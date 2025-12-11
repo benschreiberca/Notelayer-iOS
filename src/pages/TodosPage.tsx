@@ -1,0 +1,75 @@
+import { useMemo } from 'react';
+import { useAppStore } from '@/stores/useAppStore';
+import { TaskInput } from '@/components/tasks/TaskInput';
+import { TaskList } from '@/components/tasks/TaskList';
+import { cn } from '@/lib/utils';
+
+export default function TodosPage() {
+  const { tasks, showDoneTasks, toggleShowDoneTasks } = useAppStore();
+
+  const { activeTasks, completedTasks } = useMemo(() => {
+    const active = tasks.filter((t) => !t.completedAt);
+    const completed = tasks.filter((t) => !!t.completedAt);
+    return { activeTasks: active, completedTasks: completed };
+  }, [tasks]);
+
+  const displayedTasks = showDoneTasks ? completedTasks : activeTasks;
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <header className="px-4 pt-6 pb-4 safe-area-top">
+        <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
+        
+        {/* Toggle */}
+        <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-xl">
+          <button
+            type="button"
+            onClick={() => showDoneTasks && toggleShowDoneTasks()}
+            className={cn(
+              'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 tap-highlight',
+              !showDoneTasks
+                ? 'bg-card text-foreground shadow-soft'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Not Done ({activeTasks.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => !showDoneTasks && toggleShowDoneTasks()}
+            className={cn(
+              'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 tap-highlight',
+              showDoneTasks
+                ? 'bg-card text-foreground shadow-soft'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Done ({completedTasks.length})
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
+        {/* Task Input */}
+        {!showDoneTasks && (
+          <div className="mb-4 animate-fade-in">
+            <TaskInput />
+          </div>
+        )}
+
+        {/* Task List */}
+        <TaskList
+          tasks={displayedTasks}
+          showCompleted={showDoneTasks}
+          emptyMessage={
+            showDoneTasks
+              ? 'No completed tasks yet'
+              : 'All caught up! Add a task above.'
+          }
+        />
+      </div>
+    </div>
+  );
+}

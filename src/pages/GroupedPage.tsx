@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Flag, FolderOpen, Calendar } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
-import { TaskList } from '@/components/tasks/TaskList';
+import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
+import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, PRIORITY_CONFIG, Priority, CategoryId, Task } from '@/types';
-import { isToday, isTomorrow, isThisWeek, isPast, startOfDay } from 'date-fns';
+import { isToday, isTomorrow, isThisWeek, isPast } from 'date-fns';
 
 const viewTabs = [
   { id: 'priority' as const, label: 'Priority', icon: Flag },
@@ -16,6 +18,10 @@ const viewTabs = [
 export default function GroupedPage() {
   const { tasks, groupedView, setGroupedView } = useAppStore();
   const activeTasks = useMemo(() => tasks.filter((t) => !t.completedAt), [tasks]);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Enable swipe navigation
+  useSwipeNavigation();
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -46,15 +52,27 @@ export default function GroupedPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
-        {groupedView === 'priority' && <PriorityView tasks={activeTasks} />}
-        {groupedView === 'categories' && <CategoriesView tasks={activeTasks} />}
-        {groupedView === 'chrono' && <ChronoView tasks={activeTasks} />}
+        {groupedView === 'priority' && <PriorityView tasks={activeTasks} onEdit={setEditingTask} />}
+        {groupedView === 'categories' && <CategoriesView tasks={activeTasks} onEdit={setEditingTask} />}
+        {groupedView === 'chrono' && <ChronoView tasks={activeTasks} onEdit={setEditingTask} />}
       </div>
+
+      {/* Edit Sheet */}
+      <TaskEditSheet
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(open) => !open && setEditingTask(null)}
+      />
     </div>
   );
 }
 
-function PriorityView({ tasks }: { tasks: Task[] }) {
+interface ViewProps {
+  tasks: Task[];
+  onEdit: (task: Task) => void;
+}
+
+function PriorityView({ tasks, onEdit }: ViewProps) {
   const grouped = useMemo(() => {
     const groups: Record<Priority, Task[]> = {
       high: [],
@@ -84,8 +102,9 @@ function PriorityView({ tasks }: { tasks: Task[] }) {
           
           <TaskInput defaultPriority={priority} className="mb-3" />
           
-          <TaskList
+          <DraggableTaskList
             tasks={grouped[priority]}
+            onEdit={onEdit}
             emptyMessage={`No ${priority} priority tasks`}
           />
         </section>
@@ -94,7 +113,7 @@ function PriorityView({ tasks }: { tasks: Task[] }) {
   );
 }
 
-function CategoriesView({ tasks }: { tasks: Task[] }) {
+function CategoriesView({ tasks, onEdit }: ViewProps) {
   const grouped = useMemo(() => {
     const groups: Record<CategoryId, Task[]> = {} as Record<CategoryId, Task[]>;
     CATEGORIES.forEach((cat) => {
@@ -124,8 +143,9 @@ function CategoriesView({ tasks }: { tasks: Task[] }) {
           
           <TaskInput defaultCategories={[category.id]} className="mb-3" />
           
-          <TaskList
+          <DraggableTaskList
             tasks={grouped[category.id]}
+            onEdit={onEdit}
             emptyMessage={`No ${category.name.toLowerCase()} tasks`}
           />
         </section>
@@ -134,9 +154,8 @@ function CategoriesView({ tasks }: { tasks: Task[] }) {
   );
 }
 
-function ChronoView({ tasks }: { tasks: Task[] }) {
+function ChronoView({ tasks, onEdit }: ViewProps) {
   const grouped = useMemo(() => {
-    const now = new Date();
     const groups = {
       overdue: [] as Task[],
       today: [] as Task[],
@@ -194,8 +213,9 @@ function ChronoView({ tasks }: { tasks: Task[] }) {
           
           {key === 'today' && <TaskInput className="mb-3" />}
           
-          <TaskList
+          <DraggableTaskList
             tasks={grouped[key]}
+            onEdit={onEdit}
             emptyMessage={`No tasks ${label.toLowerCase()}`}
           />
         </section>

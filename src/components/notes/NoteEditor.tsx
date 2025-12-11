@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Bold, Italic, Underline, List, ListOrdered, Heading1, CheckSquare, Minus, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Bold, Italic, Underline, List, ListOrdered, Heading1, Minus, MoreHorizontal, ListPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
+import { QuickTaskSheet } from './QuickTaskSheet';
+import { useLongPress } from '@/hooks/useLongPress';
 
 interface NoteEditorProps {
   noteId: string | null;
@@ -18,6 +20,10 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const isNewNote = !noteId;
+
+  // Quick task sheet state
+  const [showQuickTask, setShowQuickTask] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
 
   useEffect(() => {
     if (note) {
@@ -63,6 +69,18 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
     contentRef.current?.focus();
   };
 
+  const handleCreateTaskFromSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim()) {
+      setSelectedText(selection.toString().trim());
+      setShowQuickTask(true);
+    } else {
+      // If no selection, use placeholder or current line
+      setSelectedText('');
+      setShowQuickTask(true);
+    }
+  };
+
   const formatButtons = [
     { icon: Bold, command: 'bold', label: 'Bold' },
     { icon: Italic, command: 'italic', label: 'Italic' },
@@ -72,6 +90,12 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
     { icon: ListOrdered, command: 'insertOrderedList', label: 'Numbered List' },
     { icon: Minus, command: 'insertHorizontalRule', label: 'Divider' },
   ];
+
+  // Long press handler for content area
+  const contentLongPress = useLongPress({
+    delay: 600,
+    onLongPress: handleCreateTaskFromSelection,
+  });
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -86,6 +110,16 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
         </button>
         
         <div className="flex-1" />
+        
+        {/* Add Task Button */}
+        <button
+          type="button"
+          onClick={handleCreateTaskFromSelection}
+          className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+          title="Create task from note"
+        >
+          <ListPlus className="w-5 h-5" />
+        </button>
         
         <button
           type="button"
@@ -124,8 +158,9 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
         <div
           ref={contentRef}
           contentEditable
+          {...contentLongPress}
           className={cn(
-            'min-h-[200px] outline-none text-foreground leading-relaxed',
+            'min-h-[200px] outline-none text-foreground leading-relaxed select-text',
             '[&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mt-6 [&>h1]:mb-3',
             '[&>h2]:text-xl [&>h2]:font-semibold [&>h2]:mt-5 [&>h2]:mb-2',
             '[&>h3]:text-lg [&>h3]:font-medium [&>h3]:mt-4 [&>h3]:mb-2',
@@ -135,14 +170,21 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
             '[&>hr]:my-4 [&>hr]:border-border',
             'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50'
           )}
-          data-placeholder="Start typing..."
+          data-placeholder="Start typing... (long-press to create task)"
           onInput={() => {
-            // Auto-save on input
             handleSave();
           }}
           suppressContentEditableWarning
         />
       </div>
+
+      {/* Quick Task Sheet */}
+      <QuickTaskSheet
+        open={showQuickTask}
+        onOpenChange={setShowQuickTask}
+        initialTitle={selectedText}
+        noteId={noteId || undefined}
+      />
     </div>
   );
 }

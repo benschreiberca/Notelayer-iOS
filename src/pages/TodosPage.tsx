@@ -1,11 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
-import { TaskList } from '@/components/tasks/TaskList';
+import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
+import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
+import { Task } from '@/types';
 
 export default function TodosPage() {
   const { tasks, showDoneTasks, toggleShowDoneTasks } = useAppStore();
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Enable swipe navigation
+  useSwipeNavigation();
 
   const { activeTasks, completedTasks } = useMemo(() => {
     const active = tasks.filter((t) => !t.completedAt);
@@ -60,9 +67,10 @@ export default function TodosPage() {
         )}
 
         {/* Task List */}
-        <TaskList
+        <DraggableTaskList
           tasks={displayedTasks}
           showCompleted={showDoneTasks}
+          onEdit={setEditingTask}
           emptyMessage={
             showDoneTasks
               ? 'No completed tasks yet'
@@ -70,6 +78,13 @@ export default function TodosPage() {
           }
         />
       </div>
+
+      {/* Edit Sheet */}
+      <TaskEditSheet
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(open) => !open && setEditingTask(null)}
+      />
     </div>
   );
 }

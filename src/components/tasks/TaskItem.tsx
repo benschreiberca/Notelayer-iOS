@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Check, MoreHorizontal, Paperclip, ChevronRight, GripVertical } from 'lucide-react';
+import { Check, Paperclip, GripVertical, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, CATEGORIES, PRIORITY_CONFIG } from '@/types';
+import { Task, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { CategoryChip } from '@/components/common/CategoryChip';
 
@@ -18,13 +19,12 @@ export function TaskItem({
   onEdit,
   className,
 }: TaskItemProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const { completeTask, restoreTask, deleteTask } = useAppStore();
+  const { completeTask, restoreTask } = useAppStore();
   
   const isCompleted = !!task.completedAt;
-  const priorityConfig = PRIORITY_CONFIG[task.priority];
 
-  const handleToggleComplete = () => {
+  const handleToggleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isCompleted) {
       restoreTask(task.id);
     } else {
@@ -32,16 +32,19 @@ export function TaskItem({
     }
   };
 
+  const handleTap = () => {
+    onEdit?.(task);
+  };
+
   return (
     <div
+      onClick={handleTap}
       className={cn(
-        'group relative bg-card rounded-xl border border-border/50 shadow-soft transition-all duration-200 tap-highlight',
-        'hover:shadow-card hover:border-border',
+        'group relative bg-card rounded-xl border border-border/50 shadow-soft transition-all duration-200 tap-highlight cursor-pointer',
+        'hover:shadow-card hover:border-border active:scale-[0.99]',
         isCompleted && 'opacity-60',
         className
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-start gap-3 p-4">
         {/* Drag Handle */}
@@ -111,24 +114,15 @@ export function TaskItem({
             )}
             
             {task.dueDate && (
-              <span>
-                {new Date(task.dueDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>
+                  {format(new Date(task.dueDate), 'MMM d')}
+                </span>
+              </div>
             )}
           </div>
         </div>
-
-        {/* Actions */}
-        <button
-          type="button"
-          onClick={() => onEdit?.(task)}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors opacity-0 group-hover:opacity-100"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

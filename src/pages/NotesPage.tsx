@@ -3,10 +3,14 @@ import { Plus } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { NoteItem } from '@/components/notes/NoteItem';
 import { NoteEditor } from '@/components/notes/NoteEditor';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 export default function NotesPage() {
   const { notes } = useAppStore();
   const [editingNoteId, setEditingNoteId] = useState<string | null | 'new'>(null);
+
+  // Enable swipe navigation
+  useSwipeNavigation();
 
   if (editingNoteId !== null) {
     return (

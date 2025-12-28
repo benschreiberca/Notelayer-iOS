@@ -17,9 +17,10 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(noteId);
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
-  const isNewNote = !noteId;
+  const isNewNote = !currentNoteId;
 
   // Quick task sheet state
   const [showQuickTask, setShowQuickTask] = useState(false);
@@ -44,23 +45,36 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   const handleSave = () => {
     const plainText = contentRef.current?.textContent || '';
     
-    if (noteId) {
-      updateNote(noteId, {
+    if (currentNoteId) {
+      updateNote(currentNoteId, {
         title: title || 'Untitled Note',
         content: contentRef.current?.innerHTML || '',
         plainText,
       });
     } else if (title || plainText) {
-      addNote({
+      // For new notes, only save on explicit back action
+      // This prevents duplicate notes from being created on every input
+    }
+  };
+
+  const handleSaveNewNote = () => {
+    const plainText = contentRef.current?.textContent || '';
+    if (title || plainText) {
+      const newId = addNote({
         title: title || 'Untitled Note',
         content: contentRef.current?.innerHTML || '',
         plainText,
       });
+      setCurrentNoteId(newId);
     }
   };
 
   const handleBack = () => {
-    handleSave();
+    if (isNewNote) {
+      handleSaveNewNote();
+    } else {
+      handleSave();
+    }
     onBack();
   };
 
@@ -111,7 +125,10 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   };
 
   const handleInput = () => {
-    handleSave();
+    // Only auto-save for existing notes, not new ones
+    if (currentNoteId) {
+      handleSave();
+    }
     
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;

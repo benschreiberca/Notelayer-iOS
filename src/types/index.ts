@@ -38,6 +38,7 @@ export interface Task {
   attachments: Attachment[];
   noteId?: string;
   noteLine?: number;
+  taskNotes?: string; // Additional notes/details for the task
   createdAt: Date;
   updatedAt: Date;
   inputMethod: 'text' | 'voice' | 'continuation';

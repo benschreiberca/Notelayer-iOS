@@ -19,6 +19,8 @@ interface AppState {
   addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   deleteNote: (id: string) => void;
+  deleteNotes: (ids: string[]) => void;
+  togglePinNote: (id: string) => void;
   setActiveNote: (id: string | null) => void;
   
   // Task Actions
@@ -76,6 +78,23 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           notes: state.notes.filter((note) => note.id !== id),
           activeNoteId: state.activeNoteId === id ? null : state.activeNoteId,
+        }));
+      },
+      
+      deleteNotes: (ids) => {
+        set((state) => ({
+          notes: state.notes.filter((note) => !ids.includes(note.id)),
+          activeNoteId: ids.includes(state.activeNoteId || '') ? null : state.activeNoteId,
+        }));
+      },
+      
+      togglePinNote: (id) => {
+        set((state) => ({
+          notes: state.notes.map((note) =>
+            note.id === id
+              ? { ...note, isPinned: !note.isPinned, updatedAt: new Date() }
+              : note
+          ),
         }));
       },
       

@@ -69,6 +69,123 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
     contentRef.current?.focus();
   };
 
+  // Handle automatic list formatting
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      const range = selection.getRangeAt(0);
+      const currentNode = range.startContainer;
+      
+      // Check if we're in a list item
+      const listItem = currentNode.parentElement?.closest('li');
+      if (listItem) {
+        const textContent = listItem.textContent || '';
+        // If list item is empty, exit the list
+        if (textContent.trim() === '') {
+          e.preventDefault();
+          const list = listItem.closest('ul, ol');
+          if (list) {
+            // Create a new paragraph after the list
+            const p = document.createElement('p');
+            p.innerHTML = '<br>';
+            list.parentNode?.insertBefore(p, list.nextSibling);
+            // Remove empty list item
+            listItem.remove();
+            // If list is now empty, remove it
+            if (list.children.length === 0) {
+              list.remove();
+            }
+            // Move cursor to the new paragraph
+            const newRange = document.createRange();
+            newRange.setStart(p, 0);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          }
+        }
+        // Otherwise, default Enter behavior will continue the list
+      }
+    }
+  };
+
+  const handleInput = () => {
+    handleSave();
+    
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const currentNode = range.startContainer;
+    
+    // Only process if we're in a text node
+    if (currentNode.nodeType !== Node.TEXT_NODE) return;
+    
+    const textContent = currentNode.textContent || '';
+    const cursorPosition = range.startOffset;
+    
+    // Check if we're at the start of a line (not inside a list already)
+    const parentElement = currentNode.parentElement;
+    if (parentElement?.closest('li')) return; // Already in a list
+    
+    // Check for bullet list trigger: "- " at start
+    if (textContent.startsWith('- ') && cursorPosition >= 2) {
+      // Remove the "- " and convert to bullet list
+      const remainingText = textContent.substring(2);
+      
+      // Clear the current text
+      currentNode.textContent = remainingText;
+      
+      // Execute bullet list command
+      document.execCommand('insertUnorderedList', false);
+      
+      // Move cursor to end of the text
+      setTimeout(() => {
+        const newSelection = window.getSelection();
+        if (newSelection && contentRef.current) {
+          const li = contentRef.current.querySelector('li:last-of-type');
+          if (li && li.firstChild) {
+            const newRange = document.createRange();
+            newRange.setStartAfter(li.firstChild);
+            newRange.collapse(true);
+            newSelection.removeAllRanges();
+            newSelection.addRange(newRange);
+          }
+        }
+      }, 0);
+      return;
+    }
+    
+    // Check for numbered list trigger: "1. " or any "N. " at start
+    const numberedMatch = textContent.match(/^(\d+)\.\s/);
+    if (numberedMatch && cursorPosition >= numberedMatch[0].length) {
+      // Remove the "N. " and convert to numbered list
+      const remainingText = textContent.substring(numberedMatch[0].length);
+      
+      // Clear the current text
+      currentNode.textContent = remainingText;
+      
+      // Execute numbered list command
+      document.execCommand('insertOrderedList', false);
+      
+      // Move cursor to end of the text
+      setTimeout(() => {
+        const newSelection = window.getSelection();
+        if (newSelection && contentRef.current) {
+          const li = contentRef.current.querySelector('ol li:last-of-type');
+          if (li && li.firstChild) {
+            const newRange = document.createRange();
+            newRange.setStartAfter(li.firstChild);
+            newRange.collapse(true);
+            newSelection.removeAllRanges();
+            newSelection.addRange(newRange);
+          }
+        }
+      }, 0);
+    }
+  };
+
   const handleCreateTaskFromSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
@@ -159,6 +276,8 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
           ref={contentRef}
           contentEditable
           {...contentLongPress}
+          onKeyDown={handleKeyDown}
+          onInput={handleInput}
           className={cn(
             'min-h-[200px] outline-none text-foreground leading-relaxed select-text',
             '[&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mt-6 [&>h1]:mb-3',
@@ -171,9 +290,6 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
             'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50'
           )}
           data-placeholder="Start typing... (long-press to create task)"
-          onInput={() => {
-            handleSave();
-          }}
           suppressContentEditableWarning
         />
       </div>

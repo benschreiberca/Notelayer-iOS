@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, CategoryId, Priority } from '@/types';
@@ -45,10 +45,12 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
     );
   };
 
-  // Update title when initialTitle changes
-  useState(() => {
-    setTitle(initialTitle);
-  });
+  // Update title when initialTitle changes (when sheet opens)
+  useEffect(() => {
+    if (open) {
+      setTitle(initialTitle);
+    }
+  }, [open, initialTitle]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Trash2, Check } from 'lucide-react';
+import { X, Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
+import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG, Note } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -24,13 +25,17 @@ const quickDateOptions = [
 ];
 
 export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) {
-  const { updateTask, deleteTask } = useAppStore();
+  const { updateTask, deleteTask, notes } = useAppStore();
   
   const [title, setTitle] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [showCustomDate, setShowCustomDate] = useState(false);
+  const [taskNotes, setTaskNotes] = useState('');
+
+  // Get linked note if exists
+  const linkedNote = task?.noteId ? notes.find((n) => n.id === task.noteId) : null;
 
   useEffect(() => {
     if (task) {
@@ -38,6 +43,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
       setSelectedCategories(task.categories);
       setPriority(task.priority);
       setDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
+      setTaskNotes(task.taskNotes || '');
     }
   }, [task]);
 
@@ -49,6 +55,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
       categories: selectedCategories,
       priority,
       dueDate,
+      taskNotes: taskNotes.trim() || undefined,
     });
     
     onOpenChange(false);
@@ -225,6 +232,40 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Notes / Details */}
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-3 block">
+              Notes & Details
+            </label>
+            <Textarea
+              value={taskNotes}
+              onChange={(e) => setTaskNotes(e.target.value)}
+              placeholder="Add references, additional details, links..."
+              className="min-h-[100px] resize-none rounded-xl bg-muted border-border/50"
+            />
+          </div>
+
+          {/* Linked Note */}
+          {linkedNote && (
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                Linked Note
+              </label>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20">
+                <FileText className="w-5 h-5 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {linkedNote.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {linkedNote.plainText?.substring(0, 50) || 'No content'}...
+                  </p>
+                </div>
+                <LinkIcon className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

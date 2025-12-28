@@ -1,0 +1,167 @@
+import { useState, useRef } from 'react';
+import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Note } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+
+interface SwipeableNoteItemProps {
+  note: Note;
+  onClick?: () => void;
+  onPin?: () => void;
+  onDelete?: () => void;
+  isSelected?: boolean;
+  isSelectMode?: boolean;
+  onSelect?: () => void;
+  className?: string;
+}
+
+const SWIPE_THRESHOLD = 80;
+
+export function SwipeableNoteItem({
+  note,
+  onClick,
+  onPin,
+  onDelete,
+  isSelected = false,
+  isSelectMode = false,
+  onSelect,
+  className,
+}: SwipeableNoteItemProps) {
+  const [offset, setOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+
+  const preview = note.plainText?.slice(0, 100) || '';
+  const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isSelectMode) return;
+    startXRef.current = e.touches[0].clientX;
+    currentXRef.current = e.touches[0].clientX;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || isSelectMode) return;
+    currentXRef.current = e.touches[0].clientX;
+    const diff = currentXRef.current - startXRef.current;
+    // Limit swipe distance
+    const clampedDiff = Math.max(-120, Math.min(120, diff));
+    setOffset(clampedDiff);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || isSelectMode) return;
+    setIsDragging(false);
+
+    if (offset > SWIPE_THRESHOLD) {
+      // Swipe right - Pin
+      onPin?.();
+    } else if (offset < -SWIPE_THRESHOLD) {
+      // Swipe left - Delete
+      onDelete?.();
+    }
+    setOffset(0);
+  };
+
+  const handleClick = () => {
+    if (isSelectMode) {
+      onSelect?.();
+    } else {
+      onClick?.();
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-xl">
+      {/* Background actions */}
+      <div className="absolute inset-0 flex">
+        {/* Pin action (right side, revealed on swipe right) */}
+        <div
+          className={cn(
+            'flex items-center justify-start pl-4 w-1/2 transition-opacity',
+            note.isPinned ? 'bg-muted' : 'bg-primary',
+            offset > 20 ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <Pin className={cn('w-6 h-6', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')} />
+          <span className={cn('ml-2 text-sm font-medium', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')}>
+            {note.isPinned ? 'Unpin' : 'Pin'}
+          </span>
+        </div>
+        {/* Delete action (left side, revealed on swipe left) */}
+        <div
+          className={cn(
+            'flex items-center justify-end pr-4 w-1/2 ml-auto bg-destructive transition-opacity',
+            offset < -20 ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
+          <Trash2 className="w-6 h-6 text-destructive-foreground" />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <button
+        type="button"
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={cn(
+          'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
+          'hover:shadow-card hover:border-border',
+          isSelected && 'ring-2 ring-primary bg-primary/5',
+          isDragging ? 'transition-none' : 'transition-transform duration-200',
+          className
+        )}
+        style={{ transform: `translateX(${offset}px)` }}
+      >
+        <div className="flex items-start gap-3">
+          {/* Selection checkbox or icon */}
+          {isSelectMode ? (
+            <div
+              className={cn(
+                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                isSelected ? 'bg-primary' : 'bg-muted border-2 border-border'
+              )}
+            >
+              {isSelected && <Check className="w-5 h-5 text-primary-foreground" />}
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0 relative">
+              <FileText className="w-5 h-5 text-accent" />
+              {note.isPinned && (
+                <Pin className="w-3 h-3 text-primary absolute -top-1 -right-1 fill-primary" />
+              )}
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-foreground truncate flex items-center gap-2">
+              {note.title || 'Untitled Note'}
+              {note.isPinned && !isSelectMode && (
+                <span className="text-[10px] text-primary font-medium">PINNED</span>
+              )}
+            </h3>
+
+            {preview && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                {preview}
+              </p>
+            )}
+
+            <p className="text-[10px] text-muted-foreground/70 mt-2">
+              {timeAgo}
+            </p>
+          </div>
+
+          {!isSelectMode && (
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+          )}
+        </div>
+      </button>
+    </div>
+  );
+}

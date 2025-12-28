@@ -49,6 +49,7 @@ export interface Note {
   title: string;
   content: string;
   plainText: string;
+  isPinned?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

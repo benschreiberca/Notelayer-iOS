@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, MoreVertical, CheckSquare, Trash2, X } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { SwipeableNoteItem } from '@/components/notes/SwipeableNoteItem';
@@ -23,7 +23,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export default function NotesPage() {
-  const { notes, deleteNote, deleteNotes, togglePinNote } = useAppStore();
+  const { notes, deleteNote, deleteNotes, togglePinNote, loadNotesFromSupabase } = useAppStore();
   const [editingNoteId, setEditingNoteId] = useState<string | null | 'new'>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
@@ -32,6 +32,11 @@ export default function NotesPage() {
 
   // Enable swipe navigation
   useSwipeNavigation();
+
+  // Load notes from Supabase on first mount
+  useEffect(() => {
+    loadNotesFromSupabase();
+  }, [loadNotesFromSupabase]);
 
   // Sort notes: pinned first, then by update time
   const sortedNotes = useMemo(() => {
@@ -132,9 +137,7 @@ export default function NotesPage() {
 
           {isSelectMode ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedNotes.size} selected
-              </span>
+              <span className="text-sm text-muted-foreground">{selectedNotes.size} selected</span>
               <button
                 type="button"
                 onClick={handleDeleteSelected}
@@ -169,10 +172,7 @@ export default function NotesPage() {
                   <CheckSquare className="w-4 h-4" />
                   Select Notes
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={selectAll}
-                  className="flex items-center gap-2"
-                >
+                <DropdownMenuItem onClick={selectAll} className="flex items-center gap-2">
                   <CheckSquare className="w-4 h-4" />
                   Select All
                 </DropdownMenuItem>
@@ -268,7 +268,9 @@ export default function NotesPage() {
             <AlertDialogDescription>
               {noteToDelete
                 ? 'This action cannot be undone. This note will be permanently deleted.'
-                : `This action cannot be undone. ${selectedNotes.size} note${selectedNotes.size > 1 ? 's' : ''} will be permanently deleted.`}
+                : `This action cannot be undone. ${selectedNotes.size} note${
+                    selectedNotes.size > 1 ? 's' : ''
+                  } will be permanently deleted.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

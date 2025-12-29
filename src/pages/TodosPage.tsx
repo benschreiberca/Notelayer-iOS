@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
@@ -8,11 +8,16 @@ import { cn } from '@/lib/utils';
 import { Task } from '@/types';
 
 export default function TodosPage() {
-  const { tasks, showDoneTasks, toggleShowDoneTasks } = useAppStore();
+  const { tasks, showDoneTasks, toggleShowDoneTasks, loadTasksFromSupabase } = useAppStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Enable swipe navigation
   useSwipeNavigation();
+
+  // Load tasks from Supabase on first mount
+  useEffect(() => {
+    loadTasksFromSupabase();
+  }, [loadTasksFromSupabase]);
 
   const { activeTasks, completedTasks } = useMemo(() => {
     const active = tasks.filter((t) => !t.completedAt);
@@ -27,7 +32,7 @@ export default function TodosPage() {
       {/* Header */}
       <header className="px-4 pt-6 pb-4 safe-area-top">
         <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
-        
+
         {/* Toggle */}
         <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-xl">
           <button

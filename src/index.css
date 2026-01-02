@@ -4,9 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* ==========================================================================
+   PALETTE: DEFAULT (Warm paper-like aesthetic)
+   ========================================================================== */
 @layer base {
-  :root {
+  :root,
+  [data-palette="default"] {
     /* Warm paper-like background */
     --background: 40 33% 98%;
     --foreground: 220 20% 15%;
@@ -71,9 +74,17 @@
     --sidebar-accent-foreground: 220 20% 25%;
     --sidebar-border: 220 15% 90%;
     --sidebar-ring: 220 25% 35%;
+
+    /* Divider */
+    --divider: 220 15% 90%;
+    
+    /* Chip */
+    --chip: 220 15% 94%;
+    --chip-foreground: 220 20% 30%;
   }
 
-  .dark {
+  .dark,
+  .dark[data-palette="default"] {
     --background: 220 20% 10%;
     --foreground: 40 20% 95%;
 
@@ -110,9 +121,389 @@
     --sidebar-accent-foreground: 40 20% 90%;
     --sidebar-border: 220 15% 20%;
     --sidebar-ring: 38 92% 55%;
+
+    --divider: 220 15% 20%;
+    
+    --chip: 220 15% 20%;
+    --chip-foreground: 40 20% 90%;
   }
 }
 
+/* ==========================================================================
+   PALETTE: HIGH CONTRAST
+   ========================================================================== */
+@layer base {
+  [data-palette="high-contrast"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 212 100% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 35%;
+
+    --accent: 212 100% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 100% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 70%;
+    --input: 0 0% 70%;
+    --ring: 212 100% 40%;
+
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 212 100% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 92%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 80%;
+    --sidebar-ring: 212 100% 40%;
+
+    --divider: 0 0% 80%;
+    
+    --chip: 0 0% 90%;
+    --chip-foreground: 0 0% 0%;
+  }
+
+  .dark[data-palette="high-contrast"] {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 212 100% 60%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 212 100% 60%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 212 100% 60%;
+
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 212 100% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 212 100% 60%;
+
+    --divider: 0 0% 25%;
+    
+    --chip: 0 0% 20%;
+    --chip-foreground: 0 0% 100%;
+  }
+}
+
+/* ==========================================================================
+   PALETTE: WARM (Amber and orange tones)
+   ========================================================================== */
+@layer base {
+  [data-palette="warm"] {
+    --background: 35 45% 97%;
+    --foreground: 20 25% 15%;
+
+    --card: 35 50% 99%;
+    --card-foreground: 20 25% 15%;
+
+    --popover: 35 50% 99%;
+    --popover-foreground: 20 25% 15%;
+
+    --primary: 25 85% 45%;
+    --primary-foreground: 35 50% 99%;
+
+    --secondary: 30 25% 90%;
+    --secondary-foreground: 20 25% 25%;
+
+    --muted: 30 20% 93%;
+    --muted-foreground: 20 15% 45%;
+
+    --accent: 38 95% 50%;
+    --accent-foreground: 20 25% 15%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 35 50% 99%;
+
+    --border: 30 20% 85%;
+    --input: 30 20% 85%;
+    --ring: 25 85% 45%;
+
+    --sidebar-background: 35 40% 96%;
+    --sidebar-foreground: 20 25% 25%;
+    --sidebar-primary: 25 85% 45%;
+    --sidebar-primary-foreground: 35 50% 99%;
+    --sidebar-accent: 30 25% 90%;
+    --sidebar-accent-foreground: 20 25% 25%;
+    --sidebar-border: 30 20% 88%;
+    --sidebar-ring: 25 85% 45%;
+
+    --divider: 30 20% 88%;
+    
+    --chip: 30 25% 92%;
+    --chip-foreground: 20 25% 25%;
+  }
+
+  .dark[data-palette="warm"] {
+    --background: 20 25% 8%;
+    --foreground: 35 30% 92%;
+
+    --card: 20 22% 11%;
+    --card-foreground: 35 30% 92%;
+
+    --popover: 20 22% 11%;
+    --popover-foreground: 35 30% 92%;
+
+    --primary: 38 95% 55%;
+    --primary-foreground: 20 25% 8%;
+
+    --secondary: 20 18% 18%;
+    --secondary-foreground: 35 25% 85%;
+
+    --muted: 20 15% 16%;
+    --muted-foreground: 30 15% 55%;
+
+    --accent: 38 95% 55%;
+    --accent-foreground: 20 25% 8%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 35 30% 92%;
+
+    --border: 20 18% 20%;
+    --input: 20 18% 20%;
+    --ring: 38 95% 55%;
+
+    --sidebar-background: 20 22% 9%;
+    --sidebar-foreground: 35 25% 88%;
+    --sidebar-primary: 38 95% 55%;
+    --sidebar-primary-foreground: 20 25% 8%;
+    --sidebar-accent: 20 18% 16%;
+    --sidebar-accent-foreground: 35 25% 88%;
+    --sidebar-border: 20 18% 18%;
+    --sidebar-ring: 38 95% 55%;
+
+    --divider: 20 18% 18%;
+    
+    --chip: 20 18% 18%;
+    --chip-foreground: 35 25% 88%;
+  }
+}
+
+/* ==========================================================================
+   PALETTE: COOL (Blue and teal tones)
+   ========================================================================== */
+@layer base {
+  [data-palette="cool"] {
+    --background: 210 35% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 210 40% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 210 40% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 210 80% 45%;
+    --primary-foreground: 210 40% 100%;
+
+    --secondary: 200 25% 90%;
+    --secondary-foreground: 215 25% 25%;
+
+    --muted: 200 20% 93%;
+    --muted-foreground: 210 15% 48%;
+
+    --accent: 175 65% 40%;
+    --accent-foreground: 210 40% 100%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 210 40% 100%;
+
+    --border: 200 20% 86%;
+    --input: 200 20% 86%;
+    --ring: 210 80% 45%;
+
+    --sidebar-background: 210 30% 96%;
+    --sidebar-foreground: 215 25% 25%;
+    --sidebar-primary: 210 80% 45%;
+    --sidebar-primary-foreground: 210 40% 100%;
+    --sidebar-accent: 200 25% 90%;
+    --sidebar-accent-foreground: 215 25% 25%;
+    --sidebar-border: 200 20% 88%;
+    --sidebar-ring: 210 80% 45%;
+
+    --divider: 200 20% 88%;
+    
+    --chip: 200 25% 92%;
+    --chip-foreground: 215 25% 25%;
+  }
+
+  .dark[data-palette="cool"] {
+    --background: 215 25% 9%;
+    --foreground: 200 25% 93%;
+
+    --card: 215 22% 12%;
+    --card-foreground: 200 25% 93%;
+
+    --popover: 215 22% 12%;
+    --popover-foreground: 200 25% 93%;
+
+    --primary: 200 80% 55%;
+    --primary-foreground: 215 25% 9%;
+
+    --secondary: 210 18% 18%;
+    --secondary-foreground: 200 20% 88%;
+
+    --muted: 210 15% 16%;
+    --muted-foreground: 200 15% 55%;
+
+    --accent: 175 65% 45%;
+    --accent-foreground: 215 25% 9%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 200 25% 93%;
+
+    --border: 210 18% 20%;
+    --input: 210 18% 20%;
+    --ring: 200 80% 55%;
+
+    --sidebar-background: 215 22% 10%;
+    --sidebar-foreground: 200 20% 88%;
+    --sidebar-primary: 200 80% 55%;
+    --sidebar-primary-foreground: 215 25% 9%;
+    --sidebar-accent: 210 18% 16%;
+    --sidebar-accent-foreground: 200 20% 88%;
+    --sidebar-border: 210 18% 18%;
+    --sidebar-ring: 200 80% 55%;
+
+    --divider: 210 18% 18%;
+    
+    --chip: 210 18% 18%;
+    --chip-foreground: 200 20% 88%;
+  }
+}
+
+/* ==========================================================================
+   PALETTE: NEUTRAL (Clean grayscale)
+   ========================================================================== */
+@layer base {
+  [data-palette="neutral"] {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    --primary: 0 0% 25%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 25%;
+
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 35%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 25%;
+
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 0 0% 25%;
+    --sidebar-primary: 0 0% 25%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 92%;
+    --sidebar-accent-foreground: 0 0% 25%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 25%;
+
+    --divider: 0 0% 90%;
+    
+    --chip: 0 0% 93%;
+    --chip-foreground: 0 0% 25%;
+  }
+
+  .dark[data-palette="neutral"] {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 92%;
+
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 92%;
+
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 92%;
+
+    --primary: 0 0% 85%;
+    --primary-foreground: 0 0% 8%;
+
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 88%;
+
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 0 0% 75%;
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 92%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 85%;
+
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 88%;
+    --sidebar-primary: 0 0% 85%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 16%;
+    --sidebar-accent-foreground: 0 0% 88%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 0% 85%;
+
+    --divider: 0 0% 18%;
+    
+    --chip: 0 0% 18%;
+    --chip-foreground: 0 0% 88%;
+  }
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
 @layer base {
   * {
     @apply border-border;
@@ -124,6 +515,9 @@
   }
 }
 
+/* ==========================================================================
+   UTILITIES
+   ========================================================================== */
 @layer utilities {
   /* Touch-friendly tap highlight */
   .tap-highlight {
@@ -161,6 +555,9 @@
   }
 }
 
+/* ==========================================================================
+   COMPONENTS
+   ========================================================================== */
 /* iOS-style bottom sheet shadows */
 @layer components {
   .shadow-sheet {
@@ -176,9 +573,39 @@
       0 -10px 15px -3px rgb(0 0 0 / 0.08),
       0 -20px 25px -5px rgb(0 0 0 / 0.1);
   }
+  
+  /* Dark mode enhanced shadows */
+  .dark .shadow-sheet {
+    box-shadow:
+      0 -1px 3px 0 rgb(0 0 0 / 0.2),
+      0 -4px 6px -2px rgb(0 0 0 / 0.15),
+      0 -10px 15px -3px rgb(0 0 0 / 0.25);
+  }
+
+  .dark .shadow-sheet-lg {
+    box-shadow:
+      0 -2px 4px -1px rgb(0 0 0 / 0.2),
+      0 -10px 15px -3px rgb(0 0 0 / 0.25),
+      0 -20px 25px -5px rgb(0 0 0 / 0.35);
+  }
+  
+  /* Dark mode card shadows */
+  .dark .shadow-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .dark .shadow-soft {
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2), 0 4px 16px -4px rgba(0, 0, 0, 0.15);
+  }
+  
+  .dark .shadow-elevated {
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.35), 0 2px 8px -2px rgba(0, 0, 0, 0.25);
+  }
 }
 
-/* Custom animations */
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -243,6 +670,9 @@
   }
 }
 
+/* ==========================================================================
+   PRIORITY & CATEGORY CHIPS
+   ========================================================================== */
 /* Priority chip styles */
 .priority-high {
   @apply bg-[hsl(var(--priority-high))] text-white;
@@ -285,4 +715,11 @@
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* ==========================================================================
+   DIVIDER UTILITY
+   ========================================================================== */
+.divider {
+  @apply h-px bg-[hsl(var(--divider))];
 }

@@ -83,8 +83,62 @@
     --chip-foreground: 220 20% 30%;
   }
 
-  .dark,
-  .dark[data-palette="default"] {
+  /* ------------------------------------------------------------
+     Palette modes (design tokens)
+     Set via: document.documentElement.dataset.palette = <value>
+     ------------------------------------------------------------ */
+
+  :root[data-palette="high-contrast"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 20%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 10%;
+    --border: 0 0% 70%;
+    --input: 0 0% 70%;
+    --primary: 220 90% 40%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 38 100% 45%;
+    --accent-foreground: 0 0% 10%;
+    --ring: 220 90% 40%;
+  }
+
+  :root[data-palette="warm"] {
+    --background: 38 45% 98%;
+    --card: 38 40% 100%;
+    --primary: 18 70% 42%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 38 92% 55%;
+    --accent-foreground: 220 20% 15%;
+    --ring: 18 70% 42%;
+  }
+
+  :root[data-palette="cool"] {
+    --background: 210 40% 98%;
+    --card: 210 35% 100%;
+    --primary: 210 85% 38%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 185 85% 42%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 210 85% 38%;
+  }
+
+  :root[data-palette="neutral"] {
+    --background: 0 0% 98%;
+    --card: 0 0% 100%;
+    --primary: 220 10% 28%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 220 10% 25%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 220 10% 28%;
+  }
+
+  .dark {
     --background: 220 20% 10%;
     --foreground: 40 20% 95%;
 
@@ -126,6 +180,50 @@
     
     --chip: 220 15% 20%;
     --chip-foreground: 40 20% 90%;
+  }
+
+  .dark[data-palette="high-contrast"] {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 80%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --border: 0 0% 28%;
+    --input: 0 0% 28%;
+    --primary: 210 100% 58%;
+    --primary-foreground: 0 0% 5%;
+    --accent: 48 100% 55%;
+    --accent-foreground: 0 0% 5%;
+    --ring: 210 100% 58%;
+  }
+
+  .dark[data-palette="warm"] {
+    --primary: 38 92% 55%;
+    --primary-foreground: 220 20% 10%;
+    --accent: 18 80% 55%;
+    --accent-foreground: 220 20% 10%;
+    --ring: 38 92% 55%;
+  }
+
+  .dark[data-palette="cool"] {
+    --primary: 185 85% 55%;
+    --primary-foreground: 220 20% 10%;
+    --accent: 210 85% 55%;
+    --accent-foreground: 220 20% 10%;
+    --ring: 185 85% 55%;
+  }
+
+  .dark[data-palette="neutral"] {
+    --primary: 0 0% 92%;
+    --primary-foreground: 0 0% 8%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 8%;
+    --ring: 0 0% 92%;
   }
 }
 
@@ -546,6 +644,14 @@
 
   .safe-area-top {
     padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left, 0);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right, 0);
   }
 
   /* iOS-style overscroll containment for nested scrollable areas */

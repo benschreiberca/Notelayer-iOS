@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, MoreVertical, CheckSquare, Trash2, X, Palette } from 'lucide-react';
+import { Plus, MoreVertical, CheckSquare, Trash2, X, Paintbrush } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { SwipeableNoteItem } from '@/components/notes/SwipeableNoteItem';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
-import { AppearanceSheet } from '@/components/AppearanceSheet';
+import { AppearanceActionSheet } from '@/components/appearance/AppearanceActionSheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +31,7 @@ export default function NotesPage() {
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
-  const [showAppearanceSheet, setShowAppearanceSheet] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
 
   // Enable swipe navigation
   useSwipeNavigation();
@@ -179,12 +179,8 @@ export default function NotesPage() {
                   <CheckSquare className="w-4 h-4" />
                   Select All
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowAppearanceSheet(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Palette className="w-4 h-4" />
+                <DropdownMenuItem onClick={() => setAppearanceOpen(true)} className="flex items-center gap-2">
+                  <Paintbrush className="w-4 h-4" />
                   Appearance
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -296,8 +292,8 @@ export default function NotesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Appearance Sheet */}
-      <AppearanceSheet open={showAppearanceSheet} onOpenChange={setShowAppearanceSheet} />
+      {/* Appearance action sheet */}
+      <AppearanceActionSheet open={appearanceOpen} onOpenChange={setAppearanceOpen} />
     </div>
   );
 }

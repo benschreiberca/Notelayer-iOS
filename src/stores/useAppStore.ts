@@ -45,14 +45,16 @@ interface AppState {
 const generateId = () => Math.random().toString(36).slice(2, 11);
 
 // ---- Date helpers (because Supabase JSON returns strings) ----
-const isIsoDateString = (v: any) =>
-  typeof v === 'string' &&
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v);
+type UnknownRecord = Record<string, unknown>;
+const isRecord = (v: unknown): v is UnknownRecord => !!v && typeof v === 'object' && !Array.isArray(v);
 
-const reviveDatesDeep = (obj: any): any => {
+const isIsoDateString = (v: unknown): v is string =>
+  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v);
+
+const reviveDatesDeep = (obj: unknown): unknown => {
   if (Array.isArray(obj)) return obj.map(reviveDatesDeep);
-  if (obj && typeof obj === 'object') {
-    const out: any = {};
+  if (isRecord(obj)) {
+    const out: UnknownRecord = {};
     for (const [k, v] of Object.entries(obj)) out[k] = reviveDatesDeep(v);
     return out;
   }
@@ -60,14 +62,38 @@ const reviveDatesDeep = (obj: any): any => {
   return obj;
 };
 
-const serializeForJsonb = (obj: any) =>
-  JSON.parse(
-    JSON.stringify(obj, (_k, v) => (v instanceof Date ? v.toISOString() : v))
-  );
+const serializeForJsonb = <T,>(obj: T): unknown =>
+  JSON.parse(JSON.stringify(obj, (_k: string, v: unknown) => (v instanceof Date ? v.toISOString() : v)));
 
 // ---- Notes mapping ----
-const rowToNote = (row: any): Note => {
-  const base = row.data && Object.keys(row.data).length ? reviveDatesDeep(row.data) : {};
+type NoteRow = {
+  id: string;
+  title?: string | null;
+  content?: string | null;
+  plain_text?: string | null;
+  is_pinned?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  data?: unknown;
+};
+
+type TaskRow = {
+  id: string;
+  title?: string | null;
+  completed_at?: string | null;
+  order_index?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  data?: unknown;
+};
+
+type TaskWithOrderIndex = Task & { orderIndex?: number };
+
+const rowToNote = (row: NoteRow): Note => {
+  const base =
+    row.data && isRecord(row.data) && Object.keys(row.data).length
+      ? (reviveDatesDeep(row.data) as Partial<Note> & { isPinned?: boolean; plainText?: string })
+      : {};
   return {
     id: row.id,
     title: row.title ?? base.title ?? '',
@@ -91,10 +117,13 @@ const noteToRow = (note: Note) => ({
 });
 
 // ---- Tasks mapping ----
-const rowToTask = (row: any): Task => {
-  const base = row.data && Object.keys(row.data).length ? reviveDatesDeep(row.data) : {};
+const rowToTask = (row: TaskRow): TaskWithOrderIndex => {
+  const base =
+    row.data && isRecord(row.data) && Object.keys(row.data).length
+      ? (reviveDatesDeep(row.data) as Partial<TaskWithOrderIndex>)
+      : {};
 
-  const task: Task = {
+  const task: TaskWithOrderIndex = {
     id: row.id,
     title: row.title ?? base.title ?? '',
     categories: base.categories ?? [],
@@ -111,17 +140,17 @@ const rowToTask = (row: any): Task => {
     inputMethod: base.inputMethod ?? 'text',
   };
 
-  // not in your TS type, but used to sort/reorder in DB
-  (task as any).orderIndex = row.order_index ?? base.orderIndex ?? Date.now();
+  // not in the Task TS type, but used to sort/reorder in DB
+  task.orderIndex = row.order_index ?? base.orderIndex ?? Date.now();
 
   return task;
 };
 
-const taskToRow = (task: Task) => ({
+const taskToRow = (task: TaskWithOrderIndex) => ({
   id: task.id,
   title: task.title,
   completed_at: task.completedAt ? task.completedAt.toISOString() : null,
-  order_index: (task as any).orderIndex ?? Date.now(),
+  order_index: task.orderIndex ?? Date.now(),
   data: serializeForJsonb(task),
   created_at: task.createdAt.toISOString(),
   updated_at: task.updatedAt.toISOString(),
@@ -163,10 +192,11 @@ export const useAppStore = create<AppState>()(
         const now = new Date();
 
         const note: Note = {
-          ...(noteData as any),
           id,
-          isPinned: (noteData as any).isPinned ?? false,
-          plainText: (noteData as any).plainText ?? '',
+          title: noteData.title ?? '',
+          content: noteData.content ?? '',
+          plainText: noteData.plainText ?? '',
+          isPinned: noteData.isPinned ?? false,
           createdAt: now,
           updatedAt: now,
         };
@@ -184,7 +214,7 @@ export const useAppStore = create<AppState>()(
       updateNote: (id, updates) => {
         set((state) => ({
           notes: state.notes.map((n) =>
-            n.id === id ? ({ ...(n as any), ...(updates as any), updatedAt: new Date() } as any) : n
+            n.id === id ? { ...n, ...updates, updatedAt: new Date() } : n
           ),
         }));
 
@@ -221,7 +251,7 @@ export const useAppStore = create<AppState>()(
       togglePinNote: (id) => {
         const note = get().notes.find((n) => n.id === id);
         if (!note) return;
-        get().updateNote(id, { isPinned: !note.isPinned } as any);
+        get().updateNote(id, { isPinned: !note.isPinned });
       },
 
       setActiveNote: (id) => set({ activeNoteId: id }),
@@ -248,23 +278,28 @@ export const useAppStore = create<AppState>()(
         const id = generateId();
         const now = new Date();
 
-        const task: any = {
-          ...(taskData as any),
+        const task: TaskWithOrderIndex = {
           id,
+          title: taskData.title,
+          categories: taskData.categories ?? [],
+          priority: taskData.priority ?? 'medium',
+          dueDate: taskData.dueDate,
+          completedAt: taskData.completedAt,
+          parentTaskId: taskData.parentTaskId,
+          attachments: taskData.attachments ?? [],
+          noteId: taskData.noteId,
+          noteLine: taskData.noteLine,
+          taskNotes: taskData.taskNotes,
           createdAt: now,
           updatedAt: now,
-          // required defaults (safety)
-          categories: (taskData as any).categories ?? [],
-          priority: (taskData as any).priority ?? 'medium',
-          attachments: (taskData as any).attachments ?? [],
-          inputMethod: (taskData as any).inputMethod ?? 'text',
+          inputMethod: taskData.inputMethod ?? 'text',
           orderIndex: Date.now(),
         };
 
         // optimistic UI
-        set((state) => ({ tasks: [task as Task, ...state.tasks] }));
+        set((state) => ({ tasks: [task, ...state.tasks] }));
 
-        void supabase.from('tasks').insert([taskToRow(task as Task)]).then(({ error }) => {
+        void supabase.from('tasks').insert([taskToRow(task)]).then(({ error }) => {
           if (error) console.error('addTask supabase error:', error);
         });
 
@@ -274,7 +309,7 @@ export const useAppStore = create<AppState>()(
       updateTask: (id, updates) => {
         set((state) => ({
           tasks: state.tasks.map((t) =>
-            t.id === id ? ({ ...(t as any), ...(updates as any), updatedAt: new Date() } as any) : t
+            t.id === id ? ({ ...(t as TaskWithOrderIndex), ...updates, updatedAt: new Date() } as TaskWithOrderIndex) : t
           ),
         }));
 
@@ -298,11 +333,11 @@ export const useAppStore = create<AppState>()(
       },
 
       completeTask: (id) => {
-        get().updateTask(id, { completedAt: new Date() } as any);
+        get().updateTask(id, { completedAt: new Date() });
       },
 
       restoreTask: (id) => {
-        get().updateTask(id, { completedAt: undefined } as any);
+        get().updateTask(id, { completedAt: undefined });
       },
 
       setActiveTask: (id) => set({ activeTaskId: id }),
@@ -310,35 +345,35 @@ export const useAppStore = create<AppState>()(
       reorderTasks: (taskIds) => {
         const { tasks } = get();
         const taskMap = new Map(tasks.map((t) => [t.id, t]));
-        const reordered = taskIds.map((id) => taskMap.get(id)).filter(Boolean) as Task[];
+        const reordered = taskIds.map((id) => taskMap.get(id)).filter((t): t is TaskWithOrderIndex => !!t);
         const remaining = tasks.filter((t) => !taskIds.includes(t.id));
 
         const nowBase = Date.now();
-        const reorderedWithOrder: any[] = reordered.map((t, idx) => ({
-          ...(t as any),
+        const reorderedWithOrder: TaskWithOrderIndex[] = reordered.map((t, idx) => ({
+          ...(t as TaskWithOrderIndex),
           orderIndex: nowBase - idx,
           updatedAt: new Date(),
         }));
 
-        set({ tasks: [...(reorderedWithOrder as Task[]), ...remaining] });
+        set({ tasks: [...reorderedWithOrder, ...remaining] });
 
         void Promise.all(
           reorderedWithOrder.map((t) =>
             supabase
               .from('tasks')
               .update({
-                order_index: (t as any).orderIndex,
+                order_index: t.orderIndex ?? Date.now(),
                 updated_at: new Date().toISOString(),
                 data: serializeForJsonb(t),
-                title: (t as any).title,
-                completed_at: (t as any).completedAt
-                  ? new Date((t as any).completedAt).toISOString()
+                title: t.title,
+                completed_at: t.completedAt
+                  ? new Date(t.completedAt).toISOString()
                   : null,
               })
-              .eq('id', (t as any).id)
+              .eq('id', t.id)
           )
         ).then((results) => {
-          const firstErr = (results as any[]).find((r) => r?.error)?.error;
+          const firstErr = results.find((r) => !!r.error)?.error;
           if (firstErr) console.error('reorderTasks supabase error:', firstErr);
         });
       },

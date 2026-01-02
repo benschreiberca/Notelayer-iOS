@@ -17,6 +17,7 @@ import {
 } from '@/types';
 import { isToday, isTomorrow, isThisWeek, isPast, addDays, startOfDay, endOfWeek } from 'date-fns';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 const viewTabs = [
   { id: 'priority' as const, label: 'Priority', icon: Flag },
@@ -35,8 +36,8 @@ export default function GroupedPage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 safe-area-top">
-        <h1 className="text-2xl font-bold text-foreground">Grouped</h1>
+      <header className="px-3 pt-6 pb-4 safe-area-top">
+        <h1 className="text-2xl font-bold text-foreground px-1">Grouped</h1>
         
         {/* View Tabs */}
         <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-xl">
@@ -59,8 +60,8 @@ export default function GroupedPage() {
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
+      {/* Content - iOS-appropriate margins with safe-area padding */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 smooth-scroll safe-area-left safe-area-right">
         {groupedView === 'priority' && <PriorityView tasks={activeTasks} onEdit={setEditingTask} />}
         {groupedView === 'categories' && <CategoriesView tasks={activeTasks} onEdit={setEditingTask} />}
         {groupedView === 'chrono' && <ChronoView tasks={activeTasks} onEdit={setEditingTask} />}
@@ -178,7 +179,7 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
           title={PRIORITY_CONFIG[priority].label}
           count={grouped[priority].length}
           defaultOpen={grouped[priority].length > 0}
-          icon={<div className={cn('w-2.5 h-2.5 rounded-full', `bg-priority-${priority}`)} />}
+          icon={<PriorityIcon priority={priority} size="sm" />}
         >
           <TaskInput defaultPriority={priority} className="mb-2" />
           <GroupedTaskList

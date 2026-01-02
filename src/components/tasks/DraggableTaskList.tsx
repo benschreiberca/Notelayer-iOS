@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Task } from '@/types';
 import { TaskItem } from './TaskItem';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,12 @@ export function DraggableTaskList({
   const { reorderTasks } = useAppStore();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  // Touch-based drag state
+  const [touchDragId, setTouchDragId] = useState<string | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; taskId: string } | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDraggingRef = useRef(false);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedId(taskId);
@@ -67,30 +73,75 @@ export function DraggableTaskList({
     setDragOverId(null);
   };
 
-  // Touch-based reordering
-  const [touchDragId, setTouchDragId] = useState<string | null>(null);
-  const [touchY, setTouchY] = useState(0);
-
-  const handleTouchStart = (taskId: string, e: React.TouchEvent) => {
+  // Touch-based press-and-drag reordering (works from anywhere on the row)
+  const handleTouchStart = useCallback((taskId: string, e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setTouchY(touch.clientY);
-    // Start drag after a short delay
-    const timeout = setTimeout(() => {
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, taskId };
+    isDraggingRef.current = false;
+    
+    // Long press to initiate drag (300ms for responsive feel)
+    longPressTimerRef.current = setTimeout(() => {
+      isDraggingRef.current = true;
       setTouchDragId(taskId);
-    }, 200);
-    
-    const cleanup = () => {
-      clearTimeout(timeout);
-    };
-    
-    e.currentTarget.addEventListener('touchend', cleanup, { once: true });
-    e.currentTarget.addEventListener('touchmove', (moveE) => {
-      const moveTouch = (moveE as TouchEvent).touches[0];
-      if (Math.abs(moveTouch.clientY - touch.clientY) > 10 || Math.abs(moveTouch.clientX - touch.clientX) > 10) {
-        clearTimeout(timeout);
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
       }
-    }, { once: true });
-  };
+    }, 300);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+    
+    // Cancel long press if moved significantly before activation
+    if (!isDraggingRef.current && (dx > 10 || dy > 10)) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+    
+    // During drag, find which task we're over and update dragOverId
+    if (isDraggingRef.current && touchDragId) {
+      const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+      const taskWrapper = elements.find(el => el.getAttribute('data-task-id'));
+      if (taskWrapper) {
+        const overId = taskWrapper.getAttribute('data-task-id');
+        if (overId && overId !== touchDragId) {
+          setDragOverId(overId);
+        }
+      }
+    }
+  }, [touchDragId]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // Perform reorder if we were dragging and have a target
+    if (isDraggingRef.current && touchDragId && dragOverId && touchDragId !== dragOverId) {
+      const draggedIndex = tasks.findIndex((t) => t.id === touchDragId);
+      const targetIndex = tasks.findIndex((t) => t.id === dragOverId);
+      
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        const newOrder = [...tasks];
+        const [removed] = newOrder.splice(draggedIndex, 1);
+        newOrder.splice(targetIndex, 0, removed);
+        reorderTasks(newOrder.map((t) => t.id));
+      }
+    }
+    
+    touchStartRef.current = null;
+    isDraggingRef.current = false;
+    setTouchDragId(null);
+    setDragOverId(null);
+  }, [touchDragId, dragOverId, tasks, reorderTasks]);
 
   if (tasks.length === 0) {
     // Condensed empty state for grouped views - minimal height
@@ -117,6 +168,7 @@ export function DraggableTaskList({
       {tasks.map((task, index) => (
         <div
           key={task.id}
+          data-task-id={task.id}
           draggable
           onDragStart={(e) => handleDragStart(e, task.id)}
           onDragOver={(e) => handleDragOver(e, task.id)}
@@ -124,11 +176,13 @@ export function DraggableTaskList({
           onDrop={(e) => handleDrop(e, task.id)}
           onDragEnd={handleDragEnd}
           onTouchStart={(e) => handleTouchStart(task.id, e)}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className={cn(
-            'animate-slide-up transition-all duration-200',
+            'animate-slide-up transition-all duration-200 touch-manipulation',
             draggedId === task.id && 'opacity-50 scale-95',
-            dragOverId === task.id && 'scale-[1.02] shadow-lg',
-            touchDragId === task.id && 'scale-[1.02] shadow-lg z-10'
+            dragOverId === task.id && 'scale-[1.02] shadow-lg ring-2 ring-primary/30',
+            touchDragId === task.id && 'scale-[1.02] shadow-lg z-10 opacity-90'
           )}
           style={{ animationDelay: `${index * 50}ms` }}
         >

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
@@ -30,10 +30,9 @@ export function SwipeableNoteItem({
   const [isDragging, setIsDragging] = useState(false);
 
   const startXRef = useRef(0);
-  const currentXRef = useRef(0);
   const startYRef = useRef(0);
-  const isTrackingRef = useRef(false);
-  const gestureLockedRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const currentXRef = useRef(0);
+  const hasDeterminedDirectionRef = useRef(false);
 
   const preview = note.plainText?.slice(0, 100) || '';
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
@@ -42,59 +41,55 @@ export function SwipeableNoteItem({
     if (isSelectMode) return;
 
     startXRef.current = e.touches[0].clientX;
-    currentXRef.current = e.touches[0].clientX;
     startYRef.current = e.touches[0].clientY;
-
-    isTrackingRef.current = true;
-    gestureLockedRef.current = null;
-    setIsDragging(false);
+    currentXRef.current = e.touches[0].clientX;
+    hasDeterminedDirectionRef.current = false;
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isTrackingRef.current || isSelectMode) return;
-
-    currentXRef.current = e.touches[0].clientX;
-    const diffX = currentXRef.current - startXRef.current;
-    const diffY = e.touches[0].clientY - startYRef.current;
-
-    if (gestureLockedRef.current === null) {
-      const absX = Math.abs(diffX);
-      const absY = Math.abs(diffY);
-
-      if (absX < GESTURE.directionLock.activationPx && absY < GESTURE.directionLock.activationPx) {
-        return;
-      }
-
-      if (absX > absY * GESTURE.directionLock.horizontalToVerticalRatio) {
-        gestureLockedRef.current = 'horizontal';
-        setIsDragging(true);
-      } else {
-        gestureLockedRef.current = 'vertical';
-        isTrackingRef.current = false;
-        setOffset(0);
-        return;
+    if (!isDragging || isSelectMode) return;
+    
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = currentX - startXRef.current;
+    const deltaY = currentY - startYRef.current;
+    
+    // Determine swipe direction early
+    if (!hasDeterminedDirectionRef.current && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+      hasDeterminedDirectionRef.current = true;
+      
+      // If horizontal swipe is detected, stop propagation to prevent tab navigation
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        e.stopPropagation();
       }
     }
-
-    if (gestureLockedRef.current !== 'horizontal') return;
-
-    const clamped = Math.max(
-      -GESTURE.row.maxTranslatePx,
-      Math.min(GESTURE.row.maxTranslatePx, diffX)
-    );
-    setOffset(clamped);
+    
+    // Only handle horizontal swipes
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.stopPropagation();
+      currentXRef.current = currentX;
+      // Limit swipe distance
+      const clampedDiff = Math.max(-120, Math.min(120, deltaX));
+      setOffset(clampedDiff);
+    }
   };
 
-  const handleTouchEnd = () => {
-    if (!isTrackingRef.current || isSelectMode) return;
-
-    isTrackingRef.current = false;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging || isSelectMode) return;
+    
+    // Stop propagation to prevent tab navigation
+    if (Math.abs(offset) > 10) {
+      e.stopPropagation();
+    }
+    
     setIsDragging(false);
 
     if (offset > GESTURE.row.actionThresholdPx) onPin?.();
     else if (offset < -GESTURE.row.actionThresholdPx) onDelete?.();
 
     setOffset(0);
+    hasDeterminedDirectionRef.current = false;
   };
 
   const handleClick = () => {
@@ -156,7 +151,10 @@ export function SwipeableNoteItem({
           isDragging ? 'transition-none' : 'transition-transform duration-150',
           className
         )}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ 
+          transform: `translateX(${offset}px)`,
+          touchAction: 'pan-y' // Prioritize vertical scrolling, allow horizontal swipe handling
+        }}
       >
         <div className="flex items-start gap-3">
           {isSelectMode ? (

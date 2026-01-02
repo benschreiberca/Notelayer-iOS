@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
@@ -55,13 +55,18 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[70vh]">
-        <SheetHeader>
-          <SheetTitle className="text-lg font-semibold">Create Task from Note</SheetTitle>
+      <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl flex flex-col p-0">
+        <SheetHeader className="pb-4 pt-6 px-6 flex-shrink-0">
+          <SheetTitle>Create Task from Note</SheetTitle>
         </SheetHeader>
 
-        {/* Scrollable content for smaller screens */}
-        <div className="flex flex-col gap-4 flex-1 overflow-y-auto -mx-5 px-5 pb-4 overscroll-contain">
+        <div 
+          className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-6 pb-8 overscroll-contain"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          } as React.CSSProperties}
+        >
           {/* Title Input */}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
             <input

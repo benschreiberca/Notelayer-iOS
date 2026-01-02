@@ -62,55 +62,18 @@ const SheetGrabber = () => (
 );
 
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = "right", className, children, hideCloseButton = false, ...props }, ref) => {
-    const isBottomSheet = side === "bottom";
-    
-    return (
-      <SheetPortal>
-        <SheetOverlay />
-        <SheetPrimitive.Content
-          ref={ref}
-          className={cn(
-            sheetVariants({ side }),
-            // Bottom sheets get special iOS styling
-            isBottomSheet && "flex flex-col pb-[env(safe-area-inset-bottom)]",
-            className
-          )}
-          {...props}
-        >
-          {/* iOS-style grabber for bottom sheets */}
-          {isBottomSheet && <SheetGrabber />}
-          
-          {/* Content wrapper with padding for bottom sheets */}
-          {isBottomSheet ? (
-            <div className="flex flex-col flex-1 min-h-0 px-5">
-              {children}
-            </div>
-          ) : (
-            children
-          )}
-          
-          {/* Close button - iOS style 44x44pt hit target */}
-          {!hideCloseButton && (
-            <SheetPrimitive.Close
-              className={cn(
-                "absolute w-11 h-11 flex items-center justify-center rounded-full",
-                "bg-muted/80 hover:bg-muted active:bg-muted/60",
-                "text-muted-foreground hover:text-foreground",
-                "transition-colors duration-150",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                // Position based on sheet type
-                isBottomSheet ? "right-4 top-4" : "right-3 top-3"
-              )}
-            >
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </SheetPrimitive.Close>
-          )}
-        </SheetPrimitive.Content>
-      </SheetPortal>
-    );
-  },
+  ({ side = "right", className, children, ...props }, ref) => (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+        {children}
+        <SheetPrimitive.Close className="absolute right-6 top-6 rounded-lg opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-secondary hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none p-2 min-h-[44px] min-w-[44px] flex items-center justify-center z-10">
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  ),
 );
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 

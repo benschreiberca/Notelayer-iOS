@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -148,17 +148,16 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] max-h-[85vh]" hideCloseButton>
-        {/* iOS-style header with actions */}
-        <SheetHeader>
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-semibold">Edit Task</SheetTitle>
-            <div className="flex items-center gap-1">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col p-0">
+        <SheetHeader className="pb-4 pt-6 px-6 flex-shrink-0">
+          <div className="flex items-center justify-between pr-12">
+            <SheetTitle>Edit Task</SheetTitle>
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleDelete}
-                className="w-11 h-11 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10"
               >
                 <CalendarPlus className="w-5 h-5" />
               </Button>
@@ -179,7 +178,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
-                className="w-11 h-11 rounded-full text-primary hover:bg-primary/10"
+                className="text-primary h-10 w-10"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -187,8 +186,13 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        {/* Scrollable content area */}
-        <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto -mx-5 px-5 pb-4 overscroll-contain">
+        <div 
+          className="flex flex-col gap-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-6 pb-8 overscroll-contain" 
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          } as React.CSSProperties}
+        >
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">

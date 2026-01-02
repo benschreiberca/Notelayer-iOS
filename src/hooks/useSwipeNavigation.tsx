@@ -77,14 +77,26 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
   }, [location.pathname, navigate, groupedView, setGroupedView, showDoneTasks, toggleShowDoneTasks, options]);
 
   useEffect(() => {
+    let touchTarget: EventTarget | null = null;
+
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
+      touchTarget = e.target;
       isSwiping.current = false;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (isSwiping.current) return;
+      
+      // Check if touch originated from a swipeable list item - let it handle swipe gestures
+      if (touchTarget instanceof Element) {
+        const swipeableParent = touchTarget.closest('[data-swipeable="true"]');
+        if (swipeableParent) {
+          // Don't interfere with row-level swipe actions
+          return;
+        }
+      }
       
       const deltaX = e.touches[0].clientX - touchStartX.current;
       const deltaY = e.touches[0].clientY - touchStartY.current;

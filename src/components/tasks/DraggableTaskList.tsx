@@ -83,7 +83,7 @@ export function DraggableTaskList({
     e.currentTarget.addEventListener('touchend', cleanup, { once: true });
     e.currentTarget.addEventListener('touchmove', (moveE) => {
       const moveTouch = (moveE as TouchEvent).touches[0];
-      if (Math.abs(moveTouch.clientY - touch.clientY) > 10) {
+      if (Math.abs(moveTouch.clientY - touch.clientY) > 10 || Math.abs(moveTouch.clientX - touch.clientX) > 10) {
         clearTimeout(timeout);
       }
     }, { once: true });

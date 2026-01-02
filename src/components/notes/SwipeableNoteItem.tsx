@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import { useSwipeable } from '@/hooks/useSwipeable';
 
 interface SwipeableNoteItemProps {
   note: Note;
@@ -15,8 +15,6 @@ interface SwipeableNoteItemProps {
   className?: string;
 }
 
-const SWIPE_THRESHOLD = 80;
-
 export function SwipeableNoteItem({
   note,
   onClick,
@@ -27,43 +25,14 @@ export function SwipeableNoteItem({
   onSelect,
   className,
 }: SwipeableNoteItemProps) {
-  const [offset, setOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const startXRef = useRef(0);
-  const currentXRef = useRef(0);
+  const { offset, isDragging, handlers } = useSwipeable({
+    onSwipeRight: onPin,
+    onSwipeLeft: onDelete,
+    disabled: isSelectMode,
+  });
 
   const preview = note.plainText?.slice(0, 100) || '';
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isSelectMode) return;
-    startXRef.current = e.touches[0].clientX;
-    currentXRef.current = e.touches[0].clientX;
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || isSelectMode) return;
-    currentXRef.current = e.touches[0].clientX;
-    const diff = currentXRef.current - startXRef.current;
-    // Limit swipe distance
-    const clampedDiff = Math.max(-120, Math.min(120, diff));
-    setOffset(clampedDiff);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging || isSelectMode) return;
-    setIsDragging(false);
-
-    if (offset > SWIPE_THRESHOLD) {
-      // Swipe right - Pin
-      onPin?.();
-    } else if (offset < -SWIPE_THRESHOLD) {
-      // Swipe left - Delete
-      onDelete?.();
-    }
-    setOffset(0);
-  };
 
   const handleClick = () => {
     if (isSelectMode) {
@@ -106,9 +75,7 @@ export function SwipeableNoteItem({
       <button
         type="button"
         onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        {...handlers}
         className={cn(
           'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
           'hover:shadow-card hover:border-border',
@@ -148,7 +115,7 @@ export function SwipeableNoteItem({
 
             {preview && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {preview}
+              {preview}
               </p>
             )}
 

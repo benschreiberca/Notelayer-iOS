@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 export const SWIPE_THRESHOLD = 80;
 export const MAX_SWIPE_DISTANCE = 120;

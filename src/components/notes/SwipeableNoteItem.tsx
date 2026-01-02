@@ -1,8 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  ROW_SWIPE_THRESHOLD,
+  ROW_SWIPE_MAX_OFFSET,
+  SWIPE_DIRECTION_LOCK_THRESHOLD,
+  SWIPE_RESET_DURATION,
+  SWIPE_ACTION_OPACITY_THRESHOLD,
+  clampSwipeOffset,
+} from '@/lib/swipe-constants';
 
 interface SwipeableNoteItemProps {
   note: Note;
@@ -14,8 +22,6 @@ interface SwipeableNoteItemProps {
   onSelect?: () => void;
   className?: string;
 }
-
-const SWIPE_THRESHOLD = 80;
 
 export function SwipeableNoteItem({
   note,
@@ -29,41 +35,76 @@ export function SwipeableNoteItem({
 }: SwipeableNoteItemProps) {
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  // Track if we've determined this is a horizontal swipe (vs vertical scroll)
+  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
+  
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const currentXRef = useRef(0);
+  // Track if we've locked the swipe direction
+  const directionLockedRef = useRef(false);
 
   const preview = note.plainText?.slice(0, 100) || '';
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isSelectMode) return;
     startXRef.current = e.touches[0].clientX;
+    startYRef.current = e.touches[0].clientY;
     currentXRef.current = e.touches[0].clientX;
     setIsDragging(true);
-  };
+    setIsHorizontalSwipe(false);
+    directionLockedRef.current = false;
+  }, [isSelectMode]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging || isSelectMode) return;
-    currentXRef.current = e.touches[0].clientX;
-    const diff = currentXRef.current - startXRef.current;
-    // Limit swipe distance
-    const clampedDiff = Math.max(-120, Math.min(120, diff));
-    setOffset(clampedDiff);
-  };
+    
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = currentX - startXRef.current;
+    const deltaY = currentY - startYRef.current;
+    
+    // Determine swipe direction once we've moved enough
+    if (!directionLockedRef.current && 
+        (Math.abs(deltaX) > SWIPE_DIRECTION_LOCK_THRESHOLD || 
+         Math.abs(deltaY) > SWIPE_DIRECTION_LOCK_THRESHOLD)) {
+      directionLockedRef.current = true;
+      // This is a horizontal swipe if horizontal movement dominates
+      const horizontal = Math.abs(deltaX) > Math.abs(deltaY);
+      setIsHorizontalSwipe(horizontal);
+      
+      if (!horizontal) {
+        // This is a vertical scroll - release the gesture
+        setIsDragging(false);
+        setOffset(0);
+        return;
+      }
+    }
+    
+    // Only update offset if we've confirmed horizontal swipe
+    if (directionLockedRef.current && isHorizontalSwipe) {
+      currentXRef.current = currentX;
+      const clampedDiff = clampSwipeOffset(deltaX, ROW_SWIPE_MAX_OFFSET);
+      setOffset(clampedDiff);
+    }
+  }, [isDragging, isSelectMode, isHorizontalSwipe]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     if (!isDragging || isSelectMode) return;
     setIsDragging(false);
+    setIsHorizontalSwipe(false);
+    directionLockedRef.current = false;
 
-    if (offset > SWIPE_THRESHOLD) {
+    if (offset > ROW_SWIPE_THRESHOLD) {
       // Swipe right - Pin
       onPin?.();
-    } else if (offset < -SWIPE_THRESHOLD) {
+    } else if (offset < -ROW_SWIPE_THRESHOLD) {
       // Swipe left - Delete
       onDelete?.();
     }
     setOffset(0);
-  };
+  }, [isDragging, isSelectMode, offset, onPin, onDelete]);
 
   const handleClick = () => {
     if (isSelectMode) {
@@ -82,7 +123,7 @@ export function SwipeableNoteItem({
           className={cn(
             'flex items-center justify-start pl-4 w-1/2 transition-opacity',
             note.isPinned ? 'bg-muted' : 'bg-primary',
-            offset > 20 ? 'opacity-100' : 'opacity-0'
+            offset > SWIPE_ACTION_OPACITY_THRESHOLD ? 'opacity-100' : 'opacity-0'
           )}
         >
           <Pin className={cn('w-6 h-6', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')} />
@@ -94,7 +135,7 @@ export function SwipeableNoteItem({
         <div
           className={cn(
             'flex items-center justify-end pr-4 w-1/2 ml-auto bg-destructive transition-opacity',
-            offset < -20 ? 'opacity-100' : 'opacity-0'
+            offset < -SWIPE_ACTION_OPACITY_THRESHOLD ? 'opacity-100' : 'opacity-0'
           )}
         >
           <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
@@ -113,10 +154,13 @@ export function SwipeableNoteItem({
           'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
           'hover:shadow-card hover:border-border',
           isSelected && 'ring-2 ring-primary bg-primary/5',
-          isDragging ? 'transition-none' : 'transition-transform duration-200',
+          isDragging ? 'transition-none' : `transition-transform`,
           className
         )}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ 
+          transform: `translateX(${offset}px)`,
+          transitionDuration: isDragging ? '0ms' : `${SWIPE_RESET_DURATION}ms`
+        }}
       >
         <div className="flex items-start gap-3">
           {/* Selection checkbox or icon */}

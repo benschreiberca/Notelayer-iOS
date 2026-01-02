@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import { GESTURE } from '@/lib/gestures';
 
 interface SwipeableNoteItemProps {
   note: Note;
@@ -14,8 +15,6 @@ interface SwipeableNoteItemProps {
   onSelect?: () => void;
   className?: string;
 }
-
-const SWIPE_THRESHOLD = 80;
 
 export function SwipeableNoteItem({
   note,
@@ -29,6 +28,7 @@ export function SwipeableNoteItem({
 }: SwipeableNoteItemProps) {
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const currentXRef = useRef(0);
@@ -39,6 +39,7 @@ export function SwipeableNoteItem({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isSelectMode) return;
+
     startXRef.current = e.touches[0].clientX;
     startYRef.current = e.touches[0].clientY;
     currentXRef.current = e.touches[0].clientX;
@@ -84,47 +85,51 @@ export function SwipeableNoteItem({
     
     setIsDragging(false);
 
-    if (offset > SWIPE_THRESHOLD) {
-      // Swipe right - Pin
-      onPin?.();
-    } else if (offset < -SWIPE_THRESHOLD) {
-      // Swipe left - Delete
-      onDelete?.();
-    }
+    if (offset > GESTURE.row.actionThresholdPx) onPin?.();
+    else if (offset < -GESTURE.row.actionThresholdPx) onDelete?.();
+
     setOffset(0);
     hasDeterminedDirectionRef.current = false;
   };
 
   const handleClick = () => {
-    if (isSelectMode) {
-      onSelect?.();
-    } else {
-      onClick?.();
-    }
+    if (isSelectMode) onSelect?.();
+    else onClick?.();
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden rounded-xl" data-swipeable="true">
       {/* Background actions */}
       <div className="absolute inset-0 flex">
-        {/* Pin action (right side, revealed on swipe right) */}
+        {/* Pin */}
         <div
           className={cn(
             'flex items-center justify-start pl-4 w-1/2 transition-opacity',
             note.isPinned ? 'bg-muted' : 'bg-primary',
-            offset > 20 ? 'opacity-100' : 'opacity-0'
+            offset > GESTURE.row.revealHintPx ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <Pin className={cn('w-6 h-6', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')} />
-          <span className={cn('ml-2 text-sm font-medium', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')}>
+          <Pin
+            className={cn(
+              'w-6 h-6',
+              note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground'
+            )}
+          />
+          <span
+            className={cn(
+              'ml-2 text-sm font-medium',
+              note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground'
+            )}
+          >
             {note.isPinned ? 'Unpin' : 'Pin'}
           </span>
         </div>
-        {/* Delete action (left side, revealed on swipe left) */}
+
+        {/* Delete */}
         <div
           className={cn(
             'flex items-center justify-end pr-4 w-1/2 ml-auto bg-destructive transition-opacity',
-            offset < -20 ? 'opacity-100' : 'opacity-0'
+            offset < -GESTURE.row.revealHintPx ? 'opacity-100' : 'opacity-0'
           )}
         >
           <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
@@ -140,10 +145,10 @@ export function SwipeableNoteItem({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
+          'w-full text-left bg-card border border-border/50 shadow-soft p-4 tap-highlight relative',
           'hover:shadow-card hover:border-border',
           isSelected && 'ring-2 ring-primary bg-primary/5',
-          isDragging ? 'transition-none' : 'transition-transform duration-200',
+          isDragging ? 'transition-none' : 'transition-transform duration-150',
           className
         )}
         style={{ 
@@ -152,7 +157,6 @@ export function SwipeableNoteItem({
         }}
       >
         <div className="flex items-start gap-3">
-          {/* Selection checkbox or icon */}
           {isSelectMode ? (
             <div
               className={cn(
@@ -180,14 +184,10 @@ export function SwipeableNoteItem({
             </h3>
 
             {preview && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {preview}
-              </p>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{preview}</p>
             )}
 
-            <p className="text-[10px] text-muted-foreground/70 mt-2">
-              {timeAgo}
-            </p>
+            <p className="text-[10px] text-muted-foreground/70 mt-2">{timeAgo}</p>
           </div>
 
           {!isSelectMode && (

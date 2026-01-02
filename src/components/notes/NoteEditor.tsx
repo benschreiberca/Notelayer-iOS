@@ -26,20 +26,28 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   const [showQuickTask, setShowQuickTask] = useState(false);
   const [selectedText, setSelectedText] = useState('');
 
-  // Track which noteId we've loaded to avoid resetting innerHTML on our own updates
-  const loadedNoteIdRef = useRef<string | null>(null);
+  // Track if we've initialized this note to avoid resetting innerHTML on our own updates
+  const hasInitializedRef = useRef(false);
+  const lastNoteIdRef = useRef<string | null>(null);
+
+  // Reset initialization flag when noteId changes
+  if (noteId !== lastNoteIdRef.current) {
+    hasInitializedRef.current = false;
+    lastNoteIdRef.current = noteId;
+  }
 
   useEffect(() => {
-    // Only set innerHTML when switching to a different note, not on our own edits
-    if (note && noteId !== loadedNoteIdRef.current) {
+    // Only set innerHTML once when the note is first loaded
+    // Skip if we've already initialized this note (prevents re-setting on our own edits)
+    if (note && !hasInitializedRef.current) {
       setTitle(note.title);
       setContent(note.content);
       if (contentRef.current) {
         contentRef.current.innerHTML = note.content;
       }
-      loadedNoteIdRef.current = noteId;
+      hasInitializedRef.current = true;
     }
-  }, [note, noteId]);
+  }, [note]);
 
   useEffect(() => {
     if (isNewNote && titleRef.current) {

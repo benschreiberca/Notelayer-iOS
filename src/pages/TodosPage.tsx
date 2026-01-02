@@ -30,8 +30,8 @@ export default function TodosPage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 safe-area-top">
-        <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
+      <header className="px-3 pt-6 pb-4 safe-area-top">
+        <h1 className="text-2xl font-bold text-foreground px-1">To-Dos</h1>
 
         {/* Toggle */}
         <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-xl">
@@ -62,16 +62,16 @@ export default function TodosPage() {
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
+      {/* Content - iOS-appropriate margins with safe-area padding */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 smooth-scroll safe-area-left safe-area-right">
         {/* Task Input */}
         {!showDoneTasks && (
-          <div className="mb-4 animate-fade-in">
+          <div className="mb-3 animate-fade-in">
             <TaskInput />
           </div>
         )}
 
-        {/* Task List */}
+        {/* Task List - near full-width */}
         <DraggableTaskList
           tasks={displayedTasks}
           showCompleted={showDoneTasks}

@@ -71,3 +71,33 @@ export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }>
   low: { label: 'Low', color: 'priority-low' },
   deferred: { label: 'Deferred', color: 'priority-deferred' },
 };
+
+/** Priority order for sorting: High > Medium > Low > Deferred */
+export const PRIORITY_ORDER: Record<Priority, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+  deferred: 3,
+};
+
+/**
+ * Sort tasks by priority (High > Medium > Low > Deferred), then by createdAt (newest first).
+ * Use this for Category and Chrono views.
+ */
+export function sortTasksByPriorityThenDate(tasks: Task[]): Task[] {
+  return [...tasks].sort((a, b) => {
+    // First sort by priority
+    const priorityDiff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+    if (priorityDiff !== 0) return priorityDiff;
+    // Then sort by createdAt (newest first)
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+}
+
+/**
+ * Sort tasks by createdAt only (newest first).
+ * Use this for Priority view (within each priority section).
+ */
+export function sortTasksByDate(tasks: Task[]): Task[] {
+  return [...tasks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}

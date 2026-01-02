@@ -27,8 +27,8 @@ export default function GroupedPage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 safe-area-top">
-        <h1 className="text-2xl font-bold text-foreground">Grouped</h1>
+      <header className="px-3 pt-6 pb-4 safe-area-top">
+        <h1 className="text-2xl font-bold text-foreground px-1">Grouped</h1>
         
         {/* View Tabs */}
         <div className="flex items-center gap-1 mt-4 p-1 bg-muted rounded-xl">
@@ -51,8 +51,8 @@ export default function GroupedPage() {
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
+      {/* Content - iOS-appropriate margins with safe-area padding */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 smooth-scroll safe-area-left safe-area-right">
         {groupedView === 'priority' && <PriorityView tasks={activeTasks} onEdit={setEditingTask} />}
         {groupedView === 'categories' && <CategoriesView tasks={activeTasks} onEdit={setEditingTask} />}
         {groupedView === 'chrono' && <ChronoView tasks={activeTasks} onEdit={setEditingTask} />}

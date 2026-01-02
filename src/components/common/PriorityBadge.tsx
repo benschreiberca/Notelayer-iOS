@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Priority, PRIORITY_CONFIG } from '@/types';
-import { Flag } from 'lucide-react';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface PriorityBadgeProps {
   priority: Priority;
@@ -28,7 +28,11 @@ export function PriorityBadge({
         onClick && 'cursor-pointer active:scale-95'
       )}
     >
-      <Flag className={size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
+      <PriorityIcon 
+        priority={priority} 
+        size={size === 'sm' ? 'xs' : 'sm'} 
+        className="text-white"
+      />
       {showLabel && <span>{config.label}</span>}
     </button>
   );

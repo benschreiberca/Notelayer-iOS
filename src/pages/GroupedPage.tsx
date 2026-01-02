@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { CATEGORIES, PRIORITY_CONFIG, Priority, CategoryId, Task } from '@/types';
 import { isToday, isTomorrow, isThisWeek, isPast } from 'date-fns';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 const viewTabs = [
   { id: 'priority' as const, label: 'Priority', icon: Flag },
@@ -147,7 +148,7 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
           title={PRIORITY_CONFIG[priority].label}
           count={grouped[priority].length}
           defaultOpen={grouped[priority].length > 0}
-          icon={<div className={cn('w-2.5 h-2.5 rounded-full', `bg-priority-${priority}`)} />}
+          icon={<PriorityIcon priority={priority} size="sm" />}
         >
           <TaskInput defaultPriority={priority} className="mb-2" />
           <DraggableTaskList

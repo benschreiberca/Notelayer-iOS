@@ -9,6 +9,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -162,13 +163,18 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                   type="button"
                   onClick={() => setPriority(p)}
                   className={cn(
-                    'flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 capitalize tap-highlight active:scale-95',
+                    'flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
                     priority === p
                       ? `priority-${p}`
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   )}
                 >
-                  {PRIORITY_CONFIG[p].label}
+                  <PriorityIcon 
+                    priority={p} 
+                    size="sm" 
+                    className={priority === p ? 'text-white' : ''} 
+                  />
+                  <span>{PRIORITY_CONFIG[p].label}</span>
                 </button>
               ))}
             </div>

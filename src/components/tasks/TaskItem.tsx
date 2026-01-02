@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Check, Paperclip, Calendar, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, PRIORITY_CONFIG } from '@/types';
+import { Task } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { CategoryChip } from '@/components/common/CategoryChip';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 import { useSwipeable } from '@/hooks/useSwipeable';
 
 interface TaskItemProps {

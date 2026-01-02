@@ -83,16 +83,16 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="pb-4">
-          <div className="flex items-center justify-between">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
+        <SheetHeader className="pb-4 flex-shrink-0">
+          <div className="flex items-center justify-between pr-12">
             <SheetTitle>Edit Task</SheetTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10"
               >
                 <Trash2 className="w-5 h-5" />
               </Button>
@@ -100,7 +100,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
-                className="text-primary"
+                className="text-primary h-10 w-10"
               >
                 <Check className="w-5 h-5" />
               </Button>
@@ -108,7 +108,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-6 overflow-y-auto pb-8">
+        <div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 pb-8">
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">

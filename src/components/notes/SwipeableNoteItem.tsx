@@ -30,7 +30,9 @@ export function SwipeableNoteItem({
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const currentXRef = useRef(0);
+  const hasDeterminedDirectionRef = useRef(false);
 
   const preview = note.plainText?.slice(0, 100) || '';
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
@@ -38,21 +40,48 @@ export function SwipeableNoteItem({
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isSelectMode) return;
     startXRef.current = e.touches[0].clientX;
+    startYRef.current = e.touches[0].clientY;
     currentXRef.current = e.touches[0].clientX;
+    hasDeterminedDirectionRef.current = false;
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || isSelectMode) return;
-    currentXRef.current = e.touches[0].clientX;
-    const diff = currentXRef.current - startXRef.current;
-    // Limit swipe distance
-    const clampedDiff = Math.max(-120, Math.min(120, diff));
-    setOffset(clampedDiff);
+    
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = currentX - startXRef.current;
+    const deltaY = currentY - startYRef.current;
+    
+    // Determine swipe direction early
+    if (!hasDeterminedDirectionRef.current && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+      hasDeterminedDirectionRef.current = true;
+      
+      // If horizontal swipe is detected, stop propagation to prevent tab navigation
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        e.stopPropagation();
+      }
+    }
+    
+    // Only handle horizontal swipes
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.stopPropagation();
+      currentXRef.current = currentX;
+      // Limit swipe distance
+      const clampedDiff = Math.max(-120, Math.min(120, deltaX));
+      setOffset(clampedDiff);
+    }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isDragging || isSelectMode) return;
+    
+    // Stop propagation to prevent tab navigation
+    if (Math.abs(offset) > 10) {
+      e.stopPropagation();
+    }
+    
     setIsDragging(false);
 
     if (offset > SWIPE_THRESHOLD) {
@@ -63,6 +92,7 @@ export function SwipeableNoteItem({
       onDelete?.();
     }
     setOffset(0);
+    hasDeterminedDirectionRef.current = false;
   };
 
   const handleClick = () => {
@@ -116,7 +146,10 @@ export function SwipeableNoteItem({
           isDragging ? 'transition-none' : 'transition-transform duration-200',
           className
         )}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ 
+          transform: `translateX(${offset}px)`,
+          touchAction: 'pan-y' // Prioritize vertical scrolling, allow horizontal swipe handling
+        }}
       >
         <div className="flex items-start gap-3">
           {/* Selection checkbox or icon */}

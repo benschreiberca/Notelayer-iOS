@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
+import { Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG, Note } from '@/types';
+import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -83,16 +83,17 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="pb-4">
+      <SheetContent side="bottom" className="h-[85vh] max-h-[85vh]" hideCloseButton>
+        {/* iOS-style header with actions */}
+        <SheetHeader>
           <div className="flex items-center justify-between">
-            <SheetTitle>Edit Task</SheetTitle>
-            <div className="flex items-center gap-2">
+            <SheetTitle className="text-lg font-semibold">Edit Task</SheetTitle>
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="w-11 h-11 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="w-5 h-5" />
               </Button>
@@ -100,7 +101,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
-                className="text-primary"
+                className="w-11 h-11 rounded-full text-primary hover:bg-primary/10"
               >
                 <Check className="w-5 h-5" />
               </Button>
@@ -108,7 +109,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto pb-8">
+        {/* Scrollable content area */}
+        <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto -mx-5 px-5 pb-4 overscroll-contain">
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">

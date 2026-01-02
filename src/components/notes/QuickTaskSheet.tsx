@@ -54,12 +54,13 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl">
-        <SheetHeader className="pb-4">
-          <SheetTitle>Create Task from Note</SheetTitle>
+      <SheetContent side="bottom" className="h-auto max-h-[70vh]">
+        <SheetHeader>
+          <SheetTitle className="text-lg font-semibold">Create Task from Note</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 pb-8">
+        {/* Scrollable content for smaller screens */}
+        <div className="flex flex-col gap-4 flex-1 overflow-y-auto -mx-5 px-5 pb-4 overscroll-contain">
           {/* Title Input */}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
             <input

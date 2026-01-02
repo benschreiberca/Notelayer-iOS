@@ -89,8 +89,12 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
     const handleTouchMove = (e: TouchEvent) => {
       if (isSwiping.current) return;
       
+      const startX = touchStartX.current;
+      const isGutter = startX < 20 || startX > window.innerWidth - 20;
+
       // Check if touch originated from a swipeable list item - let it handle swipe gestures
-      if (touchTarget instanceof Element) {
+      // UNLESS we are in the gutter, where tab navigation takes precedence.
+      if (!isGutter && touchTarget instanceof Element) {
         const swipeableParent = touchTarget.closest('[data-swipeable="true"]');
         if (swipeableParent) {
           // Don't interfere with row-level swipe actions

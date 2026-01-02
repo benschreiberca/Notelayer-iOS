@@ -83,8 +83,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="pb-4 flex-shrink-0">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col p-0">
+        <SheetHeader className="pb-4 pt-6 px-6 flex-shrink-0">
           <div className="flex items-center justify-between pr-12">
             <SheetTitle>Edit Task</SheetTitle>
             <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 pb-8">
+        <div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 px-6 pb-8" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">

@@ -10,6 +10,8 @@ interface DraggableTaskListProps {
   showCompleted?: boolean;
   onEdit?: (task: Task) => void;
   className?: string;
+  /** Use a condensed empty state for grouped views */
+  condensedEmpty?: boolean;
 }
 
 export function DraggableTaskList({
@@ -18,6 +20,7 @@ export function DraggableTaskList({
   showCompleted = false,
   onEdit,
   className,
+  condensedEmpty = false,
 }: DraggableTaskListProps) {
   const { reorderTasks } = useAppStore();
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -141,6 +144,15 @@ export function DraggableTaskList({
   }, [touchDragId, dragOverId, tasks, reorderTasks]);
 
   if (tasks.length === 0) {
+    // Condensed empty state for grouped views - minimal height
+    if (condensedEmpty) {
+      return (
+        <div className="flex items-center justify-center py-3 text-center">
+          <p className="text-muted-foreground/60 text-xs">{emptyMessage}</p>
+        </div>
+      );
+    }
+    // Standard empty state
     return (
       <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">

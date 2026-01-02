@@ -74,7 +74,7 @@ export function SwipeableNoteItem({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden rounded-xl" data-swipeable="true">
       {/* Background actions */}
       <div className="absolute inset-0 flex">
         {/* Pin action (right side, revealed on swipe right) */}

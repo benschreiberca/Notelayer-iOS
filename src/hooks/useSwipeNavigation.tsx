@@ -78,6 +78,15 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
 
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
+      // Check if touch started on a swipeable element (note item or task item)
+      const target = e.target as HTMLElement;
+      const swipeableElement = target.closest('[data-swipeable="true"]');
+      
+      // If touch started on a swipeable element, ignore it for navigation
+      if (swipeableElement) {
+        return;
+      }
+      
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
       isSwiping.current = false;
@@ -85,6 +94,15 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
 
     const handleTouchMove = (e: TouchEvent) => {
       if (isSwiping.current) return;
+      
+      // Check if touch is on a swipeable element
+      const target = e.target as HTMLElement;
+      const swipeableElement = target.closest('[data-swipeable="true"]');
+      
+      // If touch is on a swipeable element, ignore it for navigation
+      if (swipeableElement) {
+        return;
+      }
       
       const deltaX = e.touches[0].clientX - touchStartX.current;
       const deltaY = e.touches[0].clientY - touchStartY.current;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Flag, FolderOpen, Calendar } from 'lucide-react';
+import { Flag, FolderOpen, Calendar, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
@@ -8,6 +8,7 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, PRIORITY_CONFIG, Priority, CategoryId, Task } from '@/types';
 import { isToday, isTomorrow, isThisWeek, isPast } from 'date-fns';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 const viewTabs = [
   { id: 'priority' as const, label: 'Priority', icon: Flag },
@@ -72,6 +73,58 @@ interface ViewProps {
   onEdit: (task: Task) => void;
 }
 
+interface GroupedSectionProps {
+  title: string;
+  icon?: React.ReactNode;
+  count: number;
+  children: React.ReactNode;
+  headerColor?: string;
+  defaultOpen?: boolean;
+}
+
+function GroupedSection({ 
+  title, 
+  icon, 
+  count, 
+  children, 
+  headerColor, 
+  defaultOpen = true 
+}: GroupedSectionProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="group border-b border-border/50 last:border-0"
+    >
+      <CollapsibleTrigger className="flex items-center w-full py-3 px-1 hover:bg-muted/30 active:bg-muted/50 transition-colors text-left rounded-md my-0.5">
+        <div className="flex items-center gap-2 flex-1">
+          <ChevronRight 
+            className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform duration-200", 
+              isOpen && "rotate-90"
+            )} 
+          />
+          {icon}
+          <h2 className={cn("text-sm font-semibold flex-1", headerColor || "text-foreground")}>
+            {title}
+          </h2>
+          <span className="text-xs text-muted-foreground font-medium bg-muted/80 px-2 py-0.5 rounded-full">
+            {count}
+          </span>
+        </div>
+      </CollapsibleTrigger>
+      
+      <CollapsibleContent className="animate-slide-down">
+        <div className="pl-2 pb-3 pt-1">
+          {children}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function PriorityView({ tasks, onEdit }: ViewProps) {
   const grouped = useMemo(() => {
     const groups: Record<Priority, Task[]> = {
@@ -87,27 +140,23 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
   }, [tasks]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col">
       {(['high', 'medium', 'low', 'deferred'] as Priority[]).map((priority) => (
-        <section key={priority} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <div className={cn('w-3 h-3 rounded-full', `bg-priority-${priority}`)} />
-            <h2 className="text-sm font-semibold text-foreground capitalize">
-              {PRIORITY_CONFIG[priority].label}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[priority].length})
-            </span>
-          </div>
-          
-          <TaskInput defaultPriority={priority} className="mb-3" />
-          
+        <GroupedSection
+          key={priority}
+          title={PRIORITY_CONFIG[priority].label}
+          count={grouped[priority].length}
+          defaultOpen={grouped[priority].length > 0}
+          icon={<div className={cn('w-2.5 h-2.5 rounded-full', `bg-priority-${priority}`)} />}
+        >
+          <TaskInput defaultPriority={priority} className="mb-2" />
           <DraggableTaskList
             tasks={grouped[priority]}
             onEdit={onEdit}
             emptyMessage={`No ${priority} priority tasks`}
+            className="py-2"
           />
-        </section>
+        </GroupedSection>
       ))}
     </div>
   );
@@ -128,27 +177,23 @@ function CategoriesView({ tasks, onEdit }: ViewProps) {
   }, [tasks]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col">
       {CATEGORIES.map((category) => (
-        <section key={category.id} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">{category.icon}</span>
-            <h2 className="text-sm font-semibold text-foreground">
-              {category.name}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[category.id].length})
-            </span>
-          </div>
-          
-          <TaskInput defaultCategories={[category.id]} className="mb-3" />
-          
+        <GroupedSection
+          key={category.id}
+          title={category.name}
+          count={grouped[category.id].length}
+          defaultOpen={grouped[category.id].length > 0}
+          icon={<span className="text-base leading-none">{category.icon}</span>}
+        >
+          <TaskInput defaultCategories={[category.id]} className="mb-2" />
           <DraggableTaskList
             tasks={grouped[category.id]}
             onEdit={onEdit}
             emptyMessage={`No ${category.name.toLowerCase()} tasks`}
+            className="py-2"
           />
-        </section>
+        </GroupedSection>
       ))}
     </div>
   );
@@ -198,27 +243,24 @@ function ChronoView({ tasks, onEdit }: ViewProps) {
   ] as const;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col">
       {buckets.map(({ key, label, color }) => (
-        <section key={key} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className={cn('w-4 h-4', color)} />
-            <h2 className={cn('text-sm font-semibold', color)}>
-              {label}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[key].length})
-            </span>
-          </div>
-          
-          {key === 'today' && <TaskInput className="mb-3" />}
-          
+        <GroupedSection
+          key={key}
+          title={label}
+          count={grouped[key].length}
+          headerColor={color}
+          defaultOpen={grouped[key].length > 0}
+          icon={<Calendar className={cn('w-4 h-4', color)} />}
+        >
+          {key === 'today' && <TaskInput className="mb-2" />}
           <DraggableTaskList
             tasks={grouped[key]}
             onEdit={onEdit}
             emptyMessage={`No tasks ${label.toLowerCase()}`}
+            className="py-2"
           />
-        </section>
+        </GroupedSection>
       ))}
     </div>
   );

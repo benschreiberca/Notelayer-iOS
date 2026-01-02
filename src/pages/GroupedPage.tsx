@@ -1,14 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Flag, FolderOpen, Calendar, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
-import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
+import { GroupedTaskList } from '@/components/tasks/GroupedTaskList';
 import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
-import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, PRIORITY_CONFIG, Priority, CategoryId, Task } from '@/types';
-import { isToday, isTomorrow, isThisWeek, isPast } from 'date-fns';
+import {
+  CATEGORIES,
+  PRIORITY_CONFIG,
+  Priority,
+  CategoryId,
+  Task,
+  sortTasksByPriorityThenDate,
+  sortTasksByDate,
+} from '@/types';
+import { isToday, isTomorrow, isThisWeek, isPast, addDays, startOfDay, endOfWeek } from 'date-fns';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 const viewTabs = [
@@ -127,6 +134,9 @@ function GroupedSection({
 }
 
 function PriorityView({ tasks, onEdit }: ViewProps) {
+  const { updateTask } = useAppStore();
+
+  // Group tasks by priority, then sort by createdAt within each group
   const grouped = useMemo(() => {
     const groups: Record<Priority, Task[]> = {
       high: [],
@@ -137,8 +147,28 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
     tasks.forEach((task) => {
       groups[task.priority].push(task);
     });
+    // Sort each group by createdAt (newest first)
+    (['high', 'medium', 'low', 'deferred'] as Priority[]).forEach((p) => {
+      groups[p] = sortTasksByDate(groups[p]);
+    });
     return groups;
   }, [tasks]);
+
+  // Handle regrouping: update task priority when dragged to a different section
+  const handleTaskRegrouped = useCallback(
+    (taskId: string, newPriority: string) => {
+      updateTask(taskId, { priority: newPriority as Priority });
+    },
+    [updateTask]
+  );
+
+  // Handle nesting: set parent/child relationship
+  const handleTaskNested = useCallback(
+    (draggedTaskId: string, parentTaskId: string) => {
+      updateTask(draggedTaskId, { parentTaskId });
+    },
+    [updateTask]
+  );
 
   return (
     <div className="flex flex-col">
@@ -151,9 +181,12 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
           icon={<div className={cn('w-2.5 h-2.5 rounded-full', `bg-priority-${priority}`)} />}
         >
           <TaskInput defaultPriority={priority} className="mb-2" />
-          <DraggableTaskList
+          <GroupedTaskList
             tasks={grouped[priority]}
+            sectionId={priority}
             onEdit={onEdit}
+            onTaskRegrouped={handleTaskRegrouped}
+            onTaskNested={handleTaskNested}
             emptyMessage={`No ${priority} priority tasks`}
             className="py-2"
           />
@@ -164,6 +197,9 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
 }
 
 function CategoriesView({ tasks, onEdit }: ViewProps) {
+  const { updateTask } = useAppStore();
+
+  // Group tasks by category, then sort by priority then createdAt
   const grouped = useMemo(() => {
     const groups: Record<CategoryId, Task[]> = {} as Record<CategoryId, Task[]>;
     CATEGORIES.forEach((cat) => {
@@ -174,8 +210,37 @@ function CategoriesView({ tasks, onEdit }: ViewProps) {
         groups[catId].push(task);
       });
     });
+    // Sort each group by priority, then by createdAt
+    CATEGORIES.forEach((cat) => {
+      groups[cat.id] = sortTasksByPriorityThenDate(groups[cat.id]);
+    });
     return groups;
   }, [tasks]);
+
+  // Handle regrouping: update task categories when dragged to a different section
+  // This adds the new category and removes the old one
+  const handleTaskRegrouped = useCallback(
+    (taskId: string, newCategoryId: string, sourceCategoryId: string) => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      // Build new categories: remove source, add new (if not already present)
+      let newCategories = task.categories.filter((c) => c !== sourceCategoryId);
+      if (!newCategories.includes(newCategoryId as CategoryId)) {
+        newCategories = [...newCategories, newCategoryId as CategoryId];
+      }
+      updateTask(taskId, { categories: newCategories });
+    },
+    [tasks, updateTask]
+  );
+
+  // Handle nesting: set parent/child relationship
+  const handleTaskNested = useCallback(
+    (draggedTaskId: string, parentTaskId: string) => {
+      updateTask(draggedTaskId, { parentTaskId });
+    },
+    [updateTask]
+  );
 
   return (
     <div className="flex flex-col">
@@ -188,9 +253,12 @@ function CategoriesView({ tasks, onEdit }: ViewProps) {
           icon={<span className="text-base leading-none">{category.icon}</span>}
         >
           <TaskInput defaultCategories={[category.id]} className="mb-2" />
-          <DraggableTaskList
+          <GroupedTaskList
             tasks={grouped[category.id]}
+            sectionId={category.id}
             onEdit={onEdit}
+            onTaskRegrouped={handleTaskRegrouped}
+            onTaskNested={handleTaskNested}
             emptyMessage={`No ${category.name.toLowerCase()} tasks`}
             className="py-2"
           />
@@ -200,15 +268,49 @@ function CategoriesView({ tasks, onEdit }: ViewProps) {
   );
 }
 
+type ChronoBucket = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later' | 'noDueDate';
+
+/**
+ * Compute the new dueDate when a task is dropped into a chrono bucket.
+ */
+function computeDueDateForBucket(bucket: ChronoBucket): Date | undefined {
+  const now = new Date();
+  const today = startOfDay(now);
+
+  switch (bucket) {
+    case 'overdue':
+      // Keep at yesterday (overdue by 1 day)
+      return addDays(today, -1);
+    case 'today':
+      return today;
+    case 'tomorrow':
+      return addDays(today, 1);
+    case 'thisWeek':
+      // Set to end of this week
+      return endOfWeek(today, { weekStartsOn: 1 }); // Monday start
+    case 'later':
+      // Set to 1 week from now
+      return addDays(today, 7);
+    case 'noDueDate':
+      // Clear the due date
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
 function ChronoView({ tasks, onEdit }: ViewProps) {
+  const { updateTask } = useAppStore();
+
+  // Group tasks by chrono bucket, then sort by priority then createdAt
   const grouped = useMemo(() => {
-    const groups = {
-      overdue: [] as Task[],
-      today: [] as Task[],
-      tomorrow: [] as Task[],
-      thisWeek: [] as Task[],
-      later: [] as Task[],
-      noDueDate: [] as Task[],
+    const groups: Record<ChronoBucket, Task[]> = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      thisWeek: [],
+      later: [],
+      noDueDate: [],
     };
 
     tasks.forEach((task) => {
@@ -231,17 +333,39 @@ function ChronoView({ tasks, onEdit }: ViewProps) {
       }
     });
 
+    // Sort each bucket by priority, then by createdAt
+    (Object.keys(groups) as ChronoBucket[]).forEach((key) => {
+      groups[key] = sortTasksByPriorityThenDate(groups[key]);
+    });
+
     return groups;
   }, [tasks]);
 
-  const buckets = [
+  // Handle regrouping: update task dueDate when dragged to a different bucket
+  const handleTaskRegrouped = useCallback(
+    (taskId: string, newBucket: string) => {
+      const newDueDate = computeDueDateForBucket(newBucket as ChronoBucket);
+      updateTask(taskId, { dueDate: newDueDate });
+    },
+    [updateTask]
+  );
+
+  // Handle nesting: set parent/child relationship
+  const handleTaskNested = useCallback(
+    (draggedTaskId: string, parentTaskId: string) => {
+      updateTask(draggedTaskId, { parentTaskId });
+    },
+    [updateTask]
+  );
+
+  const buckets: { key: ChronoBucket; label: string; color: string }[] = [
     { key: 'overdue', label: 'Overdue', color: 'text-destructive' },
     { key: 'today', label: 'Today', color: 'text-primary' },
     { key: 'tomorrow', label: 'Tomorrow', color: 'text-accent' },
     { key: 'thisWeek', label: 'This Week', color: 'text-foreground' },
     { key: 'later', label: 'Later', color: 'text-muted-foreground' },
     { key: 'noDueDate', label: 'No Due Date', color: 'text-muted-foreground' },
-  ] as const;
+  ];
 
   return (
     <div className="flex flex-col">
@@ -255,9 +379,12 @@ function ChronoView({ tasks, onEdit }: ViewProps) {
           icon={<Calendar className={cn('w-4 h-4', color)} />}
         >
           {key === 'today' && <TaskInput className="mb-2" />}
-          <DraggableTaskList
+          <GroupedTaskList
             tasks={grouped[key]}
+            sectionId={key}
             onEdit={onEdit}
+            onTaskRegrouped={handleTaskRegrouped}
+            onTaskNested={handleTaskNested}
             emptyMessage={`No tasks ${label.toLowerCase()}`}
             className="py-2"
           />

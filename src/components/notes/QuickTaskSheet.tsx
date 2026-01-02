@@ -54,12 +54,18 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl">
-        <SheetHeader className="pb-4">
+      <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl flex flex-col p-0">
+        <SheetHeader className="pb-4 pt-6 px-6 flex-shrink-0">
           <SheetTitle>Create Task from Note</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 pb-8">
+        <div 
+          className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-6 pb-8 overscroll-contain"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          } as React.CSSProperties}
+        >
           {/* Title Input */}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
             <input

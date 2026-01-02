@@ -108,7 +108,13 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 px-6 pb-8" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div 
+          className="flex flex-col gap-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-6 pb-8 overscroll-contain" 
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          } as React.CSSProperties}
+        >
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">

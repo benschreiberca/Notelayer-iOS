@@ -5,6 +5,7 @@ import { Note } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { QuickTaskSheet } from './QuickTaskSheet';
 import { useLongPress } from '@/hooks/useLongPress';
+import { FormattingToolbar } from './FormattingToolbar';
 
 interface NoteEditorProps {
   noteId: string | null;
@@ -21,6 +22,7 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const isNewNote = !currentNoteId;
+  const [isContentFocused, setIsContentFocused] = useState(false);
 
   // Quick task sheet state
   const [showQuickTask, setShowQuickTask] = useState(false);
@@ -268,21 +270,6 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
         </button>
       </header>
 
-      {/* Formatting Toolbar */}
-      <div className="flex items-center gap-1 px-4 py-2 border-b border-border/30 overflow-x-auto hide-scrollbar">
-        {formatButtons.map(({ icon: Icon, command, value, label }) => (
-          <button
-            key={command}
-            type="button"
-            onClick={() => execCommand(command, value)}
-            className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors tap-highlight flex-shrink-0"
-            title={label}
-          >
-            <Icon className="w-4 h-4" />
-          </button>
-        ))}
-      </div>
-
       {/* Editor */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <input
@@ -300,6 +287,8 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
           {...contentLongPress}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
+          onFocus={() => setIsContentFocused(true)}
+          onBlur={() => setIsContentFocused(false)}
           className={cn(
             'min-h-[200px] outline-none text-foreground leading-relaxed select-text',
             '[&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mt-6 [&>h1]:mb-3',
@@ -315,6 +304,14 @@ export function NoteEditor({ noteId, onBack }: NoteEditorProps) {
           suppressContentEditableWarning
         />
       </div>
+
+      {/* Formatting Toolbar - iOS style above keyboard */}
+      <FormattingToolbar
+        contentRef={contentRef}
+        isVisible={isContentFocused}
+        formatButtons={formatButtons}
+        execCommand={execCommand}
+      />
 
       {/* Quick Task Sheet */}
       <QuickTaskSheet

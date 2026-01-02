@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { X, Calendar, Trash2, CalendarPlus, Share2, FileText, Link as LinkIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
@@ -9,7 +9,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -148,18 +148,17 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="pb-4">
+      <SheetContent side="bottom" className="h-[85vh] max-h-[85vh]" hideCloseButton>
+        {/* iOS-style header with actions */}
+        <SheetHeader>
           <div className="flex items-center justify-between">
-            <SheetTitle>Edit Task</SheetTitle>
+            <SheetTitle className="text-lg font-semibold">Edit Task</SheetTitle>
             <div className="flex items-center gap-1">
-              {/* Add to Calendar */}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleAddToCalendar}
-                className="text-muted-foreground hover:text-foreground"
-                title="Add to Calendar"
+                onClick={handleDelete}
+                className="w-11 h-11 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <CalendarPlus className="w-5 h-5" />
               </Button>
@@ -180,8 +179,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
-                className="text-primary"
-                title="Save and Close"
+                className="w-11 h-11 rounded-full text-primary hover:bg-primary/10"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -189,7 +187,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto pb-8">
+        {/* Scrollable content area */}
+        <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto -mx-5 px-5 pb-4 overscroll-contain">
           {/* Title */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -241,13 +240,18 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                   type="button"
                   onClick={() => setPriority(p)}
                   className={cn(
-                    'flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 capitalize tap-highlight active:scale-95',
+                    'flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
                     priority === p
                       ? `priority-${p}`
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   )}
                 >
-                  {PRIORITY_CONFIG[p].label}
+                  <PriorityIcon 
+                    priority={p} 
+                    size="sm" 
+                    className={priority === p ? 'text-white' : ''} 
+                  />
+                  <span>{PRIORITY_CONFIG[p].label}</span>
                 </button>
               ))}
             </div>

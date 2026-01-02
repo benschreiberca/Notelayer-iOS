@@ -1,16 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  ROW_SWIPE_THRESHOLD,
-  ROW_SWIPE_MAX_OFFSET,
-  SWIPE_DIRECTION_LOCK_THRESHOLD,
-  SWIPE_RESET_DURATION,
-  SWIPE_ACTION_OPACITY_THRESHOLD,
-  clampSwipeOffset,
-} from '@/lib/swipe-constants';
+import { useSwipeable } from '@/hooks/useSwipeable';
 
 interface SwipeableNoteItemProps {
   note: Note;
@@ -33,78 +25,14 @@ export function SwipeableNoteItem({
   onSelect,
   className,
 }: SwipeableNoteItemProps) {
-  const [offset, setOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  // Track if we've determined this is a horizontal swipe (vs vertical scroll)
-  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
-  
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const currentXRef = useRef(0);
-  // Track if we've locked the swipe direction
-  const directionLockedRef = useRef(false);
+  const { offset, isDragging, handlers } = useSwipeable({
+    onSwipeRight: onPin,
+    onSwipeLeft: onDelete,
+    disabled: isSelectMode,
+  });
 
   const preview = note.plainText?.slice(0, 100) || '';
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true });
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isSelectMode) return;
-    startXRef.current = e.touches[0].clientX;
-    startYRef.current = e.touches[0].clientY;
-    currentXRef.current = e.touches[0].clientX;
-    setIsDragging(true);
-    setIsHorizontalSwipe(false);
-    directionLockedRef.current = false;
-  }, [isSelectMode]);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging || isSelectMode) return;
-    
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const deltaX = currentX - startXRef.current;
-    const deltaY = currentY - startYRef.current;
-    
-    // Determine swipe direction once we've moved enough
-    if (!directionLockedRef.current && 
-        (Math.abs(deltaX) > SWIPE_DIRECTION_LOCK_THRESHOLD || 
-         Math.abs(deltaY) > SWIPE_DIRECTION_LOCK_THRESHOLD)) {
-      directionLockedRef.current = true;
-      // This is a horizontal swipe if horizontal movement dominates
-      const horizontal = Math.abs(deltaX) > Math.abs(deltaY);
-      setIsHorizontalSwipe(horizontal);
-      
-      if (!horizontal) {
-        // This is a vertical scroll - release the gesture
-        setIsDragging(false);
-        setOffset(0);
-        return;
-      }
-    }
-    
-    // Only update offset if we've confirmed horizontal swipe
-    if (directionLockedRef.current && isHorizontalSwipe) {
-      currentXRef.current = currentX;
-      const clampedDiff = clampSwipeOffset(deltaX, ROW_SWIPE_MAX_OFFSET);
-      setOffset(clampedDiff);
-    }
-  }, [isDragging, isSelectMode, isHorizontalSwipe]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging || isSelectMode) return;
-    setIsDragging(false);
-    setIsHorizontalSwipe(false);
-    directionLockedRef.current = false;
-
-    if (offset > ROW_SWIPE_THRESHOLD) {
-      // Swipe right - Pin
-      onPin?.();
-    } else if (offset < -ROW_SWIPE_THRESHOLD) {
-      // Swipe left - Delete
-      onDelete?.();
-    }
-    setOffset(0);
-  }, [isDragging, isSelectMode, offset, onPin, onDelete]);
 
   const handleClick = () => {
     if (isSelectMode) {
@@ -147,9 +75,7 @@ export function SwipeableNoteItem({
       <button
         type="button"
         onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        {...handlers}
         className={cn(
           'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
           'hover:shadow-card hover:border-border',
@@ -192,7 +118,7 @@ export function SwipeableNoteItem({
 
             {preview && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {preview}
+              {preview}
               </p>
             )}
 

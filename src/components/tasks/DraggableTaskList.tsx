@@ -103,7 +103,7 @@ export function DraggableTaskList({
     }
     // Standard empty state
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
         <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
           <span className="text-2xl">✓</span>
         </div>

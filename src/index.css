@@ -286,3 +286,34 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* Collapsible section animation */
+.collapsible-content[data-state='open'] {
+  animation: collapsible-down 200ms ease-out;
+}
+
+.collapsible-content[data-state='closed'] {
+  animation: collapsible-up 200ms ease-out;
+}
+
+@keyframes collapsible-down {
+  from {
+    opacity: 0;
+    height: 0;
+  }
+  to {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    opacity: 0;
+    height: 0;
+  }
+}

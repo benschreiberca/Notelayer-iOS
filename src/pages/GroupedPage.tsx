@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
 import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, PRIORITY_CONFIG, Priority, CategoryId, Task } from '@/types';
@@ -87,27 +88,26 @@ function PriorityView({ tasks, onEdit }: ViewProps) {
   }, [tasks]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {(['high', 'medium', 'low', 'deferred'] as Priority[]).map((priority) => (
-        <section key={priority} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <div className={cn('w-3 h-3 rounded-full', `bg-priority-${priority}`)} />
-            <h2 className="text-sm font-semibold text-foreground capitalize">
-              {PRIORITY_CONFIG[priority].label}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[priority].length})
-            </span>
-          </div>
-          
-          <TaskInput defaultPriority={priority} className="mb-3" />
-          
+        <CollapsibleSection
+          key={priority}
+          icon={
+            <div className={cn('w-2.5 h-2.5 rounded-full', `bg-priority-${priority}`)} />
+          }
+          title={PRIORITY_CONFIG[priority].label}
+          count={grouped[priority].length}
+          defaultOpen={grouped[priority].length > 0}
+          className="animate-fade-in"
+        >
+          <TaskInput defaultPriority={priority} className="mb-2" />
           <DraggableTaskList
             tasks={grouped[priority]}
             onEdit={onEdit}
             emptyMessage={`No ${priority} priority tasks`}
+            condensedEmpty
           />
-        </section>
+        </CollapsibleSection>
       ))}
     </div>
   );
@@ -128,27 +128,24 @@ function CategoriesView({ tasks, onEdit }: ViewProps) {
   }, [tasks]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {CATEGORIES.map((category) => (
-        <section key={category.id} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">{category.icon}</span>
-            <h2 className="text-sm font-semibold text-foreground">
-              {category.name}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[category.id].length})
-            </span>
-          </div>
-          
-          <TaskInput defaultCategories={[category.id]} className="mb-3" />
-          
+        <CollapsibleSection
+          key={category.id}
+          icon={<span className="text-sm">{category.icon}</span>}
+          title={category.name}
+          count={grouped[category.id].length}
+          defaultOpen={grouped[category.id].length > 0}
+          className="animate-fade-in"
+        >
+          <TaskInput defaultCategories={[category.id]} className="mb-2" />
           <DraggableTaskList
             tasks={grouped[category.id]}
             onEdit={onEdit}
             emptyMessage={`No ${category.name.toLowerCase()} tasks`}
+            condensedEmpty
           />
-        </section>
+        </CollapsibleSection>
       ))}
     </div>
   );
@@ -198,27 +195,25 @@ function ChronoView({ tasks, onEdit }: ViewProps) {
   ] as const;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {buckets.map(({ key, label, color }) => (
-        <section key={key} className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className={cn('w-4 h-4', color)} />
-            <h2 className={cn('text-sm font-semibold', color)}>
-              {label}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              ({grouped[key].length})
-            </span>
-          </div>
-          
-          {key === 'today' && <TaskInput className="mb-3" />}
-          
+        <CollapsibleSection
+          key={key}
+          icon={<Calendar className={cn('w-3.5 h-3.5', color)} />}
+          title={label}
+          count={grouped[key].length}
+          headerColorClass={color}
+          defaultOpen={grouped[key].length > 0 || key === 'today'}
+          className="animate-fade-in"
+        >
+          {key === 'today' && <TaskInput className="mb-2" />}
           <DraggableTaskList
             tasks={grouped[key]}
             onEdit={onEdit}
             emptyMessage={`No tasks ${label.toLowerCase()}`}
+            condensedEmpty
           />
-        </section>
+        </CollapsibleSection>
       ))}
     </div>
   );

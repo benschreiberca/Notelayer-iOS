@@ -1,44 +1,36 @@
-import { useState, useRef, useCallback } from 'react';
-import { Check, Paperclip, GripVertical, Calendar, Trash2 } from 'lucide-react';
+import { Check, Paperclip, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, PRIORITY_CONFIG } from '@/types';
+import { Task } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
-import {
-  ROW_SWIPE_THRESHOLD,
-  ROW_SWIPE_MAX_OFFSET,
-  SWIPE_DIRECTION_LOCK_THRESHOLD,
-  SWIPE_RESET_DURATION,
-  SWIPE_ACTION_OPACITY_THRESHOLD,
-  clampSwipeOffset,
-} from '@/lib/swipe-constants';
 import { CategoryChip } from '@/components/common/CategoryChip';
 
 interface TaskItemProps {
   task: Task;
   showCompleted?: boolean;
   onEdit?: (task: Task) => void;
+  isDragging?: boolean;
   className?: string;
 }
 
+/**
+ * TaskItem - Individual task card component
+ * 
+ * Gesture Model:
+ * - Tap: Opens task edit sheet
+ * - Long-press: Handled by parent (DraggableTaskList) for drag-and-drop
+ * - No per-card swipe gestures (horizontal swipes reserved for page navigation)
+ */
 export function TaskItem({
   task,
   showCompleted = false,
   onEdit,
+  isDragging = false,
   className,
 }: TaskItemProps) {
-  const { completeTask, restoreTask, deleteTask } = useAppStore();
+  const { completeTask, restoreTask } = useAppStore();
   
   const isCompleted = !!task.completedAt;
-  
-  // Swipe state
-  const [offset, setOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
-  
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const directionLockedRef = useRef(false);
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,103 +42,25 @@ export function TaskItem({
   };
 
   const handleTap = () => {
-    // Don't trigger tap if we were swiping
-    if (Math.abs(offset) > 5) return;
+    // Don't trigger tap if we're in drag mode
+    if (isDragging) return;
     onEdit?.(task);
   };
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    startXRef.current = e.touches[0].clientX;
-    startYRef.current = e.touches[0].clientY;
-    setIsDragging(true);
-    setIsHorizontalSwipe(false);
-    directionLockedRef.current = false;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return;
-    
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const deltaX = currentX - startXRef.current;
-    const deltaY = currentY - startYRef.current;
-    
-    // Determine swipe direction once we've moved enough
-    if (!directionLockedRef.current && 
-        (Math.abs(deltaX) > SWIPE_DIRECTION_LOCK_THRESHOLD || 
-         Math.abs(deltaY) > SWIPE_DIRECTION_LOCK_THRESHOLD)) {
-      directionLockedRef.current = true;
-      const horizontal = Math.abs(deltaX) > Math.abs(deltaY);
-      setIsHorizontalSwipe(horizontal);
-      
-      if (!horizontal) {
-        // This is a vertical scroll - release the gesture
-        setIsDragging(false);
-        setOffset(0);
-        return;
-      }
-    }
-    
-    // Only update offset if we've confirmed horizontal swipe (only allow left swipe for delete)
-    if (directionLockedRef.current && isHorizontalSwipe) {
-      // Only allow left swipe (delete) - clamp positive values to 0
-      const clampedDiff = Math.max(-ROW_SWIPE_MAX_OFFSET, Math.min(0, deltaX));
-      setOffset(clampedDiff);
-    }
-  }, [isDragging, isHorizontalSwipe]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    setIsHorizontalSwipe(false);
-    directionLockedRef.current = false;
-
-    if (offset < -ROW_SWIPE_THRESHOLD) {
-      // Swipe left - Delete
-      deleteTask(task.id);
-    }
-    setOffset(0);
-  }, [isDragging, offset, deleteTask, task.id]);
-
   return (
-    <div 
-      className="relative overflow-hidden rounded-xl"
-      data-swipeable="true"
+    <div
+      onClick={handleTap}
+      className={cn(
+        'group relative bg-card rounded-xl border border-border/50 shadow-soft tap-highlight cursor-pointer',
+        'hover:shadow-card hover:border-border',
+        'transition-all duration-200',
+        isCompleted && 'opacity-60',
+        isDragging && 'scale-[1.03] shadow-xl z-50 cursor-grabbing',
+        !isDragging && 'active:scale-[0.99]',
+        className
+      )}
     >
-      {/* Delete action (revealed on swipe left) */}
-      <div
-        className={cn(
-          'absolute inset-0 flex items-center justify-end pr-4 bg-destructive transition-opacity',
-          offset < -SWIPE_ACTION_OPACITY_THRESHOLD ? 'opacity-100' : 'opacity-0'
-        )}
-      >
-        <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
-        <Trash2 className="w-6 h-6 text-destructive-foreground" />
-      </div>
-      
-      <div
-        onClick={handleTap}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className={cn(
-          'group relative bg-card rounded-xl border border-border/50 shadow-soft tap-highlight cursor-pointer',
-          'hover:shadow-card hover:border-border active:scale-[0.99]',
-          isCompleted && 'opacity-60',
-          isDragging ? 'transition-none' : 'transition-transform',
-          className
-        )}
-        style={{ 
-          transform: `translateX(${offset}px)`,
-          transitionDuration: isDragging ? '0ms' : `${SWIPE_RESET_DURATION}ms`
-        }}
-      >
       <div className="flex items-start gap-3 p-4">
-        {/* Drag Handle */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing pt-0.5">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </div>
-
         {/* Checkbox */}
         <button
           type="button"
@@ -218,7 +132,6 @@ export function TaskItem({
             )}
           </div>
         </div>
-      </div>
       </div>
     </div>
   );

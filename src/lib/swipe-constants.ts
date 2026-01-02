@@ -6,7 +6,34 @@
  *    when the swipe starts on a list item marked with data-swipeable="true"
  * 2. Tab-level horizontal navigation only triggers from non-row areas
  *    (headers, empty space, or when vertical movement is detected first)
+ * 
+ * Long-Press-to-Drag:
+ * - Tasks use long-press to enter drag mode (no dedicated drag handle)
+ * - Fast activation (150ms) with movement threshold to prevent accidental drags
+ * - Visual feedback on activation (scale + shadow)
  */
+
+// ============================================================================
+// LONG-PRESS-TO-DRAG CONSTANTS
+// ============================================================================
+
+// Delay in ms before long-press activates drag mode
+// Tuned for iOS-like feel: fast but not accidental (120-180ms range)
+export const LONG_PRESS_DELAY = 150;
+
+// Movement threshold (px) during long-press delay
+// If finger moves more than this, cancel drag and treat as scroll
+export const LONG_PRESS_MOVEMENT_THRESHOLD = 8;
+
+// Visual feedback scale when drag is activated
+export const DRAG_ACTIVE_SCALE = 1.03;
+
+// Shadow/elevation class when dragging
+export const DRAG_ACTIVE_SHADOW = 'shadow-xl';
+
+// ============================================================================
+// SWIPE GESTURE CONSTANTS
+// ============================================================================
 
 // Minimum horizontal distance (px) to trigger a row-level swipe action
 export const ROW_SWIPE_THRESHOLD = 80;

@@ -9,13 +9,23 @@ interface TaskItemProps {
   task: Task;
   showCompleted?: boolean;
   onEdit?: (task: Task) => void;
+  isDragging?: boolean;
   className?: string;
 }
 
+/**
+ * TaskItem - Individual task card component
+ * 
+ * Gesture Model:
+ * - Tap: Opens task edit sheet
+ * - Long-press: Handled by parent (DraggableTaskList) for drag-and-drop
+ * - No per-card swipe gestures (horizontal swipes reserved for page navigation)
+ */
 export function TaskItem({
   task,
   showCompleted = false,
   onEdit,
+  isDragging = false,
   className,
 }: TaskItemProps) {
   const { completeTask, restoreTask } = useAppStore();
@@ -32,6 +42,8 @@ export function TaskItem({
   };
 
   const handleTap = () => {
+    // Don't trigger tap if we're in drag mode
+    if (isDragging) return;
     onEdit?.(task);
   };
 

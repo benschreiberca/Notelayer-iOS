@@ -51,7 +51,7 @@ export function SwipeableNoteItem({
           className={cn(
             'flex items-center justify-start pl-4 w-1/2 transition-opacity',
             note.isPinned ? 'bg-muted' : 'bg-primary',
-            offset > 20 ? 'opacity-100' : 'opacity-0'
+            offset > SWIPE_ACTION_OPACITY_THRESHOLD ? 'opacity-100' : 'opacity-0'
           )}
         >
           <Pin className={cn('w-6 h-6', note.isPinned ? 'text-muted-foreground' : 'text-primary-foreground')} />
@@ -63,7 +63,7 @@ export function SwipeableNoteItem({
         <div
           className={cn(
             'flex items-center justify-end pr-4 w-1/2 ml-auto bg-destructive transition-opacity',
-            offset < -20 ? 'opacity-100' : 'opacity-0'
+            offset < -SWIPE_ACTION_OPACITY_THRESHOLD ? 'opacity-100' : 'opacity-0'
           )}
         >
           <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
@@ -80,10 +80,13 @@ export function SwipeableNoteItem({
           'w-full text-left bg-card border border-border/50 shadow-soft p-4 transition-all tap-highlight relative',
           'hover:shadow-card hover:border-border',
           isSelected && 'ring-2 ring-primary bg-primary/5',
-          isDragging ? 'transition-none' : 'transition-transform duration-200',
+          isDragging ? 'transition-none' : `transition-transform`,
           className
         )}
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ 
+          transform: `translateX(${offset}px)`,
+          transitionDuration: isDragging ? '0ms' : `${SWIPE_RESET_DURATION}ms`
+        }}
       >
         <div className="flex items-start gap-3">
           {/* Selection checkbox or icon */}

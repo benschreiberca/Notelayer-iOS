@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Check, Paperclip, GripVertical, Calendar, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, PRIORITY_CONFIG } from '@/types';
+import { Task } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { CategoryChip } from '@/components/common/CategoryChip';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 import { useSwipeable } from '@/hooks/useSwipeable';
 
 interface TaskItemProps {
@@ -101,14 +101,10 @@ export function TaskItem({
               </h3>
               
               {/* Priority indicator */}
-              <div
-                className={cn(
-                  'w-2 h-2 rounded-full flex-shrink-0 mt-1.5',
-                  task.priority === 'high' && 'bg-priority-high',
-                  task.priority === 'medium' && 'bg-priority-medium',
-                  task.priority === 'low' && 'bg-priority-low',
-                  task.priority === 'deferred' && 'bg-priority-deferred'
-                )}
+              <PriorityIcon 
+                priority={task.priority} 
+                size="xs" 
+                className="flex-shrink-0 mt-0.5"
               />
             </div>
 

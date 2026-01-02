@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Task } from '@/types';
+import type { Task } from '@/types';
 import { TaskItem } from './TaskItem';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/useAppStore';
@@ -20,9 +20,9 @@ interface DraggableTaskListProps {
 
 /**
  * DraggableTaskList - Task list with long-press-to-drag reordering
- * 
+ *
  * Gesture Model:
- * - Long-press (150ms): Activates drag mode with visual feedback
+ * - Long-press (LONG_PRESS_DELAY): Activates drag mode with visual feedback
  * - Movement during delay: Cancels drag, allows scroll
  * - Drag: Reorder within list, visual feedback on potential drop targets
  * - Tap: Passes through to TaskItem for edit
@@ -36,128 +36,157 @@ export function DraggableTaskList({
   condensedEmpty = false,
 }: DraggableTaskListProps) {
   const { reorderTasks } = useAppStore();
-  
-  // Drag state
+
+  // Desktop drag state
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  
-  // Long-press state for touch devices
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
-  const isDragActiveRef = useRef(false);
-  
-  // Track elements for reordering during drag
-  const taskRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Touch-based drag state
   const [touchDragId, setTouchDragId] = useState<string | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number; taskId: string } | null>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; taskId: string } | null>(
+    null
+  );
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDraggingRef = useRef(false);
 
-  const handleDragStart = (e: React.DragEvent, taskId: string) => {
-    setDraggedId(taskId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', taskId);
-    
-    // Set drag image with slight offset
-    const target = e.currentTarget as HTMLElement;
-    if (target) {
-      e.dataTransfer.setDragImage(target, 20, 20);
-    }
-  }, []);
+  // --- Desktop HTML5 Drag handlers ---
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, taskId: string) => {
+      setDraggedId(taskId);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', taskId);
 
-  const handleDragOver = useCallback((e: React.DragEvent, taskId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (taskId !== draggedId) {
-      setDragOverId(taskId);
-    }
-  }, [draggedId]);
+      // Set drag image with slight offset
+      const target = e.currentTarget as HTMLElement;
+      if (target) {
+        e.dataTransfer.setDragImage(target, 20, 20);
+      }
+    },
+    []
+  );
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, taskId: string) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (taskId !== draggedId) {
+        setDragOverId(taskId);
+      }
+    },
+    [draggedId]
+  );
 
   const handleDragLeave = useCallback(() => {
     setDragOverId(null);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    
-    if (draggedId && draggedId !== targetId) {
-      const draggedIndex = tasks.findIndex((t) => t.id === draggedId);
-      const targetIndex = tasks.findIndex((t) => t.id === targetId);
-      
-      const newOrder = [...tasks];
-      const [removed] = newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, removed);
-      
-      reorderTasks(newOrder.map((t) => t.id));
-    }
-    
-    setDraggedId(null);
-    setDragOverId(null);
-  }, [draggedId, tasks, reorderTasks]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+
+      if (draggedId && draggedId !== targetId) {
+        const draggedIndex = tasks.findIndex((t) => t.id === draggedId);
+        const targetIndex = tasks.findIndex((t) => t.id === targetId);
+
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+          const newOrder = [...tasks];
+          const [removed] = newOrder.splice(draggedIndex, 1);
+          newOrder.splice(targetIndex, 0, removed);
+          reorderTasks(newOrder.map((t) => t.id));
+        }
+      }
+
+      setDraggedId(null);
+      setDragOverId(null);
+    },
+    [draggedId, tasks, reorderTasks]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggedId(null);
     setDragOverId(null);
   }, []);
 
-  // Touch-based press-and-drag reordering (works from anywhere on the row)
-  const handleTouchStart = useCallback((taskId: string, e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY, taskId };
-    isDraggingRef.current = false;
-    
-    // Long press to initiate drag (300ms for responsive feel)
-    longPressTimerRef.current = setTimeout(() => {
-      isDraggingRef.current = true;
-      setTouchDragId(taskId);
-      // Haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(10);
-      }
-    }, 300);
-  }, []);
+  // --- Touch long-press drag handlers ---
+  const handleTouchStart = useCallback(
+    (taskId: string, e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY, taskId };
+      isDraggingRef.current = false;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-    
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
-    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-    
-    // Cancel long press if moved significantly before activation
-    if (!isDraggingRef.current && (dx > 10 || dy > 10)) {
+      // Long-press to initiate drag (fast, controlled via constants)
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
       }
-    }
-    
-    // During drag, find which task we're over and update dragOverId
-    if (isDraggingRef.current && touchDragId) {
-      const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
-      const taskWrapper = elements.find(el => el.getAttribute('data-task-id'));
-      if (taskWrapper) {
-        const overId = taskWrapper.getAttribute('data-task-id');
-        if (overId && overId !== touchDragId) {
-          setDragOverId(overId);
+
+      longPressTimerRef.current = window.setTimeout(() => {
+        isDraggingRef.current = true;
+        setTouchDragId(taskId);
+
+        // Optional light haptic feedback
+        if (navigator.vibrate) navigator.vibrate(10);
+      }, LONG_PRESS_DELAY);
+    },
+    []
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartRef.current) return;
+
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+
+      // Cancel long press if user starts scrolling/moving before activation
+      if (
+        !isDraggingRef.current &&
+        (dx > LONG_PRESS_MOVEMENT_THRESHOLD ||
+          dy > LONG_PRESS_MOVEMENT_THRESHOLD)
+      ) {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
         }
       }
-    }
-  }, [touchDragId]);
+
+      // During drag, find which task we're over and update dragOverId
+      if (isDraggingRef.current && touchDragId) {
+        const elements = document.elementsFromPoint(
+          touch.clientX,
+          touch.clientY
+        );
+        const taskWrapper = elements.find((el) =>
+          (el as HTMLElement).getAttribute?.('data-task-id')
+        ) as HTMLElement | undefined;
+
+        if (taskWrapper) {
+          const overId = taskWrapper.getAttribute('data-task-id');
+          if (overId && overId !== touchDragId) {
+            setDragOverId(overId);
+          }
+        }
+      }
+    },
+    [touchDragId]
+  );
 
   const handleTouchEnd = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-    
+
     // Perform reorder if we were dragging and have a target
-    if (isDraggingRef.current && touchDragId && dragOverId && touchDragId !== dragOverId) {
+    if (
+      isDraggingRef.current &&
+      touchDragId &&
+      dragOverId &&
+      touchDragId !== dragOverId
+    ) {
       const draggedIndex = tasks.findIndex((t) => t.id === touchDragId);
       const targetIndex = tasks.findIndex((t) => t.id === dragOverId);
-      
+
       if (draggedIndex !== -1 && targetIndex !== -1) {
         const newOrder = [...tasks];
         const [removed] = newOrder.splice(draggedIndex, 1);
@@ -165,7 +194,7 @@ export function DraggableTaskList({
         reorderTasks(newOrder.map((t) => t.id));
       }
     }
-    
+
     touchStartRef.current = null;
     isDraggingRef.current = false;
     setTouchDragId(null);
@@ -183,7 +212,12 @@ export function DraggableTaskList({
     }
     // Standard empty state
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center py-12 text-center',
+          className
+        )}
+      >
         <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
           <span className="text-2xl">✓</span>
         </div>
@@ -214,7 +248,6 @@ export function DraggableTaskList({
             touchDragId === task.id && 'scale-[1.02] shadow-lg z-10 opacity-90'
           )}
           style={{ animationDelay: `${index * 50}ms` }}
-          data-swipeable="true"
         >
           <TaskItem
             task={task}

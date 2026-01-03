@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';

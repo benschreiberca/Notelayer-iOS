@@ -165,8 +165,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleDelete}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10"
+                onClick={handleAddToCalendar}
+                className="text-muted-foreground hover:text-foreground h-10 w-10"
               >
                 <CalendarPlus className="w-5 h-5" />
               </Button>

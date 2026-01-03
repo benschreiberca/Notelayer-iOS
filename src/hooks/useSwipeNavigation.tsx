@@ -98,6 +98,15 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
     let touchTarget: Element | null = null;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Check if touch started on a swipeable element (note item or task item)
+      const target = e.target as HTMLElement;
+      const swipeableElement = target.closest('[data-swipeable="true"]');
+      
+      // If touch started on a swipeable element, ignore it for navigation
+      if (swipeableElement) {
+        return;
+      }
+      
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
       touchTarget = e.target instanceof Element ? e.target : null;
@@ -113,17 +122,13 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
       // Already handled this swipe
       if (isSwiping.current) return;
       
-      const startX = touchStartX.current;
-      const isGutter = startX < 20 || startX > window.innerWidth - 20;
-
-      // Check if touch originated from a swipeable list item - let it handle swipe gestures
-      // UNLESS we are in the gutter, where tab navigation takes precedence.
-      if (!isGutter && touchTarget instanceof Element) {
-        const swipeableParent = touchTarget.closest('[data-swipeable="true"]');
-        if (swipeableParent) {
-          // Don't interfere with row-level swipe actions
-          return;
-        }
+      // Check if touch is on a swipeable element
+      const target = e.target as HTMLElement;
+      const swipeableElement = target.closest('[data-swipeable="true"]');
+      
+      // If touch is on a swipeable element, ignore it for navigation
+      if (swipeableElement) {
+        return;
       }
       
       const deltaX = e.touches[0].clientX - touchStartX.current;

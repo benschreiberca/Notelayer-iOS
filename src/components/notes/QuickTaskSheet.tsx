@@ -53,6 +53,13 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
     }
   }, [open, initialTitle]);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl flex flex-col p-0">
@@ -73,6 +80,7 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Task title..."
               autoFocus
               className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none"

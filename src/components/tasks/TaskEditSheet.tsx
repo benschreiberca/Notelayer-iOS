@@ -144,6 +144,14 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
     setDueDate(getValue());
   };
 
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    // Enter saves the task (Shift+Enter does nothing special for single-line input)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   if (!task) return null;
 
   return (
@@ -196,6 +204,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleTitleKeyDown}
               className="w-full px-4 py-3 rounded-xl bg-muted border border-border/50 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Task title..."
             />

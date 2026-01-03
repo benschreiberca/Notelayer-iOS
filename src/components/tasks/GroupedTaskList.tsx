@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Task } from '@/types';
 import { TaskItem } from './TaskItem';
 import { cn } from '@/lib/utils';

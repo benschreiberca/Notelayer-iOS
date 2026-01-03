@@ -1,5 +1,13 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Calendar, Trash2, Check, FileText, Link as LinkIcon, CalendarPlus, Share2, X } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import {
+  Calendar,
+  Trash2,
+  FileText,
+  Link as LinkIcon,
+  CalendarPlus,
+  Share2,
+  X,
+} from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
@@ -28,7 +36,7 @@ const quickDateOptions = [
 
 export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) {
   const { updateTask, deleteTask, notes } = useAppStore();
-  
+
   const [title, setTitle] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [priority, setPriority] = useState<Priority>('medium');
@@ -51,7 +59,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   const handleSave = useCallback(() => {
     if (!task || !title.trim()) return;
-    
+
     updateTask(task.id, {
       title: title.trim(),
       categories: selectedCategories,
@@ -59,7 +67,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
       dueDate,
       taskNotes: taskNotes.trim() || undefined,
     });
-    
+
     onOpenChange(false);
   }, [task, title, selectedCategories, priority, dueDate, taskNotes, updateTask, onOpenChange]);
 
@@ -73,20 +81,59 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
     });
   }, [task, deleteTask, onOpenChange]);
 
+  /**
+   * Add to Google Calendar
+   * - Ensures it is NOT all-day by always providing a start+end datetime.
+   * - Default: 9:00 AM local, 15 minutes duration.
+   * - Uses UTC-formatted timestamps for `dates=` and includes `ctz=` for correct display.
+   */
   const handleAddToCalendar = useCallback(() => {
     if (!task) return;
-    
-    // Create calendar event URL (works with Google Calendar, Apple Calendar, etc.)
+
+    const DEFAULT_START_HOUR = 9; // 9:00 AM local
+    const DEFAULT_START_MIN = 0;
+    const DEFAULT_DURATION_MIN = 15;
+
+    // Base date: dueDate (if set) otherwise today
+    const base = dueDate ? new Date(dueDate) : new Date();
+
+    // Force a concrete local time
+    const startLocal = new Date(base);
+    startLocal.setHours(DEFAULT_START_HOUR, DEFAULT_START_MIN, 0, 0);
+
+    const endLocal = new Date(startLocal.getTime() + DEFAULT_DURATION_MIN * 60 * 1000);
+
+    // Google expects UTC strings like 20260103T140000Z
+    const toGcalUtc = (d: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return (
+        d.getUTCFullYear().toString() +
+        pad(d.getUTCMonth() + 1) +
+        pad(d.getUTCDate()) +
+        'T' +
+        pad(d.getUTCHours()) +
+        pad(d.getUTCMinutes()) +
+        pad(d.getUTCSeconds()) +
+        'Z'
+      );
+    };
+
     const eventTitle = encodeURIComponent(task.title);
-    const eventDate = dueDate ? format(dueDate, "yyyyMMdd") : format(new Date(), "yyyyMMdd");
     const eventDetails = encodeURIComponent(taskNotes || '');
-    
-    // Google Calendar URL format
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDate}/${eventDate}&details=${eventDetails}`;
-    
-    // Open in new tab
-    window.open(googleCalUrl, '_blank');
-    
+    const dates = `${toGcalUtc(startLocal)}/${toGcalUtc(endLocal)}`;
+
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Toronto';
+
+    const googleCalUrl =
+      `https://calendar.google.com/calendar/render` +
+      `?action=TEMPLATE` +
+      `&text=${eventTitle}` +
+      `&dates=${dates}` +
+      `&details=${eventDetails}` +
+      `&ctz=${encodeURIComponent(timezone)}`;
+
+    window.open(googleCalUrl, '_blank', 'noopener,noreferrer');
+
     toast({
       title: 'Opening calendar',
       description: 'Add this task to your calendar.',
@@ -95,18 +142,18 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   const handleShare = useCallback(async () => {
     if (!task) return;
-    
+
     const shareData = {
       title: task.title,
-      text: `Task: ${task.title}${dueDate ? `\nDue: ${format(dueDate, 'PPP')}` : ''}${taskNotes ? `\n\n${taskNotes}` : ''}`,
+      text: `Task: ${task.title}${dueDate ? `\nDue: ${format(dueDate, 'PPP')}` : ''}${
+        taskNotes ? `\n\n${taskNotes}` : ''
+      }`,
     };
-    
-    // Use native share if available
+
     if (navigator.share) {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        // User cancelled or error
         if ((err as Error).name !== 'AbortError') {
           toast({
             title: 'Share failed',
@@ -116,7 +163,6 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
         }
       }
     } else {
-      // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareData.text);
         toast({
@@ -135,9 +181,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
 
   const toggleCategory = (categoryId: CategoryId) => {
     setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((c) => c !== categoryId)
-        : [...prev, categoryId]
+      prev.includes(categoryId) ? prev.filter((c) => c !== categoryId) : [...prev, categoryId],
     );
   };
 
@@ -146,7 +190,6 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
-    // Enter saves the task (Shift+Enter does nothing special for single-line input)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSave();
@@ -167,27 +210,27 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 size="icon"
                 onClick={handleAddToCalendar}
                 className="text-muted-foreground hover:text-foreground h-10 w-10"
+                title="Add to Calendar"
               >
                 <CalendarPlus className="w-5 h-5" />
               </Button>
-              
-              {/* Share */}
+
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleShare}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground h-10 w-10"
                 title="Share"
               >
                 <Share2 className="w-5 h-5" />
               </Button>
-              
-              {/* Close / Save */}
+
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
                 className="text-primary h-10 w-10"
+                title="Save & Close"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -196,11 +239,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
         </SheetHeader>
 
         <div className="flex flex-col gap-6 overflow-y-auto pb-8 px-6 flex-1 min-h-0">
-          {/* Title */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Title
-            </label>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">Title</label>
             <input
               type="text"
               value={title}
@@ -211,11 +251,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
             />
           </div>
 
-          {/* Categories */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Categories
-            </label>
+            <label className="text-sm font-medium text-muted-foreground mb-3 block">Categories</label>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((category) => (
                 <button
@@ -226,7 +263,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                     'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
                     selectedCategories.includes(category.id)
                       ? category.color
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
                   )}
                 >
                   <span>{category.icon}</span>
@@ -236,11 +273,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
             </div>
           </div>
 
-          {/* Priority */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Priority
-            </label>
+            <label className="text-sm font-medium text-muted-foreground mb-3 block">Priority</label>
             <div className="flex gap-2">
               {(['high', 'medium', 'low', 'deferred'] as Priority[]).map((p) => (
                 <button
@@ -249,29 +283,19 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                   onClick={() => setPriority(p)}
                   className={cn(
                     'flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
-                    priority === p
-                      ? `priority-${p}`
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    priority === p ? `priority-${p}` : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
                   )}
                 >
-                  <PriorityIcon 
-                    priority={p} 
-                    size="sm" 
-                    className={priority === p ? 'text-white' : ''} 
-                  />
+                  <PriorityIcon priority={p} size="sm" className={priority === p ? 'text-white' : ''} />
                   <span>{PRIORITY_CONFIG[p].label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Due Date */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Due Date
-            </label>
-            
-            {/* Quick Date Options */}
+            <label className="text-sm font-medium text-muted-foreground mb-3 block">Due Date</label>
+
             <div className="flex flex-wrap gap-2 mb-3">
               {quickDateOptions.map((option) => (
                 <button
@@ -281,10 +305,14 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                   className={cn(
                     'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
                     (option.label === 'No Date' && !dueDate) ||
-                    (option.label === 'Today' && dueDate && format(dueDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) ||
-                    (option.label === 'Tomorrow' && dueDate && format(dueDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd'))
+                      (option.label === 'Today' &&
+                        dueDate &&
+                        format(dueDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) ||
+                      (option.label === 'Tomorrow' &&
+                        dueDate &&
+                        format(dueDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd'))
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
                   )}
                 >
                   {option.label}
@@ -292,23 +320,17 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
               ))}
             </div>
 
-            {/* Custom Date Picker */}
             <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
-                    'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    'bg-secondary text-secondary-foreground hover:bg-secondary/80',
                   )}
                 >
                   <Calendar className="w-5 h-5 text-muted-foreground" />
-                  <span>
-                    {dueDate 
-                      ? format(dueDate, 'EEEE, MMMM d, yyyy')
-                      : 'Select custom date...'
-                    }
-                  </span>
+                  <span>{dueDate ? format(dueDate, 'EEEE, MMMM d, yyyy') : 'Select custom date...'}</span>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="center">
@@ -326,11 +348,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
             </Popover>
           </div>
 
-          {/* Notes / Details */}
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Notes & Details
-            </label>
+            <label className="text-sm font-medium text-muted-foreground mb-3 block">Notes & Details</label>
             <Textarea
               value={taskNotes}
               onChange={(e) => setTaskNotes(e.target.value)}
@@ -339,18 +358,13 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
             />
           </div>
 
-          {/* Linked Note */}
           {linkedNote && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                Linked Note
-              </label>
+              <label className="text-sm font-medium text-muted-foreground mb-3 block">Linked Note</label>
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20">
                 <FileText className="w-5 h-5 text-primary" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {linkedNote.title}
-                  </p>
+                  <p className="text-sm font-medium text-foreground truncate">{linkedNote.title}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {linkedNote.plainText?.substring(0, 50) || 'No content'}...
                   </p>
@@ -360,10 +374,8 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
             </div>
           )}
 
-          {/* Spacer to push delete to bottom */}
           <div className="flex-1 min-h-[20px]" />
 
-          {/* Delete Task - Destructive action at bottom */}
           <div className="pt-4 border-t border-border/50">
             <Button
               variant="ghost"

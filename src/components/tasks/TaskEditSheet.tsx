@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import { X, Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG, Note } from '@/types';
+import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -47,7 +48,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
     }
   }, [task]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!task || !title.trim()) return;
     
     updateTask(task.id, {
@@ -59,13 +60,77 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
     });
     
     onOpenChange(false);
-  };
+  }, [task, title, selectedCategories, priority, dueDate, taskNotes, updateTask, onOpenChange]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!task) return;
     deleteTask(task.id);
     onOpenChange(false);
-  };
+    toast({
+      title: 'Task deleted',
+      description: 'The task has been permanently deleted.',
+    });
+  }, [task, deleteTask, onOpenChange]);
+
+  const handleAddToCalendar = useCallback(() => {
+    if (!task) return;
+    
+    // Create calendar event URL (works with Google Calendar, Apple Calendar, etc.)
+    const eventTitle = encodeURIComponent(task.title);
+    const eventDate = dueDate ? format(dueDate, "yyyyMMdd") : format(new Date(), "yyyyMMdd");
+    const eventDetails = encodeURIComponent(taskNotes || '');
+    
+    // Google Calendar URL format
+    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDate}/${eventDate}&details=${eventDetails}`;
+    
+    // Open in new tab
+    window.open(googleCalUrl, '_blank');
+    
+    toast({
+      title: 'Opening calendar',
+      description: 'Add this task to your calendar.',
+    });
+  }, [task, dueDate, taskNotes]);
+
+  const handleShare = useCallback(async () => {
+    if (!task) return;
+    
+    const shareData = {
+      title: task.title,
+      text: `Task: ${task.title}${dueDate ? `\nDue: ${format(dueDate, 'PPP')}` : ''}${taskNotes ? `\n\n${taskNotes}` : ''}`,
+    };
+    
+    // Use native share if available
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or error
+        if ((err as Error).name !== 'AbortError') {
+          toast({
+            title: 'Share failed',
+            description: 'Could not share the task.',
+            variant: 'destructive',
+          });
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareData.text);
+        toast({
+          title: 'Copied to clipboard',
+          description: 'Task details copied to clipboard.',
+        });
+      } catch {
+        toast({
+          title: 'Share not available',
+          description: 'Sharing is not supported on this device.',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [task, dueDate, taskNotes]);
 
   const toggleCategory = (categoryId: CategoryId) => {
     setSelectedCategories((prev) =>
@@ -94,15 +159,28 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                 onClick={handleDelete}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10"
               >
-                <Trash2 className="w-5 h-5" />
+                <CalendarPlus className="w-5 h-5" />
               </Button>
+              
+              {/* Share */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                className="text-muted-foreground hover:text-foreground"
+                title="Share"
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
+              
+              {/* Close / Save */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleSave}
                 className="text-primary h-10 w-10"
               >
-                <Check className="w-5 h-5" />
+                <X className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -160,13 +238,18 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
                   type="button"
                   onClick={() => setPriority(p)}
                   className={cn(
-                    'flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 capitalize tap-highlight active:scale-95',
+                    'flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 tap-highlight active:scale-95',
                     priority === p
                       ? `priority-${p}`
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   )}
                 >
-                  {PRIORITY_CONFIG[p].label}
+                  <PriorityIcon 
+                    priority={p} 
+                    size="sm" 
+                    className={priority === p ? 'text-white' : ''} 
+                  />
+                  <span>{PRIORITY_CONFIG[p].label}</span>
                 </button>
               ))}
             </div>
@@ -266,6 +349,21 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
               </div>
             </div>
           )}
+
+          {/* Spacer to push delete to bottom */}
+          <div className="flex-1 min-h-[20px]" />
+
+          {/* Delete Task - Destructive action at bottom */}
+          <div className="pt-4 border-t border-border/50">
+            <Button
+              variant="ghost"
+              onClick={handleDelete}
+              className="w-full justify-center text-destructive hover:text-destructive hover:bg-destructive/10 py-3"
+            >
+              <Trash2 className="w-5 h-5 mr-2" />
+              Delete Task
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

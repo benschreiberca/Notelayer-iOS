@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Plus, Mic, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, CategoryId, Priority } from '@/types';
+import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface TaskInputProps {
   defaultCategories?: CategoryId[];
@@ -133,13 +134,18 @@ export function TaskInput({
                 type="button"
                 onClick={() => setPriority(p)}
                 className={cn(
-                  'px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 capitalize tap-highlight active:scale-95',
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 tap-highlight active:scale-95',
                   priority === p
                     ? `priority-${p}`
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                 )}
               >
-                {p}
+                <PriorityIcon 
+                  priority={p} 
+                  size="xs" 
+                  className={priority === p ? 'text-white' : ''} 
+                />
+                <span>{PRIORITY_CONFIG[p].label}</span>
               </button>
             ))}
           </div>

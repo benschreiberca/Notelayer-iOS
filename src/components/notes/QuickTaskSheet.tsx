@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, CategoryId, Priority } from '@/types';
+import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { PriorityIcon } from '@/components/common/PriorityIcon';
 
 interface QuickTaskSheetProps {
   open: boolean;
@@ -54,12 +55,18 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl">
-        <SheetHeader className="pb-4">
+      <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl flex flex-col p-0">
+        <SheetHeader className="pb-4 pt-6 px-6 flex-shrink-0">
           <SheetTitle>Create Task from Note</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 pb-8">
+        <div 
+          className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-6 pb-8 overscroll-contain"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          } as React.CSSProperties}
+        >
           {/* Title Input */}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
             <input
@@ -118,13 +125,18 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
                   type="button"
                   onClick={() => setPriority(p)}
                   className={cn(
-                    'flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 capitalize tap-highlight active:scale-95',
+                    'flex-1 flex flex-col items-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight active:scale-95',
                     priority === p
                       ? `priority-${p}`
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   )}
                 >
-                  {p}
+                  <PriorityIcon 
+                    priority={p} 
+                    size="xs" 
+                    className={priority === p ? 'text-white' : ''} 
+                  />
+                  <span>{PRIORITY_CONFIG[p].label}</span>
                 </button>
               ))}
             </div>

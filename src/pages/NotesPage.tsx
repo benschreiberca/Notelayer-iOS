@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Plus, MoreVertical, CheckSquare, Trash2, X, Paintbrush } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { SwipeableNoteItem } from '@/components/notes/SwipeableNoteItem';

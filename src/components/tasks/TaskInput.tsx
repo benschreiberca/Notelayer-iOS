@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Plus, Mic, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';

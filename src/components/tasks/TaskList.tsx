@@ -1,6 +1,7 @@
 import { Task } from '@/types';
 import { TaskItem } from './TaskItem';
 import { cn } from '@/lib/utils';
+import { useState, useRef, useCallback } from 'react';
 
 interface TaskListProps {
   tasks: Task[];

@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
-import { Calendar, Trash2, Check, FileText, Link as LinkIcon } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Calendar, Trash2, Check, FileText, Link as LinkIcon, CalendarPlus, Share2, X } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
+import { toast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';

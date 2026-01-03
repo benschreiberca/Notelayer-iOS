@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface LongPressOptions {
   delay?: number;

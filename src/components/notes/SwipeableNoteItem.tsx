@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';

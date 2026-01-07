@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import NotesPage from "./pages/NotesPage";
 import TodosPage from "./pages/TodosPage";
+import GroupedPage from "./pages/GroupedPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/notes" element={<NotesPage />} />
               <Route path="/todos" element={<TodosPage />} />
+              <Route path="/grouped" element={<GroupedPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

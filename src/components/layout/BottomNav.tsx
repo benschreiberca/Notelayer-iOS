@@ -1,10 +1,11 @@
-import { FileText, CheckSquare } from 'lucide-react';
+import { FileText, CheckSquare, LayoutGrid } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/notes', label: 'Notes', icon: FileText },
   { to: '/todos', label: 'To-Dos', icon: CheckSquare },
+  { to: '/grouped', label: 'Grouped', icon: LayoutGrid },
 ];
 
 export function BottomNav() {

@@ -1,6 +1,5 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppStore } from '@/stores/useAppStore';
 import {
   NAV_SWIPE_THRESHOLD,
   HORIZONTAL_SWIPE_RATIO,
@@ -26,7 +25,6 @@ interface SwipeNavigationOptions {
 export function useSwipeNavigation(options?: SwipeNavigationOptions) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { showDoneTasks, toggleShowDoneTasks } = useAppStore();
   
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -41,42 +39,26 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
     if (options?.onSwipeLeft?.()) return;
 
     const currentPath = location.pathname;
-    
-    // Handle local toggles first
-    if (currentPath === '/todos') {
-      if (!showDoneTasks) {
-        toggleShowDoneTasks();
-        return;
-      }
-    }
 
     // Navigate to next tab
     const currentIndex = routes.indexOf(currentPath);
     if (currentIndex < routes.length - 1) {
       navigate(routes[currentIndex + 1]);
     }
-  }, [location.pathname, navigate, showDoneTasks, toggleShowDoneTasks, options]);
+  }, [location.pathname, navigate, options]);
 
   const handleSwipeRight = useCallback(() => {
     // Check if local handler exists and handles it
     if (options?.onSwipeRight?.()) return;
 
     const currentPath = location.pathname;
-    
-    // Handle local toggles first
-    if (currentPath === '/todos') {
-      if (showDoneTasks) {
-        toggleShowDoneTasks();
-        return;
-      }
-    }
 
     // Navigate to previous tab
     const currentIndex = routes.indexOf(currentPath);
     if (currentIndex > 0) {
       navigate(routes[currentIndex - 1]);
     }
-  }, [location.pathname, navigate, showDoneTasks, toggleShowDoneTasks, options]);
+  }, [location.pathname, navigate, options]);
 
   useEffect(() => {
     let touchTarget: Element | null = null;

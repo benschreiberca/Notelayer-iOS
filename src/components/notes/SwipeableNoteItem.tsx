@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { FileText, ChevronRight, Pin, Trash2, Check } from 'lucide-react';
+import { FileText, ChevronRight, Pin, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Note } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,7 +9,6 @@ interface SwipeableNoteItemProps {
   note: Note;
   onClick?: () => void;
   onPin?: () => void;
-  onDelete?: () => void;
   isSelected?: boolean;
   isSelectMode?: boolean;
   onSelect?: () => void;
@@ -20,7 +19,6 @@ export function SwipeableNoteItem({
   note,
   onClick,
   onPin,
-  onDelete,
   isSelected = false,
   isSelectMode = false,
   onSelect,
@@ -70,7 +68,7 @@ export function SwipeableNoteItem({
       e.stopPropagation();
       currentXRef.current = currentX;
       // Limit swipe distance
-      const clampedDiff = Math.max(-120, Math.min(120, deltaX));
+      const clampedDiff = Math.max(0, Math.min(120, deltaX));
       setOffset(clampedDiff);
     }
   };
@@ -86,7 +84,6 @@ export function SwipeableNoteItem({
     setIsDragging(false);
 
     if (offset > GESTURE.row.actionThresholdPx) onPin?.();
-    else if (offset < -GESTURE.row.actionThresholdPx) onDelete?.();
 
     setOffset(0);
     hasDeterminedDirectionRef.current = false;
@@ -123,17 +120,6 @@ export function SwipeableNoteItem({
           >
             {note.isPinned ? 'Unpin' : 'Pin'}
           </span>
-        </div>
-
-        {/* Delete */}
-        <div
-          className={cn(
-            'flex items-center justify-end pr-4 w-1/2 ml-auto bg-destructive transition-opacity',
-            offset < -GESTURE.row.revealHintPx ? 'opacity-100' : 'opacity-0'
-          )}
-        >
-          <span className="mr-2 text-sm font-medium text-destructive-foreground">Delete</span>
-          <Trash2 className="w-6 h-6 text-destructive-foreground" />
         </div>
       </div>
 

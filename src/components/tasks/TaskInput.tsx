@@ -64,8 +64,10 @@ export function TaskInput({
   return (
     <div
       className={cn(
-        'bg-card rounded-xl shadow-card border border-border/50 transition-all duration-300',
-        isExpanded ? 'p-4' : 'p-3',
+        'w-full max-w-[520px] mx-auto border transition-all duration-300',
+        isExpanded
+          ? 'bg-card rounded-xl shadow-card border-border/50 p-4'
+          : 'bg-muted/50 rounded-full border-dashed border-muted-foreground/30 px-4 py-2 shadow-none hover:bg-muted/70',
         className
       )}
     >

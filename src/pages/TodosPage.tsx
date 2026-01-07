@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
@@ -13,6 +13,13 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { PriorityIcon } from '@/components/common/PriorityIcon';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   PRIORITY_CONFIG,
   CategoryId,
@@ -43,6 +50,7 @@ export default function TodosPage() {
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
 
   const viewOrder = useMemo(() => viewTabs.map((tab) => tab.id), []);
 
@@ -99,56 +107,28 @@ export default function TodosPage() {
     setIsBulkMode(true);
   }, [exitBulkMode, isBulkMode]);
 
+  const setShowDoneTasks = useCallback(
+    (showDone: boolean) => {
+      if (showDone !== showDoneTasks) {
+        toggleShowDoneTasks();
+      }
+    },
+    [showDoneTasks, toggleShowDoneTasks]
+  );
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <header className="px-3 pt-6 pb-4 safe-area-top">
         <div className="flex items-start justify-between gap-3 px-1">
           <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
-          {/* Done / Not Done Switch */}
-          <div className="flex items-center gap-2">
-            {todoView !== 'category' && (
-              <button
-                type="button"
-                onClick={toggleBulkMode}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                  isBulkMode
-                    ? 'bg-destructive/10 text-destructive'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {isBulkMode ? 'Cancel' : 'Select'}
-              </button>
-            )}
-            <div className="flex items-center gap-2 px-2 py-1 bg-muted rounded-full">
-              <span
-                className={cn(
-                  'text-xs font-medium sm:text-sm',
-                  !showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                Not Done ({activeTasks.length})
-              </span>
-              <Switch
-                checked={showDoneTasks}
-                onCheckedChange={(checked) => {
-                  if (checked !== showDoneTasks) {
-                    toggleShowDoneTasks();
-                  }
-                }}
-                aria-label={showDoneTasks ? 'Showing done tasks' : 'Showing not done tasks'}
-              />
-              <span
-                className={cn(
-                  'text-xs font-medium sm:text-sm',
-                  showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                Done ({completedTasks.length})
-              </span>
-            </div>
-          </div>
+          <TodosHeaderMenu
+            isBulkMode={isBulkMode}
+            onToggleBulkMode={toggleBulkMode}
+            onManageCategories={() => setManageOpen(true)}
+            showDoneTasks={showDoneTasks}
+            onShowDoneChange={setShowDoneTasks}
+          />
         </div>
 
         {/* Inline View Toggle */}
@@ -266,6 +246,7 @@ export default function TodosPage() {
         onOpenChange={setBulkCategoryOpen}
         selectedTaskIds={selectedTaskIds}
       />
+      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </div>
   );
 }
@@ -413,7 +394,6 @@ function CategoryView({
   onToggleBulkMode,
 }: ViewProps & { isBulkMode: boolean; onToggleBulkMode: () => void }) {
   const { updateTask, categories } = useAppStore();
-  const [manageOpen, setManageOpen] = useState(false);
 
   // Group tasks by category, then sort by priority then createdAt
   const grouped = useMemo(() => {
@@ -463,22 +443,6 @@ function CategoryView({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-1 pb-2">
-        <button
-          type="button"
-          onClick={onToggleBulkMode}
-          className="text-xs text-primary hover:text-primary/80 transition-colors"
-        >
-          {isBulkMode ? 'Cancel' : 'Select'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setManageOpen(true)}
-          className="text-xs text-primary hover:text-primary/80 transition-colors"
-        >
-          Manage Categories
-        </button>
-      </div>
       {categories.map((category) => (
         <GroupedSection
           key={category.id}
@@ -502,7 +466,6 @@ function CategoryView({
           />
         </GroupedSection>
       ))}
-      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </div>
   );
 }
@@ -640,5 +603,47 @@ function DateView({
         </GroupedSection>
       ))}
     </div>
+  );
+}
+function TodosHeaderMenu({
+  isBulkMode,
+  onToggleBulkMode,
+  onManageCategories,
+  showDoneTasks,
+  onShowDoneChange,
+}: {
+  isBulkMode: boolean;
+  onToggleBulkMode: () => void;
+  onManageCategories: () => void;
+  showDoneTasks: boolean;
+  onShowDoneChange: (showDone: boolean) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="h-11 w-11 rounded-full border border-border/50 bg-card text-muted-foreground hover:text-foreground hover:border-border transition-colors flex items-center justify-center"
+          aria-label="To-Do actions"
+        >
+          <ChevronDown className="w-5 h-5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52 bg-popover z-50">
+        <DropdownMenuItem onClick={onManageCategories}>
+          Manage categories
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onToggleBulkMode}>
+          {isBulkMode ? 'Cancel' : 'Select'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onShowDoneChange(false)}>
+          Show To Do
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onShowDoneChange(true)}>
+          Show Done
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

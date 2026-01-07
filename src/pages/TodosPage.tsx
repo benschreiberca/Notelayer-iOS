@@ -121,18 +121,17 @@ export default function TodosPage() {
                 {isBulkMode ? 'Cancel' : 'Select'}
               </button>
             )}
-            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-muted rounded-full">
+            <div className="flex items-center gap-2 px-2 py-1 bg-muted rounded-full">
               <span
                 className={cn(
-                  'text-[11px] font-medium sm:text-xs',
+                  'text-xs font-medium sm:text-sm',
                   !showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
-                To Do ({activeTasks.length})
+                Not Done ({activeTasks.length})
               </span>
               <Switch
                 checked={showDoneTasks}
-                className="h-5 w-9 [&>span]:h-4 [&>span]:w-4 [&>span]:data-[state=checked]:translate-x-4"
                 onCheckedChange={(checked) => {
                   if (checked !== showDoneTasks) {
                     toggleShowDoneTasks();
@@ -142,7 +141,7 @@ export default function TodosPage() {
               />
               <span
                 className={cn(
-                  'text-[11px] font-medium sm:text-xs',
+                  'text-xs font-medium sm:text-sm',
                   showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >

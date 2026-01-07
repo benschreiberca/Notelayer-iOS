@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Task, Note } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
-type GroupedView = 'priority' | 'categories' | 'chrono';
+type TodoView = 'list' | 'priority' | 'category' | 'date';
 
 interface AppState {
   // Notes
@@ -16,7 +16,7 @@ interface AppState {
 
   // UI
   showDoneTasks: boolean;
-  groupedView: GroupedView;
+  todoView: TodoView;
 
   // Notes: Supabase
   loadNotesFromSupabase: () => Promise<void>;
@@ -39,7 +39,7 @@ interface AppState {
 
   // UI actions
   toggleShowDoneTasks: () => void;
-  setGroupedView: (view: GroupedView) => void;
+  setTodoView: (view: TodoView) => void;
 }
 
 const generateId = () => Math.random().toString(36).slice(2, 11);
@@ -167,7 +167,7 @@ export const useAppStore = create<AppState>()(
       activeTaskId: null,
 
       showDoneTasks: false,
-      groupedView: 'priority',
+      todoView: 'list',
 
       // ----------------------
       // NOTES (Supabase)
@@ -382,13 +382,13 @@ export const useAppStore = create<AppState>()(
       // UI
       // ----------------------
       toggleShowDoneTasks: () => set((state) => ({ showDoneTasks: !state.showDoneTasks })),
-      setGroupedView: (view) => set({ groupedView: view }),
+      setTodoView: (view) => set({ todoView: view }),
     }),
     {
       name: 'productivity-app-storage',
       // Supabase is source of truth for notes/tasks; keep only UI prefs locally
       partialize: (state) => ({
-        groupedView: state.groupedView,
+        todoView: state.todoView,
         showDoneTasks: state.showDoneTasks,
       }),
     }

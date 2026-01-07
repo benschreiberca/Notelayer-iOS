@@ -91,11 +91,6 @@ export default function NotesPage() {
     setShowDeleteDialog(false);
   };
 
-  const handleSingleDelete = (id: string) => {
-    setNoteToDelete(id);
-    setShowDeleteDialog(true);
-  };
-
   const confirmSingleDelete = () => {
     if (noteToDelete) {
       deleteNote(noteToDelete);
@@ -219,7 +214,6 @@ export default function NotesPage() {
                       note={note}
                       onClick={() => setEditingNoteId(note.id)}
                       onPin={() => handlePin(note.id)}
-                      onDelete={() => handleSingleDelete(note.id)}
                       isSelectMode={isSelectMode}
                       isSelected={selectedNotes.has(note.id)}
                       onSelect={() => toggleSelect(note.id)}
@@ -245,7 +239,6 @@ export default function NotesPage() {
                   note={note}
                   onClick={() => setEditingNoteId(note.id)}
                   onPin={() => handlePin(note.id)}
-                  onDelete={() => handleSingleDelete(note.id)}
                   isSelectMode={isSelectMode}
                   isSelected={selectedNotes.has(note.id)}
                   onSelect={() => toggleSelect(note.id)}

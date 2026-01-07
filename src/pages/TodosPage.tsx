@@ -8,6 +8,7 @@ import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
 import { GroupedTaskList } from '@/components/tasks/GroupedTaskList';
 import { BulkCategorySheet } from '@/components/tasks/BulkCategorySheet';
 import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
+import { Switch } from '@/components/ui/switch';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -43,8 +44,27 @@ export default function TodosPage() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
 
-  // Enable swipe navigation
-  useSwipeNavigation();
+  const viewOrder = useMemo(() => viewTabs.map((tab) => tab.id), []);
+
+  const handleViewSwipe = useCallback(
+    (direction: 'left' | 'right') => {
+      const currentIndex = viewOrder.indexOf(todoView);
+      if (currentIndex === -1) return false;
+      const nextIndex =
+        direction === 'left'
+          ? (currentIndex + 1) % viewOrder.length
+          : (currentIndex - 1 + viewOrder.length) % viewOrder.length;
+      setTodoView(viewOrder[nextIndex]);
+      return true;
+    },
+    [setTodoView, todoView, viewOrder]
+  );
+
+  // Enable swipe navigation between views
+  useSwipeNavigation({
+    onSwipeLeft: () => handleViewSwipe('left'),
+    onSwipeRight: () => handleViewSwipe('right'),
+  });
 
   // Load tasks from Supabase on first mount
   useEffect(() => {
@@ -71,6 +91,14 @@ export default function TodosPage() {
     setSelectedTaskIds([]);
   }, []);
 
+  const toggleBulkMode = useCallback(() => {
+    if (isBulkMode) {
+      exitBulkMode();
+      return;
+    }
+    setIsBulkMode(true);
+  }, [exitBulkMode, isBulkMode]);
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -79,43 +107,47 @@ export default function TodosPage() {
           <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
           {/* Done / Not Done Switch */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => (isBulkMode ? exitBulkMode() : setIsBulkMode(true))}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                isBulkMode
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {isBulkMode ? 'Cancel' : 'Select'}
-            </button>
-            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
+            {todoView !== 'category' && (
               <button
                 type="button"
-                onClick={() => showDoneTasks && toggleShowDoneTasks()}
+                onClick={toggleBulkMode}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                  !showDoneTasks
-                    ? 'bg-card text-foreground shadow-soft'
-                    : 'text-muted-foreground hover:text-foreground'
+                  isBulkMode
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
                 )}
               >
-                Not Done ({activeTasks.length})
+                {isBulkMode ? 'Cancel' : 'Select'}
               </button>
-              <button
-                type="button"
-                onClick={() => !showDoneTasks && toggleShowDoneTasks()}
+            )}
+            <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-muted rounded-full">
+              <span
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                  showDoneTasks
-                    ? 'bg-card text-foreground shadow-soft'
-                    : 'text-muted-foreground hover:text-foreground'
+                  'text-[11px] font-medium sm:text-xs',
+                  !showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                To Do ({activeTasks.length})
+              </span>
+              <Switch
+                checked={showDoneTasks}
+                className="h-5 w-9 [&>span]:h-4 [&>span]:w-4 [&>span]:data-[state=checked]:translate-x-4"
+                onCheckedChange={(checked) => {
+                  if (checked !== showDoneTasks) {
+                    toggleShowDoneTasks();
+                  }
+                }}
+                aria-label={showDoneTasks ? 'Showing done tasks' : 'Showing not done tasks'}
+              />
+              <span
+                className={cn(
+                  'text-[11px] font-medium sm:text-xs',
+                  showDoneTasks ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
                 Done ({completedTasks.length})
-              </button>
+              </span>
             </div>
           </div>
         </div>
@@ -207,6 +239,8 @@ export default function TodosPage() {
             selectionMode={isBulkMode}
             selectedTaskIds={selectedTaskIds}
             onToggleSelect={toggleTaskSelection}
+            isBulkMode={isBulkMode}
+            onToggleBulkMode={toggleBulkMode}
           />
         )}
 
@@ -376,7 +410,9 @@ function CategoryView({
   selectionMode,
   selectedTaskIds,
   onToggleSelect,
-}: ViewProps) {
+  isBulkMode,
+  onToggleBulkMode,
+}: ViewProps & { isBulkMode: boolean; onToggleBulkMode: () => void }) {
   const { updateTask, categories } = useAppStore();
   const [manageOpen, setManageOpen] = useState(false);
 
@@ -428,7 +464,14 @@ function CategoryView({
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-end px-1 pb-2">
+      <div className="flex items-center justify-between px-1 pb-2">
+        <button
+          type="button"
+          onClick={onToggleBulkMode}
+          className="text-xs text-primary hover:text-primary/80 transition-colors"
+        >
+          {isBulkMode ? 'Cancel' : 'Select'}
+        </button>
         <button
           type="button"
           onClick={() => setManageOpen(true)}

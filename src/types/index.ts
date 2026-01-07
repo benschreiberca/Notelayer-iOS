@@ -1,14 +1,6 @@
 export type Priority = 'high' | 'medium' | 'low' | 'deferred';
 
-export type CategoryId = 
-  | 'house'
-  | 'garage'
-  | 'printing'
-  | 'vehicle'
-  | 'tech'
-  | 'finance'
-  | 'shopping'
-  | 'travel';
+export type CategoryId = string;
 
 export interface Category {
   id: CategoryId;
@@ -54,7 +46,7 @@ export interface Note {
   updatedAt: Date;
 }
 
-export const CATEGORIES: Category[] = [
+export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'house', name: 'House & Repairs', icon: '🏠', color: 'category-house' },
   { id: 'garage', name: 'Garage & Workshop', icon: '🔧', color: 'category-garage' },
   { id: 'printing', name: '3D Printing', icon: '🖨️', color: 'category-printing' },

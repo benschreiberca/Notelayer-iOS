@@ -6,12 +6,13 @@ import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
 import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
 import { GroupedTaskList } from '@/components/tasks/GroupedTaskList';
+import { BulkCategorySheet } from '@/components/tasks/BulkCategorySheet';
+import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { PriorityIcon } from '@/components/common/PriorityIcon';
 import {
-  CATEGORIES,
   PRIORITY_CONFIG,
   CategoryId,
   Priority,
@@ -38,6 +39,9 @@ export default function TodosPage() {
     setTodoView,
   } = useAppStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
 
   // Enable swipe navigation
   useSwipeNavigation();
@@ -56,6 +60,17 @@ export default function TodosPage() {
   const displayedTasks = showDoneTasks ? completedTasks : activeTasks;
   const showTaskInputs = !showDoneTasks;
 
+  const toggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedTaskIds((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+  }, []);
+
+  const exitBulkMode = useCallback(() => {
+    setIsBulkMode(false);
+    setSelectedTaskIds([]);
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -63,31 +78,45 @@ export default function TodosPage() {
         <div className="flex items-start justify-between gap-3 px-1">
           <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
           {/* Done / Not Done Switch */}
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => showDoneTasks && toggleShowDoneTasks()}
+              onClick={() => (isBulkMode ? exitBulkMode() : setIsBulkMode(true))}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                !showDoneTasks
-                  ? 'bg-card text-foreground shadow-soft'
-                  : 'text-muted-foreground hover:text-foreground'
+                isBulkMode
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
               )}
             >
-              Not Done ({activeTasks.length})
+              {isBulkMode ? 'Cancel' : 'Select'}
             </button>
-            <button
-              type="button"
-              onClick={() => !showDoneTasks && toggleShowDoneTasks()}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
-                showDoneTasks
-                  ? 'bg-card text-foreground shadow-soft'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Done ({completedTasks.length})
-            </button>
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
+              <button
+                type="button"
+                onClick={() => showDoneTasks && toggleShowDoneTasks()}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
+                  !showDoneTasks
+                    ? 'bg-card text-foreground shadow-soft'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Not Done ({activeTasks.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => !showDoneTasks && toggleShowDoneTasks()}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
+                  showDoneTasks
+                    ? 'bg-card text-foreground shadow-soft'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Done ({completedTasks.length})
+              </button>
+            </div>
           </div>
         </div>
 
@@ -109,6 +138,26 @@ export default function TodosPage() {
             </button>
           ))}
         </div>
+        {isBulkMode && (
+          <div className="flex items-center justify-between gap-3 mt-3 px-1">
+            <span className="text-xs text-muted-foreground">
+              {selectedTaskIds.length} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setBulkCategoryOpen(true)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 tap-highlight sm:text-sm',
+                selectedTaskIds.length > 0
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+              )}
+              disabled={selectedTaskIds.length === 0}
+            >
+              Edit Categories
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Content - iOS-appropriate margins with safe-area padding */}
@@ -127,6 +176,9 @@ export default function TodosPage() {
               tasks={displayedTasks}
               showCompleted={showDoneTasks}
               onEdit={setEditingTask}
+              selectionMode={isBulkMode}
+              selectedTaskIds={selectedTaskIds}
+              onToggleSelect={toggleTaskSelection}
               emptyMessage={
                 showDoneTasks
                   ? 'No completed tasks yet'
@@ -137,15 +189,36 @@ export default function TodosPage() {
         )}
 
         {todoView === 'priority' && (
-          <PriorityView tasks={displayedTasks} onEdit={setEditingTask} showInputs={showTaskInputs} />
+          <PriorityView
+            tasks={displayedTasks}
+            onEdit={setEditingTask}
+            showInputs={showTaskInputs}
+            selectionMode={isBulkMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={toggleTaskSelection}
+          />
         )}
 
         {todoView === 'category' && (
-          <CategoryView tasks={displayedTasks} onEdit={setEditingTask} showInputs={showTaskInputs} />
+          <CategoryView
+            tasks={displayedTasks}
+            onEdit={setEditingTask}
+            showInputs={showTaskInputs}
+            selectionMode={isBulkMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={toggleTaskSelection}
+          />
         )}
 
         {todoView === 'date' && (
-          <DateView tasks={displayedTasks} onEdit={setEditingTask} showInputs={showTaskInputs} />
+          <DateView
+            tasks={displayedTasks}
+            onEdit={setEditingTask}
+            showInputs={showTaskInputs}
+            selectionMode={isBulkMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={toggleTaskSelection}
+          />
         )}
       </div>
 
@@ -155,6 +228,11 @@ export default function TodosPage() {
         open={!!editingTask}
         onOpenChange={(open) => !open && setEditingTask(null)}
       />
+      <BulkCategorySheet
+        open={bulkCategoryOpen}
+        onOpenChange={setBulkCategoryOpen}
+        selectedTaskIds={selectedTaskIds}
+      />
     </div>
   );
 }
@@ -163,6 +241,9 @@ interface ViewProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   showInputs: boolean;
+  selectionMode: boolean;
+  selectedTaskIds: string[];
+  onToggleSelect: (taskId: string) => void;
 }
 
 interface GroupedSectionProps {
@@ -215,7 +296,14 @@ function GroupedSection({
   );
 }
 
-function PriorityView({ tasks, onEdit, showInputs }: ViewProps) {
+function PriorityView({
+  tasks,
+  onEdit,
+  showInputs,
+  selectionMode,
+  selectedTaskIds,
+  onToggleSelect,
+}: ViewProps) {
   const { updateTask } = useAppStore();
 
   // Group tasks by priority, then sort by createdAt within each group
@@ -271,6 +359,9 @@ function PriorityView({ tasks, onEdit, showInputs }: ViewProps) {
             onTaskNested={handleTaskNested}
             emptyMessage={`No ${priority} priority tasks`}
             className="py-2"
+            selectionMode={selectionMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={onToggleSelect}
           />
         </GroupedSection>
       ))}
@@ -278,26 +369,37 @@ function PriorityView({ tasks, onEdit, showInputs }: ViewProps) {
   );
 }
 
-function CategoryView({ tasks, onEdit, showInputs }: ViewProps) {
-  const { updateTask } = useAppStore();
+function CategoryView({
+  tasks,
+  onEdit,
+  showInputs,
+  selectionMode,
+  selectedTaskIds,
+  onToggleSelect,
+}: ViewProps) {
+  const { updateTask, categories } = useAppStore();
+  const [manageOpen, setManageOpen] = useState(false);
 
   // Group tasks by category, then sort by priority then createdAt
   const grouped = useMemo(() => {
     const groups: Record<CategoryId, Task[]> = {} as Record<CategoryId, Task[]>;
-    CATEGORIES.forEach((cat) => {
+    categories.forEach((cat) => {
       groups[cat.id] = [];
     });
     tasks.forEach((task) => {
       task.categories.forEach((catId) => {
+        if (!groups[catId]) {
+          groups[catId] = [];
+        }
         groups[catId].push(task);
       });
     });
     // Sort each group by priority, then by createdAt
-    CATEGORIES.forEach((cat) => {
-      groups[cat.id] = sortTasksByPriorityThenDate(groups[cat.id]);
+    categories.forEach((cat) => {
+      groups[cat.id] = sortTasksByPriorityThenDate(groups[cat.id] ?? []);
     });
     return groups;
-  }, [tasks]);
+  }, [tasks, categories]);
 
   // Handle regrouping: update task categories when dragged to a different section
   // This adds the new category and removes the old one
@@ -308,8 +410,8 @@ function CategoryView({ tasks, onEdit, showInputs }: ViewProps) {
 
       // Build new categories: remove source, add new (if not already present)
       let newCategories = task.categories.filter((c) => c !== sourceCategoryId);
-      if (!newCategories.includes(newCategoryId as CategoryId)) {
-        newCategories = [...newCategories, newCategoryId as CategoryId];
+      if (!newCategories.includes(newCategoryId)) {
+        newCategories = [...newCategories, newCategoryId];
       }
       updateTask(taskId, { categories: newCategories });
     },
@@ -326,7 +428,16 @@ function CategoryView({ tasks, onEdit, showInputs }: ViewProps) {
 
   return (
     <div className="flex flex-col">
-      {CATEGORIES.map((category) => (
+      <div className="flex justify-end px-1 pb-2">
+        <button
+          type="button"
+          onClick={() => setManageOpen(true)}
+          className="text-xs text-primary hover:text-primary/80 transition-colors"
+        >
+          Manage Categories
+        </button>
+      </div>
+      {categories.map((category) => (
         <GroupedSection
           key={category.id}
           title={category.name}
@@ -343,9 +454,13 @@ function CategoryView({ tasks, onEdit, showInputs }: ViewProps) {
             onTaskNested={handleTaskNested}
             emptyMessage={`No ${category.name.toLowerCase()} tasks`}
             className="py-2"
+            selectionMode={selectionMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={onToggleSelect}
           />
         </GroupedSection>
       ))}
+      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </div>
   );
 }
@@ -381,7 +496,14 @@ function computeDueDateForBucket(bucket: DateBucket): Date | undefined {
   }
 }
 
-function DateView({ tasks, onEdit, showInputs }: ViewProps) {
+function DateView({
+  tasks,
+  onEdit,
+  showInputs,
+  selectionMode,
+  selectedTaskIds,
+  onToggleSelect,
+}: ViewProps) {
   const { updateTask } = useAppStore();
 
   // Group tasks by date bucket, then sort by priority then createdAt
@@ -469,6 +591,9 @@ function DateView({ tasks, onEdit, showInputs }: ViewProps) {
             onTaskNested={handleTaskNested}
             emptyMessage={`No tasks ${label.toLowerCase()}`}
             className="py-2"
+            selectionMode={selectionMode}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={onToggleSelect}
           />
         </GroupedSection>
       ))}

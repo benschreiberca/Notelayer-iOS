@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { CATEGORIES, CategoryId } from '@/types';
+import { CategoryId } from '@/types';
+import { useAppStore } from '@/stores/useAppStore';
 
 interface CategoryChipProps {
   categoryId: CategoryId;
@@ -14,7 +15,8 @@ export function CategoryChip({
   size = 'md',
   onClick,
 }: CategoryChipProps) {
-  const category = CATEGORIES.find((c) => c.id === categoryId);
+  const categories = useAppStore((state) => state.categories);
+  const category = categories.find((c) => c.id === categoryId);
   if (!category) return null;
 
   return (

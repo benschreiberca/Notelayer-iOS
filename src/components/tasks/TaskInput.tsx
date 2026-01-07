@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { Plus, Mic, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
+import { CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { PriorityIcon } from '@/components/common/PriorityIcon';
+import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
 
 interface TaskInputProps {
   defaultCategories?: CategoryId[];
@@ -22,8 +23,10 @@ export function TaskInput({
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>(defaultCategories);
   const [priority, setPriority] = useState<Priority>(defaultPriority);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   
   const addTask = useAppStore((state) => state.addTask);
+  const categories = useAppStore((state) => state.categories);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -107,7 +110,7 @@ export function TaskInput({
         <div className="mt-4 space-y-3 animate-slide-up">
           {/* Category Chips */}
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((category) => (
+            {categories.map((category) => (
               <button
                 key={category.id}
                 type="button"
@@ -124,6 +127,13 @@ export function TaskInput({
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => setManageOpen(true)}
+            className="text-xs text-primary hover:text-primary/80 transition-colors"
+          >
+            Manage Categories
+          </button>
 
           {/* Priority Row */}
           <div className="flex items-center gap-2">
@@ -151,6 +161,7 @@ export function TaskInput({
           </div>
         </div>
       )}
+      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </div>
   );
 }

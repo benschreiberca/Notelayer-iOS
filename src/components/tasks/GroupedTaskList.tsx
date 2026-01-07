@@ -30,6 +30,9 @@ interface GroupedTaskListProps {
    * Creates a parent/child relationship.
    */
   onTaskNested?: (draggedTaskId: string, parentTaskId: string) => void;
+  selectionMode?: boolean;
+  selectedTaskIds?: string[];
+  onToggleSelect?: (taskId: string) => void;
 }
 
 const DRAG_DATA_TYPE = 'application/x-grouped-task';
@@ -43,6 +46,9 @@ export function GroupedTaskList({
   className,
   onTaskRegrouped,
   onTaskNested,
+  selectionMode = false,
+  selectedTaskIds = [],
+  onToggleSelect,
 }: GroupedTaskListProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -52,6 +58,7 @@ export function GroupedTaskList({
 
   // ---- Drag handlers for task items ----
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    if (selectionMode) return;
     setDraggedId(taskId);
     e.dataTransfer.effectAllowed = 'move';
     
@@ -62,6 +69,7 @@ export function GroupedTaskList({
   };
 
   const handleDragOver = (e: React.DragEvent, taskId: string) => {
+    if (selectionMode) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
@@ -87,6 +95,7 @@ export function GroupedTaskList({
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    if (selectionMode) return;
     // Only clear if leaving the actual element (not entering a child)
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (!e.currentTarget.contains(relatedTarget)) {
@@ -96,6 +105,7 @@ export function GroupedTaskList({
   };
 
   const handleDrop = (e: React.DragEvent, targetTaskId: string) => {
+    if (selectionMode) return;
     e.preventDefault();
     e.stopPropagation();
     
@@ -118,11 +128,13 @@ export function GroupedTaskList({
   };
 
   const handleDragEnd = () => {
+    if (selectionMode) return;
     resetDragState();
   };
 
   // ---- Section-level drag handlers (for dropping into empty sections or section background) ----
   const handleSectionDragOver = (e: React.DragEvent) => {
+    if (selectionMode) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
@@ -133,6 +145,7 @@ export function GroupedTaskList({
   };
 
   const handleSectionDragLeave = (e: React.DragEvent) => {
+    if (selectionMode) return;
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (!containerRef.current?.contains(relatedTarget)) {
       setIsDragOverSection(false);
@@ -140,6 +153,7 @@ export function GroupedTaskList({
   };
 
   const handleSectionDrop = (e: React.DragEvent) => {
+    if (selectionMode) return;
     e.preventDefault();
     
     const rawData = e.dataTransfer.getData(DRAG_DATA_TYPE);
@@ -199,7 +213,7 @@ export function GroupedTaskList({
       {tasks.map((task) => (
         <div
           key={task.id}
-          draggable
+          draggable={!selectionMode}
           onDragStart={(e) => handleDragStart(e, task.id)}
           onDragOver={(e) => handleDragOver(e, task.id)}
           onDragLeave={handleDragLeave}
@@ -216,6 +230,9 @@ export function GroupedTaskList({
             task={task}
             showCompleted={showCompleted}
             onEdit={onEdit}
+            selectionMode={selectionMode}
+            selected={selectedTaskIds.includes(task.id)}
+            onSelectToggle={onToggleSelect}
           />
         </div>
       ))}

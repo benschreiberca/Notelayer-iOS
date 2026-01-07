@@ -16,6 +16,9 @@ interface DraggableTaskListProps {
   className?: string;
   /** Use a condensed empty state for grouped views */
   condensedEmpty?: boolean;
+  selectionMode?: boolean;
+  selectedTaskIds?: string[];
+  onToggleSelect?: (taskId: string) => void;
 }
 
 /**
@@ -34,6 +37,9 @@ export function DraggableTaskList({
   onEdit,
   className,
   condensedEmpty = false,
+  selectionMode = false,
+  selectedTaskIds = [],
+  onToggleSelect,
 }: DraggableTaskListProps) {
   const { reorderTasks } = useAppStore();
 
@@ -52,6 +58,7 @@ export function DraggableTaskList({
   // --- Desktop HTML5 Drag handlers ---
   const handleDragStart = useCallback(
     (e: React.DragEvent, taskId: string) => {
+      if (selectionMode) return;
       setDraggedId(taskId);
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', taskId);
@@ -62,18 +69,19 @@ export function DraggableTaskList({
         e.dataTransfer.setDragImage(target, 20, 20);
       }
     },
-    []
+    [selectionMode]
   );
 
   const handleDragOver = useCallback(
     (e: React.DragEvent, taskId: string) => {
+      if (selectionMode) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       if (taskId !== draggedId) {
         setDragOverId(taskId);
       }
     },
-    [draggedId]
+    [draggedId, selectionMode]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -82,6 +90,7 @@ export function DraggableTaskList({
 
   const handleDrop = useCallback(
     (e: React.DragEvent, targetId: string) => {
+      if (selectionMode) return;
       e.preventDefault();
 
       if (draggedId && draggedId !== targetId) {
@@ -99,7 +108,7 @@ export function DraggableTaskList({
       setDraggedId(null);
       setDragOverId(null);
     },
-    [draggedId, tasks, reorderTasks]
+    [draggedId, tasks, reorderTasks, selectionMode]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -110,6 +119,7 @@ export function DraggableTaskList({
   // --- Touch long-press drag handlers ---
   const handleTouchStart = useCallback(
     (taskId: string, e: React.TouchEvent) => {
+      if (selectionMode) return;
       const touch = e.touches[0];
       touchStartRef.current = { x: touch.clientX, y: touch.clientY, taskId };
       isDraggingRef.current = false;
@@ -127,11 +137,12 @@ export function DraggableTaskList({
         if (navigator.vibrate) navigator.vibrate(10);
       }, LONG_PRESS_DELAY);
     },
-    []
+    [selectionMode]
   );
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
+      if (selectionMode) return;
       if (!touchStartRef.current) return;
 
       const touch = e.touches[0];
@@ -168,10 +179,11 @@ export function DraggableTaskList({
         }
       }
     },
-    [touchDragId]
+    [touchDragId, selectionMode]
   );
 
   const handleTouchEnd = useCallback(() => {
+    if (selectionMode) return;
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
@@ -199,7 +211,7 @@ export function DraggableTaskList({
     isDraggingRef.current = false;
     setTouchDragId(null);
     setDragOverId(null);
-  }, [touchDragId, dragOverId, tasks, reorderTasks]);
+  }, [touchDragId, dragOverId, tasks, reorderTasks, selectionMode]);
 
   if (tasks.length === 0) {
     // Condensed empty state for grouped views - minimal height
@@ -232,7 +244,7 @@ export function DraggableTaskList({
         <div
           key={task.id}
           data-task-id={task.id}
-          draggable
+          draggable={!selectionMode}
           onDragStart={(e) => handleDragStart(e, task.id)}
           onDragOver={(e) => handleDragOver(e, task.id)}
           onDragLeave={handleDragLeave}
@@ -254,6 +266,9 @@ export function DraggableTaskList({
             showCompleted={showCompleted}
             onEdit={onEdit}
             isDragging={draggedId === task.id}
+            selectionMode={selectionMode}
+            selected={selectedTaskIds.includes(task.id)}
+            onSelectToggle={onToggleSelect}
           />
         </div>
       ))}

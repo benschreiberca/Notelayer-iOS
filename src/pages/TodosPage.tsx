@@ -8,6 +8,7 @@ import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
 import { GroupedTaskList } from '@/components/tasks/GroupedTaskList';
 import { BulkCategorySheet } from '@/components/tasks/BulkCategorySheet';
 import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
+import { Switch } from '@/components/ui/switch';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -217,6 +218,8 @@ export default function TodosPage() {
             selectionMode={isBulkMode}
             selectedTaskIds={selectedTaskIds}
             onToggleSelect={toggleTaskSelection}
+            isBulkMode={isBulkMode}
+            onToggleBulkMode={toggleBulkMode}
           />
         )}
 
@@ -387,7 +390,9 @@ function CategoryView({
   selectionMode,
   selectedTaskIds,
   onToggleSelect,
-}: ViewProps) {
+  isBulkMode,
+  onToggleBulkMode,
+}: ViewProps & { isBulkMode: boolean; onToggleBulkMode: () => void }) {
   const { updateTask, categories } = useAppStore();
 
   // Group tasks by category, then sort by priority then createdAt

@@ -8,7 +8,7 @@ import {
   isSwipeableElement,
 } from '@/lib/swipe-constants';
 
-const routes = ['/notes', '/todos', '/grouped'];
+const routes = ['/notes', '/todos'];
 
 interface SwipeNavigationOptions {
   onSwipeLeft?: () => boolean; // Return true if handled locally
@@ -26,7 +26,7 @@ interface SwipeNavigationOptions {
 export function useSwipeNavigation(options?: SwipeNavigationOptions) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { groupedView, setGroupedView, showDoneTasks, toggleShowDoneTasks } = useAppStore();
+  const { showDoneTasks, toggleShowDoneTasks } = useAppStore();
   
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -48,22 +48,14 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
         toggleShowDoneTasks();
         return;
       }
-    } else if (currentPath === '/grouped') {
-      if (groupedView === 'priority') {
-        setGroupedView('categories');
-        return;
-      } else if (groupedView === 'categories') {
-        setGroupedView('chrono');
-        return;
-      }
     }
-    
+
     // Navigate to next tab
     const currentIndex = routes.indexOf(currentPath);
     if (currentIndex < routes.length - 1) {
       navigate(routes[currentIndex + 1]);
     }
-  }, [location.pathname, navigate, groupedView, setGroupedView, showDoneTasks, toggleShowDoneTasks, options]);
+  }, [location.pathname, navigate, showDoneTasks, toggleShowDoneTasks, options]);
 
   const handleSwipeRight = useCallback(() => {
     // Check if local handler exists and handles it
@@ -77,22 +69,14 @@ export function useSwipeNavigation(options?: SwipeNavigationOptions) {
         toggleShowDoneTasks();
         return;
       }
-    } else if (currentPath === '/grouped') {
-      if (groupedView === 'chrono') {
-        setGroupedView('categories');
-        return;
-      } else if (groupedView === 'categories') {
-        setGroupedView('priority');
-        return;
-      }
     }
-    
+
     // Navigate to previous tab
     const currentIndex = routes.indexOf(currentPath);
     if (currentIndex > 0) {
       navigate(routes[currentIndex - 1]);
     }
-  }, [location.pathname, navigate, groupedView, setGroupedView, showDoneTasks, toggleShowDoneTasks, options]);
+  }, [location.pathname, navigate, showDoneTasks, toggleShowDoneTasks, options]);
 
   useEffect(() => {
     let touchTarget: Element | null = null;

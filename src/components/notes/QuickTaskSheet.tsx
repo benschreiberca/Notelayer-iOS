@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
+import { CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PriorityIcon } from '@/components/common/PriorityIcon';
+import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
 
 interface QuickTaskSheetProps {
   open: boolean;
@@ -16,10 +17,12 @@ interface QuickTaskSheetProps {
 
 export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }: QuickTaskSheetProps) {
   const addTask = useAppStore((state) => state.addTask);
+  const categories = useAppStore((state) => state.categories);
   
   const [title, setTitle] = useState(initialTitle);
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [priority, setPriority] = useState<Priority>('medium');
+  const [manageOpen, setManageOpen] = useState(false);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -103,7 +106,7 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
               Categories
             </label>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <button
                   key={category.id}
                   type="button"
@@ -120,6 +123,13 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => setManageOpen(true)}
+              className="mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              Manage Categories
+            </button>
           </div>
 
           {/* Priority */}
@@ -152,6 +162,7 @@ export function QuickTaskSheet({ open, onOpenChange, initialTitle = '', noteId }
           </div>
         </div>
       </SheetContent>
+      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </Sheet>
   );
 }

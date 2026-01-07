@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { format, addDays, endOfWeek, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, CATEGORIES, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
+import { Task, CategoryId, Priority, PRIORITY_CONFIG } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { toast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { PriorityIcon } from '@/components/common/PriorityIcon';
+import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -35,7 +36,7 @@ const quickDateOptions = [
 ];
 
 export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) {
-  const { updateTask, deleteTask, notes } = useAppStore();
+  const { updateTask, deleteTask, notes, categories } = useAppStore();
 
   const [title, setTitle] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
@@ -43,6 +44,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [taskNotes, setTaskNotes] = useState('');
+  const [manageOpen, setManageOpen] = useState(false);
 
   // Get linked note if exists
   const linkedNote = task?.noteId ? notes.find((n) => n.id === task.noteId) : null;
@@ -252,9 +254,19 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
 
           <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">Categories</label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-muted-foreground">Categories</label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setManageOpen(true)}
+                className="text-xs text-primary"
+              >
+                Manage
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <button
                   key={category.id}
                   type="button"
@@ -388,6 +400,7 @@ export function TaskEditSheet({ task, open, onOpenChange }: TaskEditSheetProps) 
           </div>
         </div>
       </SheetContent>
+      <CategoryManagerDialog open={manageOpen} onOpenChange={setManageOpen} />
     </Sheet>
   );
 }

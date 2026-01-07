@@ -10,6 +10,9 @@ interface TaskItemProps {
   showCompleted?: boolean;
   onEdit?: (task: Task) => void;
   isDragging?: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onSelectToggle?: (taskId: string) => void;
   className?: string;
 }
 
@@ -26,6 +29,9 @@ export function TaskItem({
   showCompleted = false,
   onEdit,
   isDragging = false,
+  selectionMode = false,
+  selected = false,
+  onSelectToggle,
   className,
 }: TaskItemProps) {
   const { completeTask, restoreTask } = useAppStore();
@@ -44,6 +50,10 @@ export function TaskItem({
   const handleTap = () => {
     // Don't trigger tap if we're in drag mode
     if (isDragging) return;
+    if (selectionMode) {
+      onSelectToggle?.(task.id);
+      return;
+    }
     onEdit?.(task);
   };
 
@@ -61,6 +71,7 @@ export function TaskItem({
           'group relative bg-card rounded-xl border border-border/50 shadow-soft transition-all tap-highlight cursor-pointer select-none touch-manipulation',
           'hover:shadow-card hover:border-border active:scale-[0.99]',
           isCompleted && 'opacity-60',
+          selected && selectionMode && 'ring-2 ring-primary/30 bg-primary/5',
           className
         )}
       >
@@ -70,16 +81,34 @@ export function TaskItem({
             {/* Title row */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2 flex-1 min-w-0">
-                {/* Priority indicator (dot for now; icons handled elsewhere if desired) */}
-                <div
-                  className={cn(
-                    'w-2 h-2 rounded-full flex-shrink-0 mt-1.5',
-                    task.priority === 'high' && 'bg-priority-high',
-                    task.priority === 'medium' && 'bg-priority-medium',
-                    task.priority === 'low' && 'bg-priority-low',
-                    task.priority === 'deferred' && 'bg-priority-deferred'
-                  )}
-                />
+                {selectionMode ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelectToggle?.(task.id);
+                    }}
+                    className={cn(
+                      'w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition',
+                      selected
+                        ? 'bg-primary border-primary text-primary-foreground'
+                        : 'border-muted-foreground/50 text-transparent'
+                    )}
+                    aria-label={selected ? 'Deselect task' : 'Select task'}
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                ) : (
+                  <div
+                    className={cn(
+                      'w-2 h-2 rounded-full flex-shrink-0 mt-1.5',
+                      task.priority === 'high' && 'bg-priority-high',
+                      task.priority === 'medium' && 'bg-priority-medium',
+                      task.priority === 'low' && 'bg-priority-low',
+                      task.priority === 'deferred' && 'bg-priority-deferred'
+                    )}
+                  />
+                )}
                 <h3
                   className={cn(
                     'text-sm font-medium text-foreground leading-snug flex-1',

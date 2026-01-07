@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Task, Note } from '@/types';
+import { Task, Note, Category, CategoryId, DEFAULT_CATEGORIES } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
 type TodoView = 'list' | 'priority' | 'category' | 'date';
@@ -13,6 +13,9 @@ interface AppState {
   // Tasks
   tasks: Task[];
   activeTaskId: string | null;
+
+  // Categories
+  categories: Category[];
 
   // UI
   showDoneTasks: boolean;
@@ -36,6 +39,15 @@ interface AppState {
   restoreTask: (id: string) => void;
   setActiveTask: (id: string | null) => void;
   reorderTasks: (taskIds: string[]) => void;
+  bulkUpdateTaskCategories: (
+    taskIds: string[],
+    changes: { add?: CategoryId[]; remove?: CategoryId[] }
+  ) => Promise<boolean>;
+
+  // Categories
+  addCategory: (category: Omit<Category, 'id'> & { id?: CategoryId }) => CategoryId;
+  updateCategory: (id: CategoryId, updates: Partial<Omit<Category, 'id'>>) => void;
+  reorderCategories: (orderedIds: CategoryId[]) => void;
 
   // UI actions
   toggleShowDoneTasks: () => void;
@@ -165,6 +177,8 @@ export const useAppStore = create<AppState>()(
 
       tasks: [],
       activeTaskId: null,
+
+      categories: DEFAULT_CATEGORIES,
 
       showDoneTasks: false,
       todoView: 'list',
@@ -378,6 +392,75 @@ export const useAppStore = create<AppState>()(
         });
       },
 
+      bulkUpdateTaskCategories: async (taskIds, changes) => {
+        const { tasks } = get();
+        const add = changes.add ?? [];
+        const remove = changes.remove ?? [];
+        const tasksToUpdate = tasks.filter((t) => taskIds.includes(t.id));
+
+        if (tasksToUpdate.length === 0) return true;
+
+        const updatedTasks: TaskWithOrderIndex[] = tasksToUpdate.map((task) => {
+          let nextCategories = task.categories.filter((category) => !remove.includes(category));
+          if (add.length > 0) {
+            nextCategories = Array.from(new Set([...nextCategories, ...add]));
+          }
+
+          return {
+            ...(task as TaskWithOrderIndex),
+            categories: nextCategories,
+            updatedAt: new Date(),
+          };
+        });
+
+        const { error } = await supabase.from('tasks').upsert(updatedTasks.map(taskToRow));
+        if (error) {
+          console.error('bulkUpdateTaskCategories supabase error:', error);
+          return false;
+        }
+
+        set((state) => ({
+          tasks: state.tasks.map((task) => {
+            const updated = updatedTasks.find((updatedTask) => updatedTask.id === task.id);
+            return updated ?? task;
+          }),
+        }));
+
+        return true;
+      },
+
+      addCategory: (categoryData) => {
+        const id = categoryData.id ?? generateId();
+        const category: Category = {
+          id,
+          name: categoryData.name,
+          icon: categoryData.icon,
+          color: categoryData.color,
+        };
+
+        set((state) => ({ categories: [...state.categories, category] }));
+        return id;
+      },
+
+      updateCategory: (id, updates) => {
+        set((state) => ({
+          categories: state.categories.map((category) =>
+            category.id === id ? { ...category, ...updates } : category
+          ),
+        }));
+      },
+
+      reorderCategories: (orderedIds) => {
+        set((state) => {
+          const categoryMap = new Map(state.categories.map((category) => [category.id, category]));
+          const reordered = orderedIds
+            .map((id) => categoryMap.get(id))
+            .filter((category): category is Category => !!category);
+          const remaining = state.categories.filter((category) => !orderedIds.includes(category.id));
+          return { categories: [...reordered, ...remaining] };
+        });
+      },
+
       // ----------------------
       // UI
       // ----------------------
@@ -386,10 +469,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'productivity-app-storage',
-      // Supabase is source of truth for notes/tasks; keep only UI prefs locally
+      // Supabase is source of truth for notes/tasks; keep categories + UI prefs locally
       partialize: (state) => ({
         todoView: state.todoView,
         showDoneTasks: state.showDoneTasks,
+        categories: state.categories,
       }),
     }
   )

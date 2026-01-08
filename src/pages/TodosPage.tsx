@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Calendar, ChevronDown, ChevronRight } from 'lucide-react';
+import * as SwitchPrimitives from '@radix-ui/react-switch';
 import { useAppStore } from '@/stores/useAppStore';
 import { TaskInput } from '@/components/tasks/TaskInput';
 import { DraggableTaskList } from '@/components/tasks/DraggableTaskList';
@@ -8,7 +9,6 @@ import { TaskEditSheet } from '@/components/tasks/TaskEditSheet';
 import { GroupedTaskList } from '@/components/tasks/GroupedTaskList';
 import { BulkCategorySheet } from '@/components/tasks/BulkCategorySheet';
 import { CategoryManagerDialog } from '@/components/categories/CategoryManagerDialog';
-import { Switch } from '@/components/ui/switch';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -17,7 +17,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -122,13 +121,24 @@ export default function TodosPage() {
       <header className="px-3 pt-6 pb-4 safe-area-top">
         <div className="flex items-start justify-between gap-3 px-1">
           <h1 className="text-2xl font-bold text-foreground">To-Dos</h1>
-          <TodosHeaderMenu
-            isBulkMode={isBulkMode}
-            onToggleBulkMode={toggleBulkMode}
-            onManageCategories={() => setManageOpen(true)}
-            showDoneTasks={showDoneTasks}
-            onShowDoneChange={setShowDoneTasks}
-          />
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/60 px-2 py-1 text-[11px] font-medium text-muted-foreground">
+              <span className="leading-none">{showDoneTasks ? 'Done' : 'Doing'}</span>
+              <SwitchPrimitives.Root
+                checked={!showDoneTasks}
+                onCheckedChange={(checked) => setShowDoneTasks(!checked)}
+                className="inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-muted-foreground/30 transition-colors data-[state=checked]:bg-primary"
+                aria-label="Toggle completion filter"
+              >
+                <SwitchPrimitives.Thumb className="block h-3 w-3 translate-x-0 rounded-full bg-background shadow-sm transition-transform data-[state=checked]:translate-x-3" />
+              </SwitchPrimitives.Root>
+            </label>
+            <TodosHeaderMenu
+              isBulkMode={isBulkMode}
+              onToggleBulkMode={toggleBulkMode}
+              onManageCategories={() => setManageOpen(true)}
+            />
+          </div>
         </div>
 
         {/* Inline View Toggle */}
@@ -609,14 +619,10 @@ function TodosHeaderMenu({
   isBulkMode,
   onToggleBulkMode,
   onManageCategories,
-  showDoneTasks,
-  onShowDoneChange,
 }: {
   isBulkMode: boolean;
   onToggleBulkMode: () => void;
   onManageCategories: () => void;
-  showDoneTasks: boolean;
-  onShowDoneChange: (showDone: boolean) => void;
 }) {
   return (
     <DropdownMenu>
@@ -635,13 +641,6 @@ function TodosHeaderMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onToggleBulkMode}>
           {isBulkMode ? 'Cancel' : 'Select'}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onShowDoneChange(false)}>
-          Show To Do
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onShowDoneChange(true)}>
-          Show Done
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

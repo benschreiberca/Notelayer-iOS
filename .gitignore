@@ -1,0 +1,11 @@
+## Xcode / Swift
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.pbxuser
+*.modev3
+*.mode*v3
+*.perspectivev3
+.DS_Store
+

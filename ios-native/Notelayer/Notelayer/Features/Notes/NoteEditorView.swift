@@ -70,7 +70,7 @@ struct NoteEditorView: View {
         if isNewNote {
             if !title.trimmingCharacters(in: .whitespaces).isEmpty || !plainText.trimmingCharacters(in: .whitespaces).isEmpty {
                 let finalTitle = title.trimmingCharacters(in: .whitespaces).isEmpty ? "Untitled Note" : title
-                appStore.addNote(title: finalTitle, content: content, plainText: plainText)
+                _ = appStore.addNote(title: finalTitle, content: content, plainText: plainText)
             }
         } else if let id = currentNoteId {
             appStore.updateNote(id: id, title: title, content: content, plainText: plainText)

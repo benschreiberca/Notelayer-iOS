@@ -16,7 +16,7 @@ struct NotelayerApp: App {
             RootTabsView()
                 .environmentObject(appStore)
                 .onAppear {
-                    Task {
+                    _Concurrency.Task {
                         await appStore.loadInitialData()
                     }
                 }

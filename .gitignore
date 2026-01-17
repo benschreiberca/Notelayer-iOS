@@ -27,3 +27,8 @@ dist-ssr
 # Xcode user state
 **/xcuserdata/
 **/*.xcuserstate
+
+# Local DerivedData (Cursor agent runs xcodebuild with this path)
+.derivedData/
+
+.env

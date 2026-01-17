@@ -27,3 +27,5 @@ dist-ssr
 # Xcode user state
 **/xcuserdata/
 **/*.xcuserstate
+
+.env

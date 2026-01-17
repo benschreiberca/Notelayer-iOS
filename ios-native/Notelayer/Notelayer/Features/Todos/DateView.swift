@@ -80,7 +80,7 @@ struct DateView: View {
                                 onEdit: onEdit,
                                 selectionMode: selectionMode,
                                 selected: selectedTaskIds.contains(task.id),
-                                onToggleSelect: onToggleSelect
+                                onSelectToggle: onToggleSelect
                             )
                             .environmentObject(appStore)
                         }

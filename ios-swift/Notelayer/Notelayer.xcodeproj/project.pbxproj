@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		BC33D4202F174654006E53D7 /* NoteLayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoteLayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		BC33D4222F174654006E53D7 /* NoteLayer */ = {
+		BC2CCDD82F174A5100406D9A /* Notelayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = NoteLayer;
+			path = Notelayer;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		BC33D41D2F174654006E53D7 /* Frameworks */ = {
+		BC2CCDD32F174A5100406D9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,18 +29,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		BC33D4172F174654006E53D7 = {
+		BC2CCDCD2F174A5100406D9A = {
 			isa = PBXGroup;
 			children = (
-				BC33D4222F174654006E53D7 /* NoteLayer */,
-				BC33D4212F174654006E53D7 /* Products */,
+				BC2CCDD82F174A5100406D9A /* Notelayer */,
+				BC2CCDD72F174A5100406D9A /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		BC33D4212F174654006E53D7 /* Products */ = {
+		BC2CCDD72F174A5100406D9A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BC33D4202F174654006E53D7 /* NoteLayer.app */,
+				BC2CCDD62F174A5100406D9A /* Notelayer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,64 +48,64 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		BC33D41F2F174654006E53D7 /* NoteLayer */ = {
+		BC2CCDD52F174A5100406D9A /* Notelayer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = BC33D42B2F174654006E53D7 /* Build configuration list for PBXNativeTarget "NoteLayer" */;
+			buildConfigurationList = BC2CCDE12F174A5200406D9A /* Build configuration list for PBXNativeTarget "Notelayer" */;
 			buildPhases = (
-				BC33D41C2F174654006E53D7 /* Sources */,
-				BC33D41D2F174654006E53D7 /* Frameworks */,
-				BC33D41E2F174654006E53D7 /* Resources */,
+				BC2CCDD22F174A5100406D9A /* Sources */,
+				BC2CCDD32F174A5100406D9A /* Frameworks */,
+				BC2CCDD42F174A5100406D9A /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				BC33D4222F174654006E53D7 /* NoteLayer */,
+				BC2CCDD82F174A5100406D9A /* Notelayer */,
 			);
-			name = NoteLayer;
+			name = Notelayer;
 			packageProductDependencies = (
 			);
-			productName = NoteLayer;
-			productReference = BC33D4202F174654006E53D7 /* NoteLayer.app */;
+			productName = Notelayer;
+			productReference = BC2CCDD62F174A5100406D9A /* Notelayer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		BC33D4182F174654006E53D7 /* Project object */ = {
+		BC2CCDCE2F174A5100406D9A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					BC33D41F2F174654006E53D7 = {
+					BC2CCDD52F174A5100406D9A = {
 						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
-			buildConfigurationList = BC33D41B2F174654006E53D7 /* Build configuration list for PBXProject "NoteLayer" */;
+			buildConfigurationList = BC2CCDD12F174A5100406D9A /* Build configuration list for PBXProject "Notelayer" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = BC33D4172F174654006E53D7;
+			mainGroup = BC2CCDCD2F174A5100406D9A;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = BC33D4212F174654006E53D7 /* Products */;
+			productRefGroup = BC2CCDD72F174A5100406D9A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				BC33D41F2F174654006E53D7 /* NoteLayer */,
+				BC2CCDD52F174A5100406D9A /* Notelayer */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		BC33D41E2F174654006E53D7 /* Resources */ = {
+		BC2CCDD42F174A5100406D9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		BC33D41C2F174654006E53D7 /* Sources */ = {
+		BC2CCDD22F174A5100406D9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -125,7 +125,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		BC33D4292F174654006E53D7 /* Debug */ = {
+		BC2CCDDF2F174A5200406D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -178,7 +178,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -189,7 +189,7 @@
 			};
 			name = Debug;
 		};
-		BC33D42A2F174654006E53D7 /* Release */ = {
+		BC2CCDE02F174A5200406D9A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -236,7 +236,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -246,7 +246,7 @@
 			};
 			name = Release;
 		};
-		BC33D42C2F174654006E53D7 /* Debug */ = {
+		BC2CCDE22F174A5200406D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -261,12 +261,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NoteLayer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -278,7 +279,7 @@
 			};
 			name = Debug;
 		};
-		BC33D42D2F174654006E53D7 /* Release */ = {
+		BC2CCDE32F174A5200406D9A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -293,12 +294,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NoteLayer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -313,25 +315,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		BC33D41B2F174654006E53D7 /* Build configuration list for PBXProject "NoteLayer" */ = {
+		BC2CCDD12F174A5100406D9A /* Build configuration list for PBXProject "Notelayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BC33D4292F174654006E53D7 /* Debug */,
-				BC33D42A2F174654006E53D7 /* Release */,
+				BC2CCDDF2F174A5200406D9A /* Debug */,
+				BC2CCDE02F174A5200406D9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BC33D42B2F174654006E53D7 /* Build configuration list for PBXNativeTarget "NoteLayer" */ = {
+		BC2CCDE12F174A5200406D9A /* Build configuration list for PBXNativeTarget "Notelayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BC33D42C2F174654006E53D7 /* Debug */,
-				BC33D42D2F174654006E53D7 /* Release */,
+				BC2CCDE22F174A5200406D9A /* Debug */,
+				BC2CCDE32F174A5200406D9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = BC33D4182F174654006E53D7 /* Project object */;
+	rootObject = BC2CCDCE2F174A5100406D9A /* Project object */;
 }

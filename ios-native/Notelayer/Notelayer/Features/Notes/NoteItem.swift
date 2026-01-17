@@ -36,16 +36,16 @@ struct NoteItem: View {
                 } else {
                     ZStack {
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.accent.opacity(0.2))
+                            .fill(Color.accentColor.opacity(0.2))
                             .frame(width: 40, height: 40)
                         
                         Image(systemName: "doc.text")
-                            .foregroundColor(.accent)
+                            .foregroundColor(.accentColor)
                             .font(.system(size: 20))
                         
                         if note.isPinned {
                             Image(systemName: "pin.fill")
-                                .foregroundColor(.accent)
+                                .foregroundColor(.accentColor)
                                 .font(.system(size: 10))
                                 .offset(x: 12, y: -12)
                         }
@@ -65,7 +65,7 @@ struct NoteItem: View {
                             Text("PINNED")
                                 .font(.system(size: 10))
                                 .fontWeight(.medium)
-                                .foregroundColor(.accent)
+                                .foregroundColor(.accentColor)
                         }
                     }
                     

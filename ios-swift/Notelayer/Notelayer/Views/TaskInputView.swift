@@ -9,11 +9,33 @@ struct TaskInputView: View {
     
     let defaultPriority: Priority
     let defaultCategories: Set<String>
+    private let defaultDueDate: Date?
+    private let creationContext: CreationContext
     let onTaskCreated: (String) -> Void
     
+    private enum CreationContext {
+        case standard
+        case dateLens
+    }
+    
+    /// Standard task input used by List/Priority/Category lenses.
+    /// Regression guard: this initializer MUST NOT set `defaultDueDate`.
     init(defaultPriority: Priority = .medium, defaultCategories: Set<String> = [], onTaskCreated: @escaping (String) -> Void = { _ in }) {
         self.defaultPriority = defaultPriority
         self.defaultCategories = defaultCategories
+        self.defaultDueDate = nil
+        self.creationContext = .standard
+        self.onTaskCreated = onTaskCreated
+        _priority = State(initialValue: defaultPriority)
+        _selectedCategories = State(initialValue: defaultCategories)
+    }
+    
+    /// Date-lens-only task input: new tasks inherit the active date group’s due date.
+    init(dateGroupDueDate: Date?, defaultPriority: Priority = .medium, defaultCategories: Set<String> = [], onTaskCreated: @escaping (String) -> Void = { _ in }) {
+        self.defaultPriority = defaultPriority
+        self.defaultCategories = defaultCategories
+        self.defaultDueDate = dateGroupDueDate
+        self.creationContext = .dateLens
         self.onTaskCreated = onTaskCreated
         _priority = State(initialValue: defaultPriority)
         _selectedCategories = State(initialValue: defaultCategories)
@@ -96,10 +118,14 @@ struct TaskInputView: View {
     private func submitTask() {
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
+        // Regression check: only the Date lens is allowed to create tasks with an inherited due date.
+        assert(creationContext == .dateLens || defaultDueDate == nil, "defaultDueDate should only be set when TaskInputView is used from the Date lens")
+        
         let task = Task(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             categories: Array(selectedCategories),
-            priority: priority
+            priority: priority,
+            dueDate: defaultDueDate
         )
         
         let taskId = store.addTask(task)

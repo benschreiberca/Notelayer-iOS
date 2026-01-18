@@ -587,7 +587,8 @@ private struct TodoDateModeView: View {
                         }
                     ) {
                         if !showingDone {
-                            TaskInputView(defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
+                            // Date lens only: new tasks inherit the active bucket's due date.
+                            TaskInputView(dateGroupDueDate: dueDateForBucket(bucket), defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
                                 .padding(.top, 6)
                         }
                         TodoGroupTaskList(

@@ -24,6 +24,19 @@ struct DateView: View {
         case later = "Later"
         case noDueDate = "No Due Date"
     }
+
+    /// Default due date to use when creating a task from within a specific bucket.
+    /// IMPORTANT: We intentionally only return a value for buckets that have an inline input today,
+    /// to avoid changing behavior in other buckets without explicit UX decisions.
+    private func defaultDueDate(for bucket: DateBucket) -> Date? {
+        let calendar = Calendar.current
+        switch bucket {
+        case .today:
+            return calendar.startOfDay(for: Date())
+        default:
+            return nil
+        }
+    }
     
     private var grouped: [DateBucket: [Task]] {
         var groups: [DateBucket: [Task]] = [:]
@@ -69,7 +82,7 @@ struct DateView: View {
             ForEach(DateBucket.allCases, id: \.self) { bucket in
                 Section {
                     if bucket == .today && showInputs {
-                        TaskInput()
+                        TaskInput(defaultDueDate: defaultDueDate(for: bucket))
                             .environmentObject(appStore)
                     }
                     

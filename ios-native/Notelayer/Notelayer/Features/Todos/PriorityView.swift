@@ -32,7 +32,8 @@ struct PriorityView: View {
             ForEach(Priority.allCases, id: \.self) { priority in
                 Section {
                     if showInputs {
-                        TaskInput(defaultPriority: priority)
+                        // Regression guard: Priority lens should NOT set a due date by default.
+                        TaskInput(defaultPriority: priority, defaultDueDate: nil)
                             .environmentObject(appStore)
                     }
                     

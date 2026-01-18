@@ -37,7 +37,8 @@ struct CategoryView: View {
             ForEach(appStore.categories) { category in
                 Section {
                     if showInputs {
-                        TaskInput(defaultCategories: [category.id])
+                        // Regression guard: Category lens should NOT set a due date by default.
+                        TaskInput(defaultCategories: [category.id], defaultDueDate: nil)
                             .environmentObject(appStore)
                     }
                     

@@ -135,7 +135,8 @@ struct TodosView: View {
         List {
             if !appStore.showDoneTasks {
                 Section {
-                    TaskInput()
+                    // Regression guard: List lens should NOT set a due date by default.
+                    TaskInput(defaultDueDate: nil)
                         .environmentObject(appStore)
                 }
             }

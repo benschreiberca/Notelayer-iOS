@@ -11,6 +11,8 @@ struct TaskInput: View {
     @EnvironmentObject var appStore: AppStore
     var defaultCategories: [CategoryId] = []
     var defaultPriority: Priority = .medium
+    /// When non-nil, newly created tasks will inherit this due date (used by the Date lens only).
+    var defaultDueDate: Date? = nil
     var onTaskCreated: ((String) -> Void)?
     
     @State private var title: String = ""
@@ -73,22 +75,26 @@ struct TaskInput: View {
                     }
                     
                     // Priority
-                    HStack(spacing: 8) {
-                        Text("Priority:")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                        
-                        ForEach(Priority.allCases, id: \.self) { p in
-                            Button(action: {
-                                priority = p
-                            }) {
-                                Text(p.displayName)
-                                    .font(.system(size: 12))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(priority == p ? Color.blue : Color(.systemGray5))
-                                    .foregroundColor(priority == p ? .white : .primary)
-                                    .cornerRadius(16)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 8) {
+                            Text("Priority:")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            
+                            ForEach(Priority.allCases, id: \.self) { p in
+                                Button(action: {
+                                    priority = p
+                                }) {
+                                    Text(p.displayName)
+                                        .font(.system(size: 12))
+                                        .lineLimit(1)
+                                        .fixedSize(horizontal: true, vertical: false)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(priority == p ? Color.blue : Color(.systemGray5))
+                                        .foregroundColor(priority == p ? .white : .primary)
+                                        .cornerRadius(16)
+                                }
                             }
                         }
                     }
@@ -108,7 +114,8 @@ struct TaskInput: View {
         let taskId = appStore.addTask(
             title: title.trimmingCharacters(in: .whitespaces),
             categories: selectedCategories,
-            priority: priority
+            priority: priority,
+            dueDate: defaultDueDate
         )
         
         title = ""

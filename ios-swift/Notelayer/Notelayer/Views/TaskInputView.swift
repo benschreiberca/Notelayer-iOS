@@ -97,14 +97,18 @@ struct TaskInputView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        ForEach(Priority.allCases, id: \.self) { p in
-                            PriorityButton(
-                                priority: p,
-                                isSelected: priority == p,
-                                onTap: {
-                                    priority = p
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(Priority.allCases, id: \.self) { p in
+                                    PriorityButton(
+                                        priority: p,
+                                        isSelected: priority == p,
+                                        onTap: {
+                                            priority = p
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -170,6 +174,8 @@ struct PriorityButton: View {
             Text(priority.label)
                 .font(.caption)
                 .fontWeight(isSelected ? .semibold : .regular)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(isSelected ? priorityColor : Color(.systemGray5))

@@ -86,7 +86,7 @@ struct TaskEditView: View {
                         }
                     }
                     
-                    if let dueDate = dueDate {
+                    if dueDate != nil {
                         Button(role: .destructive) {
                             self.dueDate = nil
                         } label: {

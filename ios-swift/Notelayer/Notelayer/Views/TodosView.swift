@@ -14,6 +14,7 @@ struct TodosView: View {
     @State private var editingTask: Task? = nil
     @State private var showingCategoryManager = false
     @State private var showingAppearance = false
+    @State private var showingAuthentication = false
     @State private var viewMode: TodoViewMode = .list
     @State private var sharePayload: SharePayload? = nil
     @EnvironmentObject private var theme: ThemeManager
@@ -85,6 +86,11 @@ struct TodosView: View {
                                     showingCategoryManager = true
                                 } label: {
                                     Label("Manage Categories", systemImage: "tag")
+                                }
+                                Button {
+                                    showingAuthentication = true
+                                } label: {
+                                    Label("Authentication", systemImage: "person.badge.key")
                                 }
                             } label: {
                                 Image(systemName: "gearshape")
@@ -169,6 +175,20 @@ struct TodosView: View {
                 AppearanceView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingAuthentication) {
+                NavigationStack {
+                    AuthTestView()
+                        .navigationTitle("Authentication")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    showingAuthentication = false
+                                }
+                            }
+                        }
+                }
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)
@@ -458,8 +478,6 @@ private struct TodoCategoryModeView: View {
                     let groupTasks = tasks.filter { $0.categories.contains(category.id) }
                     let groupId = "category:\(category.id)"
                     let isCollapsed = collapse.isCollapsed(mode: .category, groupId: groupId)
-                    let color = Color(hex: category.color) ?? .accentColor
-                    
                     TodoGroupCard(
                         mode: .category,
                         groupId: groupId,
@@ -817,4 +835,3 @@ private struct TodoGroupTaskList: View {
         .padding(.vertical, 4)
     }
 }
-

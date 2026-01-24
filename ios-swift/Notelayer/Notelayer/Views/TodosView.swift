@@ -177,18 +177,9 @@ struct TodosView: View {
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingAuthentication) {
-                NavigationStack {
-                    AuthTestView()
-                        .navigationTitle("Authentication")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
-                                    showingAuthentication = false
-                                }
-                            }
-                        }
-                }
+                SignInSheet()
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)

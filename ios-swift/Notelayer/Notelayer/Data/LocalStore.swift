@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import _Concurrency
 
 struct Note: Identifiable, Codable {
     let id: UUID
@@ -20,19 +21,88 @@ class LocalStore: ObservableObject {
     @Published var notes: [Note] = []
     @Published var tasks: [Task] = []
     @Published var categories: [Category] = []
+
+    private var backend: BackendSyncing?
+    private var suppressBackendWrites = false
     
     private let notesKey = "com.notelayer.app.notes"
     private let tasksKey = "com.notelayer.app.tasks"
     private let categoriesKey = "com.notelayer.app.categories"
+    private let backendUserIdKey = "com.notelayer.app.backendUserId"
     private let appGroupIdentifier = "group.com.notelayer.app"
     
     private var userDefaults: UserDefaults {
         UserDefaults(suiteName: appGroupIdentifier) ?? UserDefaults.standard
     }
+
+    var lastBackendUserId: String? {
+        userDefaults.string(forKey: backendUserIdKey)
+    }
     
     private init() {
         load()
         migrateIfNeeded()
+    }
+
+    func attachBackend(_ backend: BackendSyncing?) {
+        self.backend = backend
+    }
+
+    func updateBackendUserId(_ userId: String?) {
+        userDefaults.set(userId, forKey: backendUserIdKey)
+    }
+
+    func resetForNewUser() {
+        applyRemoteUpdate {
+            notes = []
+            tasks = []
+            categories = []
+            saveNotes()
+            saveTasks()
+            saveCategories()
+            migrateIfNeeded()
+        }
+    }
+
+    func applyRemoteSnapshot(notes: [Note], tasks: [Task], categories: [Category]) {
+        applyRemoteUpdate {
+            self.notes = notes
+            self.tasks = tasks
+            self.categories = categories
+            saveNotes()
+            saveTasks()
+            saveCategories()
+            migrateIfNeeded()
+        }
+    }
+
+    func applyRemoteNotes(_ notes: [Note]) {
+        applyRemoteUpdate {
+            self.notes = notes
+            saveNotes()
+        }
+    }
+
+    func applyRemoteTasks(_ tasks: [Task]) {
+        applyRemoteUpdate {
+            self.tasks = tasks
+            saveTasks()
+        }
+    }
+
+    func applyRemoteCategories(_ categories: [Category]) {
+        applyRemoteUpdate {
+            self.categories = categories
+            saveCategories()
+            migrateIfNeeded()
+        }
+    }
+
+    private func applyRemoteUpdate(_ updates: () -> Void) {
+        let wasSuppressed = suppressBackendWrites
+        suppressBackendWrites = true
+        updates()
+        suppressBackendWrites = wasSuppressed
     }
     
     // MARK: - Load & Save
@@ -100,11 +170,20 @@ class LocalStore: ObservableObject {
     func addNote(_ note: Note) {
         notes.append(note)
         saveNotes()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(note: note) }
+        }
     }
     
     func deleteNotes(at offsets: IndexSet) {
+        let deletedNotes = offsets.map { notes[$0] }
         notes.remove(atOffsets: offsets)
         saveNotes()
+        if let backend, !suppressBackendWrites {
+            for note in deletedNotes {
+                _Concurrency.Task { try? await backend.deleteNote(id: note.id) }
+            }
+        }
     }
     
     // MARK: - Tasks
@@ -116,6 +195,9 @@ class LocalStore: ObservableObject {
         }
         tasks.append(newTask)
         saveTasks()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: newTask) }
+        }
         return newTask.id
     }
     
@@ -126,11 +208,17 @@ class LocalStore: ObservableObject {
         task.updatedAt = Date()
         tasks[index] = task
         saveTasks()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: task) }
+        }
     }
     
     func deleteTask(id: String) {
         tasks.removeAll { $0.id == id }
         saveTasks()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.deleteTask(id: id) }
+        }
     }
     
     func completeTask(id: String) {
@@ -160,6 +248,9 @@ class LocalStore: ObservableObject {
         
         tasks = reorderedWithOrder + remaining
         saveTasks()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(tasks: tasks) }
+        }
     }
     
     // MARK: - Categories
@@ -167,6 +258,9 @@ class LocalStore: ObservableObject {
     func addCategory(_ category: Category) {
         categories.append(category)
         saveCategories()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(category: category) }
+        }
     }
     
     func updateCategory(id: String, updates: (inout Category) -> Void) {
@@ -175,12 +269,18 @@ class LocalStore: ObservableObject {
         updates(&category)
         categories[index] = category
         saveCategories()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(category: category) }
+        }
     }
     
     func reorderCategories(orderedIds: [String]) {
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
         categories = orderedIds.compactMap { categoryMap[$0] }
         saveCategories()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(categories: categories) }
+        }
     }
     
     func getCategory(id: String) -> Category? {

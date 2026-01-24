@@ -10,6 +10,7 @@
 		BC3A1B1B2F1A000100406D9A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
 		BC9A4A2B2F70000100D1E2F3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */; };
 		BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */; };
+		BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */; };
 		BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */,
 				BC9A4A2B2F70000100D1E2F3 /* FirebaseAuth in Frameworks */,
 				BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */,
 				BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */,
@@ -77,6 +79,7 @@
 			);
 			name = Notelayer;
 			packageProductDependencies = (
+				BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */,
 				BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */,
 				BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */,
 				BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */,
@@ -97,6 +100,11 @@
 				TargetAttributes = {
 					BC2CCDD52F174A5100406D9A = {
 						CreatedOnToolsVersion = 26.2;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -276,8 +284,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLSchemes =     (\n        \"$(REVERSED_CLIENT_ID)\"\n    );\n}";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleURLTypes = "( { CFBundleTypeRole = Editor; CFBundleURLName = \"com.notelayer.app\"; CFBundleURLSchemes = ( \"$(REVERSED_CLIENT_ID)\" ); } )";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -312,8 +321,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLSchemes =     (\n        \"$(REVERSED_CLIENT_ID)\"\n    );\n}";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleURLTypes = "( { CFBundleTypeRole = Editor; CFBundleURLName = \"com.notelayer.app\"; CFBundleURLSchemes = ( \"$(REVERSED_CLIENT_ID)\" ); } )";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -390,6 +400,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BC9A4A2F2F70000100D1E2F3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
 		};
 		BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;

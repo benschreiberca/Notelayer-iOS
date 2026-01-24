@@ -34,3 +34,9 @@ dist-ssr
 
 .derivedData/
 DerivedData/
+
+# Screenshots (generated files)
+ios-swift/Notelayer/Screenshots/
+*.png
+!ios-swift/Notelayer/Notelayer/Assets.xcassets/**/*.png
+!ios-swift/Notelayer/Notelayer/Assets.xcassets/**/*.jpg

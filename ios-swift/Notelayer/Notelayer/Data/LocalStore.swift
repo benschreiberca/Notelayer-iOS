@@ -29,7 +29,16 @@ class LocalStore: ObservableObject {
     private let tasksKey = "com.notelayer.app.tasks"
     private let categoriesKey = "com.notelayer.app.categories"
     private let backendUserIdKey = "com.notelayer.app.backendUserId"
-    private let appGroupIdentifier = "group.com.notelayer.app"
+    
+    // Use isolated data store for screenshot generation to protect user's real data
+    private static var isScreenshotMode: Bool {
+        ProcessInfo.processInfo.environment["SCREENSHOT_MODE"] == "true" ||
+        ProcessInfo.processInfo.arguments.contains("--screenshot-generation")
+    }
+    
+    private var appGroupIdentifier: String {
+        Self.isScreenshotMode ? "group.com.notelayer.app.screenshots" : "group.com.notelayer.app"
+    }
     
     private var userDefaults: UserDefaults {
         UserDefaults(suiteName: appGroupIdentifier) ?? UserDefaults.standard

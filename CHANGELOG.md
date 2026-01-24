@@ -1,19 +1,33 @@
 # Changelog
 
+## Branch: feature/app-store-metadata
+
+**Purpose:** Prepare NoteLayer for App Store submission by completing pre-submission tasks including code cleanup, documentation creation, and verification tooling.
+
+**Intent:** This branch addresses critical App Store launch requirements: production-ready code (debug cleanup), complete metadata (description, keywords, promotional text), legal compliance (privacy policy), reviewer guidance (app review notes), asset preparation (screenshot guide), and submission verification (checklist + script).
+
+**Quick Summary:**
+- **Code Cleanup:** Wrapped 86 debug print statements in `#if DEBUG`, removed TODOs
+- **Documentation:** Created App Store metadata, privacy policy, release checklist, app review notes, screenshot guide
+- **Tooling:** Added pre-submission verification script
+- **Assets:** Updated GoogleLogo with retina scale support
+
+---
+
 ## Unreleased
 
 ### Added
-- Firebase Firestore backend sync service for notes/tasks/categories with per-user collections and realtime listeners.
-- Push Notifications capability and `aps-environment` entitlement to support phone auth via APNs.
-- Explicit `Info.plist` checked in for URL schemes and app configuration.
-- Project Cursor slash command templates under `.cursor/commands`.
-- Command implementation tracking doc for the new slash commands.
+- App Store metadata documentation (name, subtitle, description, keywords, promotional text) in `docs/APP_STORE_METADATA.md`.
+- Privacy policy document in `docs/PRIVACY_POLICY.md` covering data collection, storage, third-party services, and user rights.
+- Release checklist in `RELEASE_CHECKLIST.md` covering code quality, configuration, assets, Firebase setup, App Store Connect, and testing.
+- App review notes in `docs/APP_REVIEW_NOTES.md` with testing instructions for App Store reviewers.
+- Screenshot guide in `docs/SCREENSHOT_GUIDE.md` with step-by-step instructions for creating 6 App Store screenshots.
+- Pre-submission verification script (`scripts/pre-submission-check.sh`) to validate bundle ID, version, build, deployment target, and capabilities.
+- Debug code cleanup summary in `docs/DEBUG_CODE_CLEANUP_SUMMARY.md` documenting removal of debug prints and TODOs.
 
 ### Changed
-- App bootstrap now guards Firebase configuration and initializes the backend sync service on launch.
-- Local store writes through the backend when available and suppresses writes during remote snapshots.
-- Auth test view delays provider sign-in until after sheet dismiss and uses a more resilient top-view-controller lookup.
-- App icon asset set consolidated to a single 1024 PNG for light/dark/tinted.
+- Debug print statements wrapped in `#if DEBUG` to prevent console output in release builds (86 statements across AuthService, NotelayerApp, FirebaseBackendService).
+- GoogleLogo asset updated with 2x and 3x scale entries for proper retina display support.
 
 ### Removed
-- Legacy app icon SVG assets and icon.json from the app icon source set.
+- TODO comments from SyncService replaced with implementation pending notes.

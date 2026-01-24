@@ -73,7 +73,9 @@ final class FirebaseBackendService: ObservableObject {
 
             store.applyRemoteSnapshot(notes: notes, tasks: tasks, categories: categories)
         } catch {
+            #if DEBUG
             print("Firebase backend initial sync failed: \(error)")
+            #endif
         }
     }
 

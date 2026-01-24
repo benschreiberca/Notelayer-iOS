@@ -11,30 +11,44 @@ import _Concurrency
 
 private func configureFirebaseIfNeeded() {
     if FirebaseApp.app() == nil {
+        #if DEBUG
         print("🔥 [Firebase] Configuring Firebase...")
+        #endif
         
         // Verify GoogleService-Info.plist exists in bundle
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") == nil {
+            #if DEBUG
             print("⚠️ [Firebase] WARNING: GoogleService-Info.plist not found in bundle!")
             print("   Bundle path: \(Bundle.main.bundlePath)")
             print("   Resource path: \(Bundle.main.resourcePath ?? "nil")")
+            #endif
         } else {
+            #if DEBUG
             print("✅ [Firebase] GoogleService-Info.plist found in bundle")
+            #endif
         }
         
         FirebaseApp.configure()
         if let app = FirebaseApp.app() {
+            #if DEBUG
             print("🔥 [Firebase] Configuration complete - App: \(app.name)")
             print("🔥 [Firebase] Project ID: \(app.options.projectID ?? "nil")")
             print("🔥 [Firebase] Client ID: \(app.options.clientID ?? "nil")")
+            #endif
             if app.options.clientID == nil || app.options.clientID!.isEmpty {
+                #if DEBUG
                 print("❌ [Firebase] ERROR: Client ID is missing! Check GoogleService-Info.plist")
+                #endif
             }
         } else {
+            #if DEBUG
             print("❌ [Firebase] Configuration failed - FirebaseApp is nil")
+            #endif
         }
     } else {
+        #if DEBUG
         print("🔥 [Firebase] Already configured")
+        #endif
     }
 }
 
@@ -50,12 +64,14 @@ final class AuthService: NSObject, ObservableObject {
         super.init()
         configureFirebaseIfNeeded()
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] auth, user in
+            #if DEBUG
             print("👤 [AuthService] Auth state changed - user: \(user?.uid ?? "nil")")
             if let user = user {
                 print("   Email: \(user.email ?? "nil")")
                 print("   Phone: \(user.phoneNumber ?? "nil")")
                 print("   Providers: \(user.providerData.map { $0.providerID })")
             }
+            #endif
             self?.user = user
         }
     }
@@ -72,57 +88,81 @@ final class AuthService: NSObject, ObservableObject {
     }
 
     func signInWithGoogle(presenting viewController: UIViewController) async throws {
+        #if DEBUG
         print("🔵 [AuthService] Starting Google Sign-In...")
+        #endif
         configureFirebaseIfNeeded()
         
         guard let app = FirebaseApp.app() else {
+            #if DEBUG
             print("❌ [AuthService] FirebaseApp is nil")
+            #endif
             throw AuthServiceError.missingGoogleClientID
         }
         
         guard let clientID = app.options.clientID, !clientID.isEmpty else {
+            #if DEBUG
             print("❌ [AuthService] Client ID is missing or empty")
             print("   Options: \(app.options)")
+            #endif
             throw AuthServiceError.missingGoogleClientID
         }
         
+        #if DEBUG
         print("✅ [AuthService] Client ID found: \(clientID)")
+        #endif
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
         
+        #if DEBUG
         print("🔵 [AuthService] Calling GIDSignIn.sharedInstance.signIn...")
+        #endif
         do {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: viewController)
             
+            #if DEBUG
             print("✅ [AuthService] Google Sign-In completed")
             print("   User ID: \(result.user.userID ?? "nil")")
             print("   Email: \(result.user.profile?.email ?? "nil")")
+            #endif
             
             guard let idToken = result.user.idToken?.tokenString else {
+                #if DEBUG
                 print("❌ [AuthService] ID Token is nil")
+                #endif
                 throw AuthServiceError.missingGoogleIDToken
             }
             
+            #if DEBUG
             print("✅ [AuthService] ID Token retrieved")
+            #endif
             let credential = GoogleAuthProvider.credential(
                 withIDToken: idToken,
                 accessToken: result.user.accessToken.tokenString
             )
             
+            #if DEBUG
             print("🔵 [AuthService] Signing in to Firebase with Google credential...")
+            #endif
             let authResult = try await Auth.auth().signIn(with: credential)
+            #if DEBUG
             print("✅ [AuthService] Firebase sign-in successful - user: \(authResult.user.uid)")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ [AuthService] Google Sign-In ERROR: \(error.localizedDescription)")
             if let nsError = error as NSError? {
                 print("   Domain: \(nsError.domain), Code: \(nsError.code)")
                 print("   UserInfo: \(nsError.userInfo)")
             }
+            #endif
             throw error
         }
     }
 
     func signInWithApple(presentationAnchor: ASPresentationAnchor?) async throws {
+        #if DEBUG
         print("🍎 [AuthService] Starting Apple Sign-In...")
+        #endif
         configureFirebaseIfNeeded()
         
         // Try to get a presentation anchor
@@ -132,71 +172,101 @@ final class AuthService: NSObject, ObservableObject {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
                 anchor = window
+                #if DEBUG
                 print("✅ [AuthService] Found key window from window scene")
+                #endif
             } else if let window = UIApplication.shared.keyWindow {
                 anchor = window
+                #if DEBUG
                 print("✅ [AuthService] Found key window from UIApplication")
+                #endif
             } else if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                       let window = windowScene.windows.first {
                 anchor = window
+                #if DEBUG
                 print("✅ [AuthService] Found first window from window scene")
+                #endif
             }
         }
         
         guard let anchor else {
+            #if DEBUG
             print("❌ [AuthService] Missing presentation anchor")
             print("   Connected scenes: \(UIApplication.shared.connectedScenes.count)")
+            #endif
             throw AuthServiceError.missingPresentationAnchor
         }
         
+        #if DEBUG
         print("✅ [AuthService] Presentation anchor found")
+        #endif
         do {
             _ = try await appleCoordinator.signIn(presentationAnchor: anchor)
+            #if DEBUG
             print("✅ [AuthService] Apple Sign-In completed")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ [AuthService] Apple Sign-In ERROR: \(error.localizedDescription)")
             if let nsError = error as NSError? {
                 print("   Domain: \(nsError.domain), Code: \(nsError.code)")
                 print("   UserInfo: \(nsError.userInfo)")
             }
+            #endif
             throw error
         }
     }
 
     func prepareForPhoneAuth() {
+        #if DEBUG
         print("📱 [AuthService] Preparing for phone authentication")
+        #endif
         configureFirebaseIfNeeded()
         
         #if targetEnvironment(simulator)
+        #if DEBUG
         print("⚠️ [AuthService] Running on simulator - phone auth may not work properly")
         print("   APNS token cannot be set on simulator (would crash)")
+        #endif
         #endif
         
         // Only register if not already registered
         if UIApplication.shared.isRegisteredForRemoteNotifications {
+            #if DEBUG
             print("📱 [AuthService] Already registered for remote notifications")
+            #endif
         } else {
+            #if DEBUG
             print("📱 [AuthService] Registering for remote notifications...")
+            #endif
             UIApplication.shared.registerForRemoteNotifications()
         }
     }
 
     func startPhoneNumberSignIn(phoneNumber: String) async throws -> String {
+        #if DEBUG
         print("📱 [AuthService] Starting phone number sign-in - phone: \(phoneNumber)")
+        #endif
         configureFirebaseIfNeeded()
         let verificationID = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { id, error in
                 if let error {
+                    #if DEBUG
                     print("❌ [AuthService] Phone verification ERROR: \(error.localizedDescription)")
+                    #endif
                     continuation.resume(throwing: error)
                     return
                 }
                 guard let id else {
+                    #if DEBUG
                     print("❌ [AuthService] Phone verification ID is nil")
+                    #endif
                     continuation.resume(throwing: AuthServiceError.missingPhoneVerificationID)
                     return
                 }
+                #if DEBUG
                 print("✅ [AuthService] Phone verification ID received: \(id)")
+                #endif
                 continuation.resume(returning: id)
             }
         }
@@ -206,24 +276,32 @@ final class AuthService: NSObject, ObservableObject {
     }
 
     func verifyPhoneNumber(code: String, verificationID: String? = nil) async throws {
+        #if DEBUG
         print("📱 [AuthService] Verifying phone number with code")
+        #endif
         configureFirebaseIfNeeded()
         let id = verificationID ?? phoneVerificationID
         guard let id else {
+            #if DEBUG
             print("❌ [AuthService] Missing phone verification ID")
+            #endif
             throw AuthServiceError.missingPhoneVerificationID
         }
 
         let credential = PhoneAuthProvider.provider().credential(withVerificationID: id, verificationCode: code)
         do {
             let result = try await Auth.auth().signIn(with: credential)
+            #if DEBUG
             print("✅ [AuthService] Phone verification successful - user: \(result.user.uid)")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ [AuthService] Phone verification ERROR: \(error.localizedDescription)")
             if let nsError = error as NSError? {
                 print("   Domain: \(nsError.domain), Code: \(nsError.code)")
                 print("   UserInfo: \(nsError.userInfo)")
             }
+            #endif
             throw error
         }
     }
@@ -308,20 +386,26 @@ private final class AppleSignInCoordinator: NSObject {
 
 extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        #if DEBUG
         print("🍎 [AppleSignIn] Authorization completed")
+        #endif
         guard
             let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
             let nonce = currentNonce,
             let tokenData = appleIDCredential.identityToken,
             let tokenString = String(data: tokenData, encoding: .utf8)
         else {
+            #if DEBUG
             print("❌ [AppleSignIn] Missing required credential data")
+            #endif
             continuation?.resume(throwing: AuthServiceError.missingAppleIDToken)
             continuation = nil
             return
         }
 
+        #if DEBUG
         print("✅ [AppleSignIn] Token retrieved, creating Firebase credential...")
+        #endif
         configureFirebaseIfNeeded()
         let credential = OAuthProvider.credential(
             providerID: .apple,
@@ -331,10 +415,14 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
         _Concurrency.Task {
             do {
                 let result = try await Auth.auth().signIn(with: credential)
+                #if DEBUG
                 print("✅ [AppleSignIn] Firebase sign-in successful - user: \(result.user.uid)")
+                #endif
                 continuation?.resume(returning: result)
             } catch {
+                #if DEBUG
                 print("❌ [AppleSignIn] Firebase sign-in ERROR: \(error.localizedDescription)")
+                #endif
                 continuation?.resume(throwing: error)
             }
             continuation = nil
@@ -342,7 +430,9 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        #if DEBUG
         print("❌ [AppleSignIn] Authorization failed: \(error.localizedDescription)")
+        #endif
         continuation?.resume(throwing: error)
         continuation = nil
     }

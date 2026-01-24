@@ -14,7 +14,18 @@
 		BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BC2B47932F25421C00F6D5C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC2CCDCE2F174A5100406D9A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC2CCDD52F174A5100406D9A;
+			remoteInfo = Notelayer;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		313235613231363861323230 /* NotelayerScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -28,6 +39,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		363035386163383739613963 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BC2CCDD32F174A5100406D9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -55,6 +73,7 @@
 			isa = PBXGroup;
 			children = (
 				BC2CCDD62F174A5100406D9A /* Notelayer.app */,
+				313235613231363861323230 /* NotelayerScreenshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -62,6 +81,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		303233363063333438613162 /* NotelayerScreenshotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 653636356164663864626163 /* Build configuration list for PBXNativeTarget "NotelayerScreenshotTests" */;
+			buildPhases = (
+				373439373734396364633064 /* Sources */,
+				363035386163383739613963 /* Frameworks */,
+				626364633737643165316262 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				626232656465613338653137 /* PBXTargetDependency */,
+			);
+			name = NotelayerScreenshotTests;
+			productName = NotelayerScreenshotTests;
+			productReference = 313235613231363861323230 /* NotelayerScreenshotTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		BC2CCDD52F174A5100406D9A /* Notelayer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BC2CCDE12F174A5200406D9A /* Build configuration list for PBXNativeTarget "Notelayer" */;
@@ -98,9 +135,16 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					303233363063333438613162 = {
+						TestTargetID = BC2CCDD52F174A5100406D9A;
+					};
 					BC2CCDD52F174A5100406D9A = {
 						CreatedOnToolsVersion = 26.2;
 						SystemCapabilities = {
+							303233363063333438613162 = {
+								CreatedOnToolsVersion = 26.2;
+								TestTargetID = BC2CCDD52F174A5100406D9A;
+							};
 							com.apple.Push = {
 								enabled = 1;
 							};
@@ -127,11 +171,19 @@
 			projectRoot = "";
 			targets = (
 				BC2CCDD52F174A5100406D9A /* Notelayer */,
+				303233363063333438613162 /* NotelayerScreenshotTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		626364633737643165316262 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BC2CCDD42F174A5100406D9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -143,6 +195,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		373439373734396364633064 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BC2CCDD22F174A5100406D9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -152,7 +211,59 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		626232656465613338653137 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC2CCDD52F174A5100406D9A /* Notelayer */;
+			targetProxy = BC2B47932F25421C00F6D5C6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		316333343931663132313334 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				INFOPLIST_FILE = NotelayerScreenshotTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NotelayerScreenshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Notelayer;
+			};
+			name = Debug;
+		};
+		383230653634346261333439 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				INFOPLIST_FILE = NotelayerScreenshotTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NotelayerScreenshotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Notelayer;
+			};
+			name = Release;
+		};
 		BC2CCDDF2F174A5200406D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -351,6 +462,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		653636356164663864626163 /* Build configuration list for PBXNativeTarget "NotelayerScreenshotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				316333343931663132313334 /* Debug */,
+				383230653634346261333439 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		BC2CCDD12F174A5100406D9A /* Build configuration list for PBXProject "Notelayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

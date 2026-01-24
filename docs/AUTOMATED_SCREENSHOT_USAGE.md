@@ -16,42 +16,46 @@ The automated screenshot system uses XCUITest to:
 
 1. **Xcode** installed (latest version recommended)
 2. **iPhone 17 Pro** simulator (or any iPhone Pro simulator)
-3. **Project built** at least once in Xcode
+3. **Ruby** available (macOS system Ruby is fine)
 
 ## Quick Start
 
-### Option 1: Using the Automation Script (Recommended)
+### Option 1: One-Command Setup + Run (Recommended)
+
+```bash
+cd /Users/bens/Notelayer/Notelayer-iOS-1
+./scripts/setup-screenshot-system.sh
+```
+
+The script will:
+1. Install the xcodeproj gem if needed
+2. Add/update the `NotelayerScreenshotTests` UI test target
+3. Create/update the "Screenshot Generation" scheme
+4. Verify the setup
+5. Find and boot the iPhone 17 Pro simulator
+6. Configure simulator state (time, battery, etc.)
+7. Build the app with screenshot generation mode
+8. Run the XCUITest suite
+9. Collect and copy screenshots to the backup location
+
+### Option 2: Run Only (After Setup)
 
 ```bash
 cd /Users/bens/Notelayer/Notelayer-iOS-1
 ./scripts/generate-screenshots.sh
 ```
 
-The script will:
-1. Find and boot the iPhone 17 Pro simulator
-2. Configure simulator state (time, battery, etc.)
-3. Build the app with screenshot generation mode
-4. Run XCUITest suite
-5. Collect and copy screenshots to backup location
+To skip running tests during setup:
 
-### Option 2: Using Xcode
+```bash
+./scripts/setup-screenshot-system.sh --skip-generate
+```
 
-1. Open `ios-swift/Notelayer/Notelayer.xcodeproj` in Xcode
-2. Create a new scheme "Screenshot Generation":
-   - Product > Scheme > Manage Schemes
-   - Click "+" to add new scheme
-   - Name it "Screenshot Generation"
-   - Set launch arguments: `--screenshot-generation`
-   - Set environment variable: `SCREENSHOT_MODE=true`
-3. Add UI Test Target (if not already added):
-   - File > New > Target
-   - Choose "UI Testing Bundle"
-   - Name it "NotelayerScreenshotTests"
-   - Add the test file: `NotelayerScreenshotTests/ScreenshotGenerationTests.swift`
-4. Run tests:
-   - Select "Screenshot Generation" scheme
-   - Select iPhone 17 Pro simulator
-   - Product > Test (⌘+U)
+### Verification
+
+```bash
+./scripts/verify-screenshot-setup.sh
+```
 
 ## Screenshot Storage Locations
 
@@ -125,10 +129,8 @@ To add a new screenshot:
 **Error**: Test target not found
 
 **Solution**:
-1. Open project in Xcode
-2. Add UI Test Target: File > New > Target > UI Testing Bundle
-3. Name it "NotelayerScreenshotTests"
-4. Add test file to target
+1. Re-run `./scripts/setup-screenshot-system.sh`
+2. Confirm `./scripts/verify-screenshot-setup.sh` passes
 
 ### Screenshots Not Appearing
 
@@ -196,7 +198,9 @@ ios-swift/Notelayer/
 └── Screenshots/                        # Temporary screenshot storage
 
 scripts/
-└── generate-screenshots.sh             # Automation script
+├── generate-screenshots.sh             # Screenshot run script
+├── setup-screenshot-system.sh          # End-to-end setup + run
+└── verify-screenshot-setup.sh          # Verification checks
 
 docs/
 ├── AUTOMATED_SCREENSHOT_PLAN.md       # Implementation plan

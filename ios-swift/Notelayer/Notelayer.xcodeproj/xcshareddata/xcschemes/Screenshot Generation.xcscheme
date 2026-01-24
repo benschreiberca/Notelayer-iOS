@@ -4,7 +4,8 @@
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -27,21 +28,7 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageTargets = "BC2CCDD52F174A5100406D9A">
-      <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES"
-            testExecutionOrdering = "random">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BC2CCDD52F174A5100406D9A"
-               BuildableName = "NotelayerScreenshotTests.xctest"
-               BlueprintName = "NotelayerScreenshotTests"
-               ReferencedContainer = "container:Notelayer.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
+      shouldAutocreateTestPlan = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -51,16 +38,31 @@
             ReferencedContainer = "container:Notelayer.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <AdditionalOptions>
-         <AdditionalOption
-            key = "commandLineArguments"
-            value = "--screenshot-generation">
-         </AdditionalOption>
-         <AdditionalOption
-            key = "environmentVariables"
-            value = "SCREENSHOT_MODE=true">
-         </AdditionalOption>
-      </AdditionalOptions>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "--screenshot-generation"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SCREENSHOT_MODE"
+            value = "true"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "303233363063333438613162"
+               BuildableName = "NotelayerScreenshotTests.xctest"
+               BlueprintName = "NotelayerScreenshotTests"
+               ReferencedContainer = "container:Notelayer.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

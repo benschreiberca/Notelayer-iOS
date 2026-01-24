@@ -12,6 +12,7 @@
 		BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */; };
 		BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */; };
 		BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */; };
+		E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,13 +27,17 @@
 
 /* Begin PBXFileReference section */
 		313235613231363861323230 /* NotelayerScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenshotGenerationTests.swift; sourceTree = "<group>"; };
 		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		FB965E1A6487C5856ABC702C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BC2CCDD82F174A5100406D9A /* Notelayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = Notelayer;
 			sourceTree = "<group>";
 		};
@@ -60,12 +65,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */ = {
+			isa = PBXGroup;
+			children = (
+				78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */,
+				FB965E1A6487C5856ABC702C /* Info.plist */,
+			);
+			name = NotelayerScreenshotTests;
+			path = NotelayerScreenshotTests;
+			sourceTree = "<group>";
+		};
 		BC2CCDCD2F174A5100406D9A = {
 			isa = PBXGroup;
 			children = (
 				BC2CCDD82F174A5100406D9A /* Notelayer */,
 				BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */,
 				BC2CCDD72F174A5100406D9A /* Products */,
+				174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -199,6 +215,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

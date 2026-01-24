@@ -1,78 +1,61 @@
-# Automated Screenshot Setup - Complete! ✅
+# Automated Screenshot Setup - Complete ✅
 
 ## What Was Done Automatically
 
-I've automatically set up the XCUITest target and screenshot generation system:
+The system now provisions the XCUITest target and screenshot generation flow without any manual Xcode steps:
 
 ### ✅ Files Created/Modified
 
-1. **Test Target Added**: Modified `project.pbxproj` to add `NotelayerScreenshotTests` UI Test target
+1. **Test Target Added/Updated**: Automated creation/update of `NotelayerScreenshotTests` UI test target
 2. **Test File**: `NotelayerScreenshotTests/ScreenshotGenerationTests.swift` (already created)
 3. **Info.plist**: Created `NotelayerScreenshotTests/Info.plist` for the test target
-4. **Scheme Created**: Created "Screenshot Generation" scheme with launch arguments
+4. **Scheme Created**: "Screenshot Generation" scheme with launch arguments and environment variables
 
 ### ✅ Code Implementation
 
 1. **Data Isolation**: `LocalStore.swift` modified to use isolated screenshot data store
 2. **Data Seeder**: `ScreenshotDataSeeder.swift` created with quirky tasks
 3. **App Integration**: `NotelayerApp.swift` detects screenshot mode
-4. **Automation Script**: `scripts/generate-screenshots.sh` ready to use
+4. **Automation Scripts**:
+   - `scripts/setup-screenshot-system.sh` (end-to-end setup + run)
+   - `scripts/generate-screenshots.sh` (run only)
+   - `scripts/verify-screenshot-setup.sh` (verification)
 
-## Next Steps - Verification in Xcode
+## Usage (No Manual Xcode Steps)
 
-**Please open the project in Xcode to verify and complete setup:**
+Run the setup script once to add/update the target and scheme, then run tests:
 
-1. **Open Project**: Open `ios-swift/Notelayer/Notelayer.xcodeproj` in Xcode
-
-2. **Verify Test Target**:
-   - Check that `NotelayerScreenshotTests` appears in the target list
-   - If it doesn't appear, you may need to add it manually:
-     - File > New > Target > UI Testing Bundle
-     - Name: `NotelayerScreenshotTests`
-
-3. **Add Test File to Target**:
-   - Select `ScreenshotGenerationTests.swift` in Project Navigator
-   - In File Inspector, ensure "NotelayerScreenshotTests" target is checked
-   - If not, add it manually
-
-4. **Verify Scheme**:
-   - Product > Scheme > "Screenshot Generation" should appear
-   - If not, select "Manage Schemes..." and ensure it's checked
-   - Edit the scheme and verify launch arguments:
-     - Arguments: `--screenshot-generation`
-     - Environment: `SCREENSHOT_MODE=true`
-
-5. **Build Test Target**:
-   - Select "Screenshot Generation" scheme
-   - Select iPhone 17 Pro simulator (or any iPhone Pro)
-   - Product > Build (⌘+B) to verify it compiles
+```bash
+cd /Users/bens/Notelayer/Notelayer-iOS-1
+./scripts/setup-screenshot-system.sh
+```
 
 ## Ready to Use!
 
-Once verified in Xcode, you can generate screenshots:
+After the initial setup, you can generate screenshots directly:
 
 ```bash
 cd /Users/bens/Notelayer/Notelayer-iOS-1
 ./scripts/generate-screenshots.sh
 ```
 
-Or run tests directly in Xcode:
-- Select "Screenshot Generation" scheme
-- Product > Test (⌘+U)
+To verify setup without running tests:
+
+```bash
+./scripts/verify-screenshot-setup.sh
+```
 
 ## Troubleshooting
 
 ### Test Target Not Found
-- The Python script may have had issues modifying the project file
-- Add the target manually in Xcode (File > New > Target > UI Testing Bundle)
+- Re-run `./scripts/setup-screenshot-system.sh`
+- Check `./scripts/verify-screenshot-setup.sh` output
 
 ### Scheme Not Found
-- The scheme file was created but Xcode may need to recognize it
-- Open Product > Scheme > Manage Schemes and ensure "Screenshot Generation" is checked
+- Re-run `./scripts/setup-screenshot-system.sh`
 
 ### Test File Not in Target
-- Select the test file and verify target membership in File Inspector
-- Manually add to target if needed
+- Re-run `./scripts/setup-screenshot-system.sh` to re-link test sources
 
 ### Build Errors
 - Ensure test target has correct settings:
@@ -82,6 +65,6 @@ Or run tests directly in Xcode:
 
 ## Summary
 
-The automated setup is complete! The system is ready to generate screenshots once you verify the test target in Xcode. All code is in place, and the automation script is ready to run.
+The automated setup is complete. The system is ready to generate screenshots with no manual Xcode steps.
 
 Your production data is safe - screenshot generation uses an isolated data store that never touches your real tasks and notes.

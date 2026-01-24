@@ -13,11 +13,12 @@ NC='\033[0m' # No Color
 
 # Configuration
 SIMULATOR_NAME="iPhone 17 Pro"
-SCHEME_NAME="Notelayer"
-TEST_SCHEME_NAME="NotelayerScreenshotTests"
+SCHEME_NAME="Screenshot Generation"
+TEST_TARGET_NAME="NotelayerScreenshotTests"
 SCREENSHOT_BACKUP_DIR="/Users/bens/Notelayer/App-Icons-&-screenshots"
 TEMP_SCREENSHOT_DIR="ios-swift/Notelayer/Screenshots"
 PROJECT_PATH="ios-swift/Notelayer/Notelayer.xcodeproj"
+SCHEME_PATH="$PROJECT_PATH/xcshareddata/xcschemes/$SCHEME_NAME.xcscheme"
 
 echo -e "${GREEN}📸 Starting Automated Screenshot Generation${NC}"
 echo ""
@@ -25,6 +26,12 @@ echo ""
 # Check if Xcode is installed
 if ! command -v xcodebuild &> /dev/null; then
     echo -e "${RED}❌ Error: xcodebuild not found. Please install Xcode.${NC}"
+    exit 1
+fi
+
+if [ ! -f "$SCHEME_PATH" ]; then
+    echo -e "${RED}❌ Error: Scheme not found at $SCHEME_PATH${NC}"
+    echo -e "${YELLOW}Run ./scripts/setup-screenshot-system.sh to create the scheme.${NC}"
     exit 1
 fi
 
@@ -58,12 +65,12 @@ sleep 2
 
 # Set simulator state
 echo -e "${YELLOW}⚙️  Configuring simulator state...${NC}"
-# Set time to 10:00 AM
-xcrun simctl status_bar "$SIMULATOR_UDID" override --time "10:00"
+# Set time to 09:41 (Apple default status bar time)
+xcrun simctl status_bar "$SIMULATOR_UDID" override --time "09:41"
 # Set battery to 100%
 xcrun simctl status_bar "$SIMULATOR_UDID" override --batteryLevel 100
-# Set battery state to unplugged (shows battery icon)
-xcrun simctl status_bar "$SIMULATOR_UDID" override --batteryState unplugged
+# Set battery state to discharging (shows battery icon)
+xcrun simctl status_bar "$SIMULATOR_UDID" override --batteryState discharging
 echo -e "${GREEN}✅ Simulator configured${NC}"
 
 # Build and test
@@ -78,7 +85,7 @@ xcodebuild test \
     -project "$PROJECT_PATH" \
     -scheme "$SCHEME_NAME" \
     -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
-    -only-testing:"$TEST_SCHEME_NAME/ScreenshotGenerationTests" \
+    -only-testing:"$TEST_TARGET_NAME/ScreenshotGenerationTests" \
     -derivedDataPath ./DerivedData \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \

@@ -51,6 +51,10 @@ class ScreenshotGenerationTests: XCTestCase {
         let exists = element.waitForExistence(timeout: timeout)
         XCTAssertTrue(exists, "Element \(element) did not appear")
     }
+
+    func firstMatchButton(containing labelFragment: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", labelFragment)).firstMatch
+    }
     
     // MARK: - Screenshot Tests
     
@@ -229,5 +233,68 @@ class ScreenshotGenerationTests: XCTestCase {
         sleep(1)
         
         try captureScreenshot(name: "screenshot-6-priority-view")
+    }
+
+    func testGestureDemoVideo() throws {
+        // Navigate to Todos tab
+        let todosTab = app.tabBars.buttons["Todos"]
+        waitForElement(todosTab)
+        todosTab.tap()
+
+        // Ensure "List" view mode is selected
+        let segmentedControl = app.segmentedControls.firstMatch
+        if segmentedControl.exists {
+            let listButton = segmentedControl.buttons["List"]
+            if listButton.exists && !listButton.isSelected {
+                listButton.tap()
+            }
+        }
+
+        sleep(1)
+
+        // Add a new task
+        let newTaskField = app.textFields["New task..."]
+        waitForElement(newTaskField)
+        newTaskField.tap()
+        newTaskField.typeText("Plan weekend hike")
+
+        sleep(1)
+
+        // Submit task while the field is focused
+        newTaskField.typeText("\n")
+
+        sleep(1)
+
+        // Switch to Category view to categorize via drag-and-drop
+        if segmentedControl.exists {
+            let categoryTab = segmentedControl.buttons["Category"]
+            waitForElement(categoryTab)
+            categoryTab.tap()
+        }
+
+        sleep(1)
+
+        let newTaskCell = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Plan weekend hike")).firstMatch
+        waitForElement(newTaskCell)
+        let categoryGroupHeader = firstMatchButton(containing: "House & Repairs")
+        waitForElement(categoryGroupHeader)
+        newTaskCell.press(forDuration: 0.6, thenDragTo: categoryGroupHeader)
+
+        sleep(1)
+
+        // Switch to Priority view and drag between priorities
+        if segmentedControl.exists {
+            let priorityButton = segmentedControl.buttons["Priority"]
+            waitForElement(priorityButton)
+            priorityButton.tap()
+        }
+
+        sleep(1)
+
+        let highGroupHeader = firstMatchButton(containing: "High")
+        waitForElement(highGroupHeader)
+        newTaskCell.press(forDuration: 0.6, thenDragTo: highGroupHeader)
+
+        sleep(1)
     }
 }

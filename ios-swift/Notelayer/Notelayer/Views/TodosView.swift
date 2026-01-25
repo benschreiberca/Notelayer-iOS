@@ -395,10 +395,6 @@ private struct TodoPriorityModeView: View {
                             collapse.setCollapsed(!isCollapsed, mode: .priority, groupId: groupId)
                         }
                     ) {
-                        if !showingDone {
-                            TaskInputView(defaultPriority: priority, defaultCategories: [], onTaskCreated: { _ in })
-                                .padding(.top, 6)
-                        }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
                             categoryLookup: categoryLookup,
@@ -412,6 +408,11 @@ private struct TodoPriorityModeView: View {
                                 return true
                             }
                         )
+                        if !showingDone {
+                            // Keep the new task input below active tasks in grouped views.
+                            TaskInputView(defaultPriority: priority, defaultCategories: [], onTaskCreated: { _ in })
+                                .padding(.top, 6)
+                        }
                     }
                     .dropDestination(for: TodoDragPayload.self) { items, _ in
                         guard let payload = items.first else { return false }
@@ -489,10 +490,6 @@ private struct TodoCategoryModeView: View {
                         collapse.setCollapsed(!isUncategorizedCollapsed, mode: .category, groupId: uncategorizedGroupId)
                     }
                 ) {
-                    if !showingDone {
-                        TaskInputView(defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
-                            .padding(.top, 6)
-                    }
                     TodoGroupTaskList(
                         tasks: sortedByOrderIndexDesc(uncategorizedTasks),
                         categoryLookup: categoryLookup,
@@ -506,6 +503,11 @@ private struct TodoCategoryModeView: View {
                             return true
                         }
                     )
+                    if !showingDone {
+                        // Keep the new task input below active tasks in grouped views.
+                        TaskInputView(defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
+                            .padding(.top, 6)
+                    }
                 }
                 .dropDestination(for: TodoDragPayload.self) { items, _ in
                     guard let payload = items.first else { return false }
@@ -531,10 +533,6 @@ private struct TodoCategoryModeView: View {
                             collapse.setCollapsed(!isCollapsed, mode: .category, groupId: groupId)
                         }
                     ) {
-                        if !showingDone {
-                            TaskInputView(defaultPriority: .medium, defaultCategories: [category.id], onTaskCreated: { _ in })
-                                .padding(.top, 6)
-                        }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
                             categoryLookup: categoryLookup,
@@ -548,6 +546,11 @@ private struct TodoCategoryModeView: View {
                                 return true
                             }
                         )
+                        if !showingDone {
+                            // Keep the new task input below active tasks in grouped views.
+                            TaskInputView(defaultPriority: .medium, defaultCategories: [category.id], onTaskCreated: { _ in })
+                                .padding(.top, 6)
+                        }
                     }
                     .dropDestination(for: TodoDragPayload.self) { items, _ in
                         guard let payload = items.first else { return false }
@@ -650,11 +653,6 @@ private struct TodoDateModeView: View {
                             collapse.setCollapsed(!isCollapsed, mode: .date, groupId: groupId)
                         }
                     ) {
-                        if !showingDone {
-                            // Date lens only: new tasks inherit the active bucket's due date.
-                            TaskInputView(dateGroupDueDate: dueDateForBucket(bucket), defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
-                                .padding(.top, 6)
-                        }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
                             categoryLookup: categoryLookup,
@@ -668,6 +666,12 @@ private struct TodoDateModeView: View {
                                 return true
                             }
                         )
+                        if !showingDone {
+                            // Keep the new task input below active tasks in grouped views.
+                            // Date lens only: new tasks inherit the active bucket's due date.
+                            TaskInputView(dateGroupDueDate: dueDateForBucket(bucket), defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
+                                .padding(.top, 6)
+                        }
                     }
                     .dropDestination(for: TodoDragPayload.self) { items, _ in
                         guard let payload = items.first else { return false }

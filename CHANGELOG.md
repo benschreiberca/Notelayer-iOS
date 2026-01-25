@@ -16,6 +16,11 @@
 
 ## Unreleased
 
+### 2026-01-25 17:12:45 -0500 - Update: New Task placement in grouped views
+
+#### Changed
+- "New Task" input appears after active tasks in Date, Priority, and Category groups (List view unchanged).
+
 ### 2026-01-25 16:40:23 -0500 - Merge: ShakeUndo-and-delete
 
 #### Added

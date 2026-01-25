@@ -19,12 +19,14 @@ struct TodosView: View {
     @State private var sharePayload: SharePayload? = nil
     @EnvironmentObject private var theme: ThemeManager
     
-    var allTasks: [Task] { store.tasks }
-    var doingTasks: [Task] { allTasks.filter { $0.completedAt == nil } }
-    var doneTasks: [Task] { allTasks.filter { $0.completedAt != nil } }
-    var filteredTasks: [Task] { showingDone ? doneTasks : doingTasks }
-    
     var body: some View {
+        let tasks = store.tasks
+        // Split once per render to avoid multiple passes over the full task list.
+        let partitioned = splitTasksByCompletion(tasks)
+        let doingTasks = partitioned.doing
+        let doneTasks = partitioned.done
+        let filteredTasks = showingDone ? doneTasks : doingTasks
+
         NavigationStack {
             ZStack {
                 // Screen-edge Siri glow when Done is selected (no background color changes)
@@ -223,6 +225,49 @@ private func sortedByOrderIndexDesc(_ tasks: [Task]) -> [Task] {
     tasks.sorted { taskSortKey($0) > taskSortKey($1) }
 }
 
+private func splitTasksByCompletion(_ tasks: [Task]) -> (doing: [Task], done: [Task]) {
+    var doing: [Task] = []
+    var done: [Task] = []
+    doing.reserveCapacity(tasks.count)
+    done.reserveCapacity(tasks.count / 4)
+    for task in tasks {
+        if task.completedAt == nil {
+            doing.append(task)
+        } else {
+            done.append(task)
+        }
+    }
+    return (doing, done)
+}
+
+private func makeCategoryLookup(_ categories: [Category]) -> [String: Category] {
+    Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+}
+
+private func groupTasksByCategory(_ tasks: [Task]) -> (uncategorized: [Task], byCategory: [String: [Task]]) {
+    var uncategorized: [Task] = []
+    var byCategory: [String: [Task]] = [:]
+    for task in tasks {
+        if task.categories.isEmpty {
+            uncategorized.append(task)
+        } else {
+            for categoryId in task.categories {
+                byCategory[categoryId, default: []].append(task)
+            }
+        }
+    }
+    return (uncategorized, byCategory)
+}
+
+private func groupTasksByDateBucket(_ tasks: [Task]) -> [TodoDateBucket: [Task]] {
+    var grouped: [TodoDateBucket: [Task]] = [:]
+    for task in tasks {
+        let bucket = bucketForDueDate(task.dueDate)
+        grouped[bucket, default: []].append(task)
+    }
+    return grouped
+}
+
 private func dueDateForBucket(_ bucket: TodoDateBucket, now: Date = Date(), calendar: Calendar = .current) -> Date? {
     switch bucket {
     case .overdue:
@@ -259,6 +304,7 @@ private struct TodoListModeView: View {
     @Binding var sharePayload: SharePayload?
     
     var body: some View {
+        let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
             LazyVStack(spacing: 12) {
                 TodoGroupCard(
@@ -274,7 +320,7 @@ private struct TodoListModeView: View {
                     }
                     TodoGroupTaskList(
                         tasks: sortedByOrderIndexDesc(tasks),
-                        categories: categories,
+                        categoryLookup: categoryLookup,
                         sourceGroupId: "all",
                         onToggleComplete: toggleComplete,
                         onTap: { editingTask = $0 },
@@ -329,10 +375,13 @@ private struct TodoPriorityModeView: View {
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
+        // Pre-group once to avoid repeated filtering in each priority lane.
+        let tasksByPriority = Dictionary(grouping: tasks, by: { $0.priority })
+        let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(Priority.allCases, id: \.self) { priority in
-                    let groupTasks = tasks.filter { $0.priority == priority }
+                    let groupTasks = tasksByPriority[priority] ?? []
                     let groupId = "priority:\(priority.rawValue)"
                     let isCollapsed = collapse.isCollapsed(mode: .priority, groupId: groupId)
                     
@@ -352,7 +401,7 @@ private struct TodoPriorityModeView: View {
                         }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
-                            categories: categories,
+                            categoryLookup: categoryLookup,
                             sourceGroupId: priority.rawValue,
                             onToggleComplete: toggleComplete,
                             onTap: { editingTask = $0 },
@@ -421,10 +470,13 @@ private struct TodoCategoryModeView: View {
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
+        // Pre-group to avoid scanning the full task list for each category.
+        let grouped = groupTasksByCategory(tasks)
+        let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
             LazyVStack(spacing: 12) {
                 // Uncategorized group (so tasks with no categories remain visible + droppable)
-                let uncategorizedTasks = tasks.filter { $0.categories.isEmpty }
+                let uncategorizedTasks = grouped.uncategorized
                 let uncategorizedGroupId = "category:Uncategorized"
                 let isUncategorizedCollapsed = collapse.isCollapsed(mode: .category, groupId: uncategorizedGroupId)
                 TodoGroupCard(
@@ -443,7 +495,7 @@ private struct TodoCategoryModeView: View {
                     }
                     TodoGroupTaskList(
                         tasks: sortedByOrderIndexDesc(uncategorizedTasks),
-                        categories: categories,
+                        categoryLookup: categoryLookup,
                         sourceGroupId: "Uncategorized",
                         onToggleComplete: toggleComplete,
                         onTap: { editingTask = $0 },
@@ -466,7 +518,7 @@ private struct TodoCategoryModeView: View {
                 .padding(.horizontal, 16)
                 
                 ForEach(categories) { category in
-                    let groupTasks = tasks.filter { $0.categories.contains(category.id) }
+                    let groupTasks = grouped.byCategory[category.id] ?? []
                     let groupId = "category:\(category.id)"
                     let isCollapsed = collapse.isCollapsed(mode: .category, groupId: groupId)
                     TodoGroupCard(
@@ -485,7 +537,7 @@ private struct TodoCategoryModeView: View {
                         }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
-                            categories: categories,
+                            categoryLookup: categoryLookup,
                             sourceGroupId: category.id,
                             onToggleComplete: toggleComplete,
                             onTap: { editingTask = $0 },
@@ -578,10 +630,13 @@ private struct TodoDateModeView: View {
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
+        // Pre-group to avoid repeated bucket filtering across each date section.
+        let tasksByBucket = groupTasksByDateBucket(tasks)
+        let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(TodoDateBucket.allCases, id: \.self) { bucket in
-                    let groupTasks = tasks.filter { bucketForDueDate($0.dueDate) == bucket }
+                    let groupTasks = tasksByBucket[bucket] ?? []
                     let groupId = "date:\(bucket.rawValue)"
                     let isCollapsed = collapse.isCollapsed(mode: .date, groupId: groupId)
                     
@@ -602,7 +657,7 @@ private struct TodoDateModeView: View {
                         }
                         TodoGroupTaskList(
                             tasks: sortedByOrderIndexDesc(groupTasks),
-                            categories: categories,
+                            categoryLookup: categoryLookup,
                             sourceGroupId: bucket.rawValue,
                             onToggleComplete: toggleComplete,
                             onTap: { editingTask = $0 },
@@ -776,7 +831,7 @@ final class GroupCollapseStore: ObservableObject {
 private struct TodoGroupTaskList: View {
     @StateObject private var store = LocalStore.shared
     let tasks: [Task]
-    let categories: [Category]
+    let categoryLookup: [String: Category]
     /// Identifier representing the group the rows are being rendered within (used as drag sourceGroupId).
     let sourceGroupId: String
     let onToggleComplete: (Task) -> Void
@@ -803,7 +858,7 @@ private struct TodoGroupTaskList: View {
                 ForEach(tasks) { task in
                     TaskItemView(
                         task: task,
-                        categories: categories,
+                        categoryLookup: categoryLookup,
                         onToggleComplete: { onToggleComplete(task) },
                         onTap: { onTap(task) }
                     )
@@ -812,7 +867,11 @@ private struct TodoGroupTaskList: View {
                     .rowContextMenu(
                         shareTitle: "Share…",
                         onShare: { onShare(task) },
-                        onCopy: { onCopy(task) }
+                        onCopy: { onCopy(task) },
+                        onDelete: {
+                            store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
+                            UndoCoordinator.shared.activateResponder()
+                        }
                     )
                     .dropDestination(for: TodoDragPayload.self) { items, _ in
                         guard let payload = items.first else { return false }
@@ -824,5 +883,10 @@ private struct TodoGroupTaskList: View {
         }
         // Requested: increase padding between group headers and list cards (top & bottom)
         .padding(.vertical, 4)
+    }
+
+    private var resolvedUndoManager: UndoManager? {
+        // Route delete undo registration through the same manager used by the shake responder.
+        UndoCoordinator.shared.undoManager
     }
 }

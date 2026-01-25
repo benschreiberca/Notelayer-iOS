@@ -3,7 +3,7 @@ import SwiftUI
 struct TaskItemView: View {
     @EnvironmentObject private var theme: ThemeManager
     let task: Task
-    let categories: [Category]
+    let categoryLookup: [String: Category]
     let onToggleComplete: () -> Void
     let onTap: () -> Void
     
@@ -38,8 +38,9 @@ struct TaskItemView: View {
 
                         priorityBadge
 
+                        // Use the lookup table to avoid per-row linear scans.
                         ForEach(task.categories, id: \.self) { id in
-                            if let category = categories.first(where: { $0.id == id }) {
+                            if let category = categoryLookup[id] {
                                 categoryBadge(category)
                             }
                         }

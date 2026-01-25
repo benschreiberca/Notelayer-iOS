@@ -21,6 +21,7 @@ struct RootTabsView: View {
                     }
                     .tag(AppTab.todos)
             }
+            .background(UndoShakeHost())
         }
         .tint(theme.tokens.accent)
         .preferredColorScheme(theme.preferredColorScheme)

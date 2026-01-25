@@ -36,8 +36,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BC2CCDD82F174A5100406D9A /* Notelayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Notelayer;
 			sourceTree = "<group>";
 		};
@@ -71,7 +69,6 @@
 				78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */,
 				FB965E1A6487C5856ABC702C /* Info.plist */,
 			);
-			name = NotelayerScreenshotTests;
 			path = NotelayerScreenshotTests;
 			sourceTree = "<group>";
 		};

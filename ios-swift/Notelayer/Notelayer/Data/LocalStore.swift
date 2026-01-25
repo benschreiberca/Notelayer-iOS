@@ -229,6 +229,29 @@ class LocalStore: ObservableObject {
             _Concurrency.Task { try? await backend.deleteTask(id: id) }
         }
     }
+
+    func deleteTask(id: String, undoManager: UndoManager?) {
+        guard let task = tasks.first(where: { $0.id == id }) else { return }
+        deleteTask(id: id)
+        registerUndoForTaskDeletion(task, undoManager: undoManager)
+    }
+
+    private func registerUndoForTaskDeletion(_ task: Task, undoManager: UndoManager?) {
+        // Restore the task and register a redo that deletes it again.
+        undoManager?.registerUndo(withTarget: self) { store in
+            store.addTask(task)
+            store.registerRedoForTaskDeletion(task, undoManager: undoManager)
+        }
+        undoManager?.setActionName("Delete Task")
+    }
+
+    private func registerRedoForTaskDeletion(_ task: Task, undoManager: UndoManager?) {
+        undoManager?.registerUndo(withTarget: self) { store in
+            store.deleteTask(id: task.id)
+            store.registerUndoForTaskDeletion(task, undoManager: undoManager)
+        }
+        undoManager?.setActionName("Delete Task")
+    }
     
     func completeTask(id: String) {
         updateTask(id: id) { task in

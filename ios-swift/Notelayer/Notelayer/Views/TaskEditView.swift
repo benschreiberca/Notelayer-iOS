@@ -102,7 +102,8 @@ struct TaskEditView: View {
                 
                 Section {
                     Button(role: .destructive) {
-                        store.deleteTask(id: task.id)
+                        store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
+                        UndoCoordinator.shared.activateResponder()
                         dismiss()
                     } label: {
                         HStack {
@@ -147,6 +148,11 @@ struct TaskEditView: View {
             task.dueDate = dueDate
             task.taskNotes = taskNotes.isEmpty ? nil : taskNotes
         }
+    }
+
+    private var resolvedUndoManager: UndoManager? {
+        // Route delete undo registration through the same manager used by the shake responder.
+        UndoCoordinator.shared.undoManager
     }
     
 }

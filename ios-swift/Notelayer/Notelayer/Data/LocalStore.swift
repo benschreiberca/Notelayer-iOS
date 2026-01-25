@@ -291,6 +291,45 @@ class LocalStore: ObservableObject {
             _Concurrency.Task { try? await backend.upsert(categories: categories) }
         }
     }
+
+    func deleteCategory(id: String, reassignTo replacementId: String? = nil) {
+        let resolvedReplacementId: String? = {
+            guard let replacementId, replacementId != id else { return nil }
+            return categories.contains(where: { $0.id == replacementId }) ? replacementId : nil
+        }()
+        let updatedTasks = updateTasksForCategoryRemoval(categoryId: id, replacementId: resolvedReplacementId)
+        categories.removeAll { $0.id == id }
+        saveCategories()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task {
+                try? await backend.deleteCategory(id: id)
+                if !updatedTasks.isEmpty {
+                    try? await backend.upsert(tasks: updatedTasks)
+                }
+            }
+        }
+    }
+
+    private func updateTasksForCategoryRemoval(categoryId: String, replacementId: String?) -> [Task] {
+        var updatedTasks: [Task] = []
+        let now = Date()
+        for idx in tasks.indices {
+            var task = tasks[idx]
+            guard task.categories.contains(categoryId) else { continue }
+            // Remove the deleted category and optionally reassign it in one pass.
+            task.categories.removeAll { $0 == categoryId }
+            if let replacementId, !task.categories.contains(replacementId) {
+                task.categories.append(replacementId)
+            }
+            task.updatedAt = now
+            tasks[idx] = task
+            updatedTasks.append(task)
+        }
+        if !updatedTasks.isEmpty {
+            saveTasks()
+        }
+        return updatedTasks
+    }
     
     func getCategory(id: String) -> Category? {
         categories.first { $0.id == id }

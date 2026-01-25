@@ -20,7 +20,7 @@ NoteLayer is a task management and notes app that helps users organize their tod
   - Category view (grouped by category)
   - Date view (grouped by due date: Overdue, Today, Tomorrow, This Week, Later, No Due Date)
 - **Drag & Drop**: Reorder tasks within and between groups
-- **Doing/Done Toggle**: Switch between active tasks and completed tasks
+- **Doing/Done Toggle**: Switch between active tasks and completed tasks; checkmarks in Done return tasks to Doing
 - **Collapsible Groups**: Expand/collapse groups in Priority, Category, and Date views
 
 ### Customization
@@ -67,13 +67,19 @@ NoteLayer is a task management and notes app that helps users organize their tod
 
 ### Creating Tasks
 1. Navigate to Todos tab
-2. Tap in the task input field at the top of the list
+2. Tap anywhere in the task input row (including the + icon)
 3. Type a task title and press return/enter
 4. **Expected**: Task appears in the list immediately
 5. Tap on a task to open edit view
 6. Modify title, select categories, change priority, set due date, add notes
 7. Tap "Save"
 8. **Expected**: Changes are saved and reflected in the task list
+
+### Marking Tasks Done/Undone
+1. In Doing, tap a task checkmark to complete it
+2. Switch to Done
+3. Tap the same task checkmark to unmark it
+4. **Expected**: Task moves back to Doing immediately
 
 ### Using Different View Modes
 1. Navigate to Todos tab
@@ -98,6 +104,10 @@ NoteLayer is a task management and notes app that helps users organize their tod
 9. **Expected**: Changes are saved
 10. Use drag handles to reorder categories
 11. **Expected**: Categories reorder and new order persists
+12. Swipe left on a category with tasks and tap Delete
+13. **Expected**: Confirmation appears with options to delete or bulk rename tasks
+14. Choose "Bulk Rename Tasks" and select a target category
+15. **Expected**: Tasks are reassigned to the selected category and the old category is removed
 
 ### Theme Changes
 1. Navigate to Todos tab → Tap gear icon (⚙️) → Select "Appearance"

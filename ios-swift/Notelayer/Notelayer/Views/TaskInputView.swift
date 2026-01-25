@@ -6,6 +6,7 @@ struct TaskInputView: View {
     @State private var selectedCategories: Set<String> = []
     @State private var priority: Priority = .medium
     @State private var isExpanded = false
+    @FocusState private var isTitleFocused: Bool
     
     let defaultPriority: Priority
     let defaultCategories: Set<String>
@@ -51,6 +52,7 @@ struct TaskInputView: View {
                 
                 TextField("New task...", text: $title)
                     .textFieldStyle(.plain)
+                    .focused($isTitleFocused)
                     .onSubmit {
                         submitTask()
                     }
@@ -67,6 +69,12 @@ struct TaskInputView: View {
                 }
             }
             .padding()
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Expand and focus when tapping anywhere in the input row, including the plus icon.
+                isExpanded = true
+                isTitleFocused = true
+            }
             
             // Expanded Options
             if isExpanded || !title.isEmpty {

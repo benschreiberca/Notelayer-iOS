@@ -235,6 +235,88 @@ class ScreenshotGenerationTests: XCTestCase {
         try captureScreenshot(name: "screenshot-6-priority-view")
     }
 
+    func testDoneTaskCanBeUndone() throws {
+        let todosTab = app.tabBars.buttons["Todos"]
+        waitForElement(todosTab)
+        todosTab.tap()
+
+        let segmentedControl = app.segmentedControls.firstMatch
+        let taskCheckmarks = app.buttons.matching(identifier: "task-checkmark")
+
+        func doingToggle() -> XCUIElement {
+            firstMatchButton(containing: "Doing")
+        }
+        func doneToggle() -> XCUIElement {
+            firstMatchButton(containing: "Done")
+        }
+        func firstVisibleCheckmark() -> XCUIElement {
+            taskCheckmarks.allElementsBoundByIndex.first(where: { $0.isHittable }) ?? taskCheckmarks.firstMatch
+        }
+        func countFromToggleLabel(_ label: String) -> Int? {
+            let digits = label.filter { $0.isNumber }
+            return digits.isEmpty ? nil : Int(digits)
+        }
+        func currentDoneCount() -> Int? {
+            countFromToggleLabel(doneToggle().label)
+        }
+        func ensureDoingTaskExists() {
+            if !taskCheckmarks.firstMatch.waitForExistence(timeout: 2) {
+                let newTaskField = app.textFields["New task..."]
+                waitForElement(newTaskField)
+                newTaskField.tap()
+                newTaskField.typeText("Undo toggle test\n")
+            }
+        }
+
+        let modes = ["List", "Priority", "Category", "Date"]
+        for mode in modes {
+            if segmentedControl.exists {
+                let modeButton = segmentedControl.buttons[mode]
+                if modeButton.exists && !modeButton.isSelected {
+                    modeButton.tap()
+                }
+            }
+
+            let doingButton = doingToggle()
+            if doingButton.exists {
+                doingButton.tap()
+            }
+            ensureDoingTaskExists()
+
+            guard let baselineDoneCount = currentDoneCount() else {
+                XCTFail("Could not read Done count for \(mode).")
+                return
+            }
+
+            let firstTaskCheckmark = firstVisibleCheckmark()
+            waitForElement(firstTaskCheckmark)
+            firstTaskCheckmark.tap()
+
+            sleep(1)
+
+            let doneButton = doneToggle()
+            doneButton.tap()
+
+            guard let updatedDoneCount = currentDoneCount() else {
+                XCTFail("Could not read Done count after completing a task in \(mode).")
+                return
+            }
+            XCTAssertEqual(updatedDoneCount, baselineDoneCount + 1, "Done count should increment after completing a task in \(mode).")
+
+            let undoButton = firstVisibleCheckmark()
+            waitForElement(undoButton)
+            undoButton.tap()
+
+            sleep(1)
+
+            guard let finalDoneCount = currentDoneCount() else {
+                XCTFail("Could not read Done count after undoing in \(mode).")
+                return
+            }
+            XCTAssertEqual(finalDoneCount, baselineDoneCount, "Done count should return after undoing in \(mode).")
+        }
+    }
+
     func testGestureDemoVideo() throws {
         // Navigate to Todos tab
         let todosTab = app.tabBars.buttons["Todos"]

@@ -172,6 +172,10 @@ private final class FirestoreBackend: BackendSyncing {
         try await upsertBatch(categories: categories)
     }
 
+    func deleteCategory(id: String) async throws {
+        try await deleteDocument(categoriesCollection.document(id))
+    }
+
     func listenNotes(_ handler: @escaping ([Note]) -> Void) -> ListenerRegistration {
         notesCollection.addSnapshotListener { snapshot, error in
             guard let snapshot, error == nil else { return }
@@ -307,7 +311,12 @@ private final class FirestoreBackend: BackendSyncing {
             "orderIndex": task.orderIndex as Any
         ]
         if let dueDate = task.dueDate { data["dueDate"] = dueDate }
-        if let completedAt = task.completedAt { data["completedAt"] = completedAt }
+        if let completedAt = task.completedAt {
+            data["completedAt"] = completedAt
+        } else {
+            // Ensure completedAt is removed when restoring a task.
+            data["completedAt"] = FieldValue.delete()
+        }
         if let taskNotes = task.taskNotes { data["taskNotes"] = taskNotes }
         return data
     }

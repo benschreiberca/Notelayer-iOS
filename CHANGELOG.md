@@ -24,10 +24,15 @@
 - Screenshot guide in `docs/SCREENSHOT_GUIDE.md` with step-by-step instructions for creating 6 App Store screenshots.
 - Pre-submission verification script (`scripts/pre-submission-check.sh`) to validate bundle ID, version, build, deployment target, and capabilities.
 - Debug code cleanup summary in `docs/DEBUG_CODE_CLEANUP_SUMMARY.md` documenting removal of debug prints and TODOs.
+- Category deletion warning with a bulk reassign option for tasks in the category.
 
 ### Changed
 - Debug print statements wrapped in `#if DEBUG` to prevent console output in release builds (86 statements across AuthService, NotelayerApp, FirebaseBackendService).
 - GoogleLogo asset updated with 2x and 3x scale entries for proper retina display support.
+
+### Fixed
+- Done tasks can be unchecked to return to Doing, including when synced.
+- New task control responds when tapping the plus icon.
 
 ### Removed
 - TODO comments from SyncService replaced with implementation pending notes.

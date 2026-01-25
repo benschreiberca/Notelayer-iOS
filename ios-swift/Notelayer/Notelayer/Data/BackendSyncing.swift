@@ -11,4 +11,5 @@ protocol BackendSyncing: AnyObject {
 
     func upsert(category: Category) async throws
     func upsert(categories: [Category]) async throws
+    func deleteCategory(id: String) async throws
 }

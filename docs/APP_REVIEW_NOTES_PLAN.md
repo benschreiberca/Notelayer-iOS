@@ -53,3 +53,8 @@ Create comprehensive App Review Notes document (`docs/APP_REVIEW_NOTES.md`) that
   - [x] 🟩 Verify formatting is clean and readable
   - [x] 🟩 Check that instructions are clear and actionable
   - [x] 🟩 Ensure document is concise as requested
+
+## Notes Updates
+- Added test steps for Done → Doing unmark behavior
+- Documented category deletion warning and bulk rename flow
+- Clarified that tapping the + icon focuses the task input row

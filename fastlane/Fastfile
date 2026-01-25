@@ -1,17 +1,32 @@
+require "base64"
+require "shellwords"
+
 default_platform(:ios)
 
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
-    key_content = ENV["ASC_PRIVATE_KEY"]
+    key_content = ENV["ASC_PRIVATE_KEY"].to_s
     # Treat non-PEM key content as base64.
-    is_base64 = !key_content.to_s.include?("BEGIN")
+    is_base64 = !key_content.include?("BEGIN")
     api_key = app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
       key_content: key_content,
       is_key_content_base64: is_base64
     )
+
+    key_file_content = is_base64 ? Base64.decode64(key_content) : key_content
+    tmp_dir = ENV["RUNNER_TEMP"] || ENV["TMPDIR"] || "/tmp"
+    key_path = File.join(tmp_dir, "AuthKey.p8")
+    File.write(key_path, key_file_content)
+
+    signing_args = [
+      "-allowProvisioningUpdates",
+      "-authenticationKeyPath #{Shellwords.escape(key_path)}",
+      "-authenticationKeyID #{ENV["ASC_KEY_ID"]}",
+      "-authenticationKeyIssuerID #{ENV["ASC_ISSUER_ID"]}"
+    ].join(" ")
 
     run_number = ENV["GITHUB_RUN_NUMBER"]
     run_attempt = ENV["GITHUB_RUN_ATTEMPT"]
@@ -37,7 +52,10 @@ platform :ios do
 
     build_app(
       project: "ios-swift/Notelayer/Notelayer.xcodeproj",
-      scheme: "Notelayer"
+      scheme: "Notelayer",
+      export_method: "app-store",
+      xcargs: signing_args,
+      export_xcargs: signing_args
     )
 
     upload_to_testflight(

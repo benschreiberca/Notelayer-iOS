@@ -100,9 +100,11 @@ platform :ios do
       output_directory: "./build",
       clean: true,
       codesigning_identity: "Apple Distribution",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER='#{profile_name}' CODE_SIGN_IDENTITY='Apple Distribution'",
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER='#{profile_name}' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM=DPVQ2X986Z",
       export_options: {
         method: "app-store",
+        signingStyle: "manual",
+        teamID: "DPVQ2X986Z",
         provisioningProfiles: {
           "com.notelayer.app" => profile_name
         }

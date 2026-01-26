@@ -3,9 +3,19 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
+    # Validate environment variables
+    required_env = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_PRIVATE_KEY"]
+    missing_env = required_env.select { |e| ENV[e].to_s.empty? }
+    
+    unless missing_env.empty?
+      UI.user_error!("Missing required environment variables: #{missing_env.join(', ')}")
+    end
+
     key_content = ENV["ASC_PRIVATE_KEY"].to_s
     # Treat non-PEM key content as base64.
     is_base64 = !key_content.include?("BEGIN")
+    
+    UI.message("🔑 Setting up App Store Connect API key...")
     api_key = app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
@@ -15,10 +25,12 @@ platform :ios do
 
     setup_ci if ENV["CI"] == "true"
 
+    UI.message("🔐 Syncing code signing certificates...")
     sync_code_signing(
       type: "appstore",
       app_identifier: "com.notelayer.app",
-      readonly: ENV["CI"] == "true"
+      readonly: false,  # Allow certificate generation on first run
+      force_for_new_devices: true
     )
 
     run_number = ENV["GITHUB_RUN_NUMBER"]
@@ -33,24 +45,61 @@ platform :ios do
     end
 
     if build_number
+      UI.message("📱 Setting build number to #{build_number}...")
       increment_build_number(
         xcodeproj: "ios-swift/Notelayer/Notelayer.xcodeproj",
         build_number: build_number
       )
     else
+      UI.message("📱 Incrementing build number...")
       increment_build_number(
         xcodeproj: "ios-swift/Notelayer/Notelayer.xcodeproj"
       )
     end
 
+    UI.message("🔨 Building app...")
     build_app(
       project: "ios-swift/Notelayer/Notelayer.xcodeproj",
       scheme: "Notelayer",
-      export_method: "app-store"
+      export_method: "app-store",
+      output_directory: "./build",
+      clean: true
     )
 
+    # Generate changelog from git commits
+    changelog = changelog_from_git_commits(
+      pretty: "- %s",
+      merge_commit_filtering: "exclude_merges"
+    ) rescue "Bug fixes and improvements"
+
+    UI.message("📤 Uploading to TestFlight...")
     upload_to_testflight(
-      api_key: api_key
+      api_key: api_key,
+      changelog: changelog,
+      skip_waiting_for_build_processing: true
     )
+
+    UI.success("✅ Successfully uploaded build to TestFlight!")
+  end
+
+  desc "Build app locally without uploading (for testing)"
+  lane :build_only do
+    UI.message("🔐 Syncing code signing certificates...")
+    sync_code_signing(
+      type: "appstore",
+      app_identifier: "com.notelayer.app",
+      readonly: true
+    )
+
+    UI.message("🔨 Building app...")
+    build_app(
+      project: "ios-swift/Notelayer/Notelayer.xcodeproj",
+      scheme: "Notelayer",
+      export_method: "app-store",
+      output_directory: "./build",
+      clean: true
+    )
+
+    UI.success("✅ Build complete! Check ./build directory for .ipa file")
   end
 end

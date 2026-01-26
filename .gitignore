@@ -43,3 +43,9 @@ ios-swift/Notelayer/Screenshots/
 
 # Automation backups
 scripts/backups/
+
+# Sensitive setup files
+MY_GITHUB_SECRETS_VALUES.md
+FINAL_SETUP_VALUES.md
+GITHUB_SECRETS_READY.txt
+setup-testflight-automation.sh

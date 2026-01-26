@@ -98,8 +98,10 @@ platform :ios do
       export_method: "app-store",
       output_directory: "./build",
       clean: true,
-      # Allow Xcode to automatically manage provisioning
-      xcargs: "DEVELOPMENT_TEAM=DPVQ2X986Z -allowProvisioningUpdates",
+      # Skip automatic profile detection - causes timeouts
+      skip_profile_detection: true,
+      # Just set the team - let Xcode find installed profiles
+      xcargs: "DEVELOPMENT_TEAM=DPVQ2X986Z",
       export_options: {
         method: "app-store",
         teamID: "DPVQ2X986Z",

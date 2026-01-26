@@ -42,7 +42,9 @@ platform :ios do
       UI.message("Importing Apple WWDR certificate...")
       sh("curl -o /tmp/AppleWWDRCAG3.cer https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer")
       sh("security import /tmp/AppleWWDRCAG3.cer -k ~/Library/Keychains/#{keychain_name}-db -T /usr/bin/codesign -T /usr/bin/security")
-      sh("security set-key-partition-list -S apple-tool:,apple: -k #{keychain_password} ~/Library/Keychains/#{keychain_name}-db")
+      
+      # Unlock keychain for the build process
+      sh("security unlock-keychain -p #{keychain_password} ~/Library/Keychains/#{keychain_name}-db")
     end
 
     UI.message("🔐 Syncing code signing certificates...")
@@ -54,6 +56,12 @@ platform :ios do
       keychain_name: keychain_name,
       keychain_password: keychain_password
     )
+    
+    # Set partition list after certificates are installed
+    if ENV["CI"] == "true"
+      UI.message("Setting partition list for installed certificates...")
+      sh("security set-key-partition-list -S apple-tool:,apple: -k #{keychain_password} ~/Library/Keychains/#{keychain_name}-db || true")
+    end
 
     run_number = ENV["GITHUB_RUN_NUMBER"]
     run_attempt = ENV["GITHUB_RUN_ATTEMPT"]

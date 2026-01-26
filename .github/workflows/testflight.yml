@@ -16,13 +16,28 @@ jobs:
         with:
           ruby-version: "3.2"
           bundler-cache: true
+      - name: Configure match env
+        run: |
+          if [ -n "${{ secrets.MATCH_GIT_URL }}" ]; then
+            echo "MATCH_GIT_URL=${{ secrets.MATCH_GIT_URL }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ secrets.MATCH_GIT_BRANCH }}" ]; then
+            echo "MATCH_GIT_BRANCH=${{ secrets.MATCH_GIT_BRANCH }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ secrets.MATCH_PASSWORD }}" ]; then
+            echo "MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}" ]; then
+            echo "MATCH_GIT_BASIC_AUTHORIZATION=${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ secrets.MATCH_GIT_PRIVATE_KEY }}" ]; then
+            echo "MATCH_GIT_PRIVATE_KEY<<EOF" >> "$GITHUB_ENV"
+            echo "${{ secrets.MATCH_GIT_PRIVATE_KEY }}" >> "$GITHUB_ENV"
+            echo "EOF" >> "$GITHUB_ENV"
+          fi
       - name: Upload to TestFlight
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          MATCH_GIT_PRIVATE_KEY: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
         run: bundle exec fastlane beta

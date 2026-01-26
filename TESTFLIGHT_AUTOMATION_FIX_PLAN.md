@@ -1,8 +1,8 @@
 # TestFlight Automation - Issue Resolution Plan
 
-**Overall Progress:** `85%`
+**Overall Progress:** `95%`
 
-**Last Updated:** Build #15 Failed - xcodebuild hanging on build settings detection
+**Last Updated:** Build #16 - Fixed Xcode project signing configuration (awaiting results)
 
 ## TLDR
 Fix the persistent GitHub Actions TestFlight automation failures. Currently failing because xcodebuild times out when detecting build settings with `-allowProvisioningUpdates` flag.
@@ -27,11 +27,24 @@ Fix the persistent GitHub Actions TestFlight automation failures. Currently fail
 - ❌ Manual provisioning profile was being forced on all targets
 - Fix attempted: Removed manual profile specification
 
-### Build #15: Current Failure - Timeout
+### Build #15: Timeout
 - ❌ Error: `xcodebuild -showBuildSettings timed out after 4 retries`
-- ❌ Hanging when trying to detect provisioning profiles
-- ❌ Caused by: `-allowProvisioningUpdates` making xcodebuild try to communicate with Apple servers
-- **Root Cause**: fastlane's automatic profile detection is incompatible with our setup
+- ❌ Caused by: `-allowProvisioningUpdates` flag
+- Fix: Added `skip_profile_detection: true`
+
+### Build #16: Provisioning Profile Not Found
+- ❌ Error: "No profiles for 'com.notelayer.app' were found"
+- ❌ Xcode looking for Development profile, but match installed App Store profile
+- **Root Cause**: Xcode project had wrong settings:
+  - `CODE_SIGN_IDENTITY = "Apple Development"` in Release config (wrong!)
+  - `PROVISIONING_PROFILE_SPECIFIER = ""` (empty!)
+  - No `ProvisioningStyle = Automatic` in TargetAttributes
+
+### Build #17: CURRENT - Complete Fix Applied
+- ✅ Added `ProvisioningStyle = Automatic` to main target
+- ✅ Changed Release identity to `Apple Distribution`
+- ✅ Removed empty PROVISIONING_PROFILE_SPECIFIER
+- **Expected**: Xcode will now auto-select the match App Store profile
 
 ## Current Status
 

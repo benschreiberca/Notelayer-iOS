@@ -37,6 +37,12 @@ platform :ios do
         timeout: 3600,
         lock_when_sleeps: false
       )
+      
+      # Import Apple WWDR certificate
+      UI.message("Importing Apple WWDR certificate...")
+      sh("curl -o /tmp/AppleWWDRCAG3.cer https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer")
+      sh("security import /tmp/AppleWWDRCAG3.cer -k ~/Library/Keychains/#{keychain_name}-db -T /usr/bin/codesign -T /usr/bin/security")
+      sh("security set-key-partition-list -S apple-tool:,apple: -k #{keychain_password} ~/Library/Keychains/#{keychain_name}-db")
     end
 
     UI.message("🔐 Syncing code signing certificates...")

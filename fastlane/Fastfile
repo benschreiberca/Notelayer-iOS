@@ -98,13 +98,12 @@ platform :ios do
       export_method: "app-store",
       output_directory: "./build",
       clean: true,
-      # Skip automatic profile detection - causes timeouts on -showBuildSettings
-      skip_profile_detection: true,
-      # Enable automatic provisioning updates during build AND set team
-      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=DPVQ2X986Z",
+      # Use manual signing - profiles already installed by match
+      codesigning_identity: "Apple Distribution: Ben Schreiber (DPVQ2X986Z)",
       export_options: {
         method: "app-store",
         teamID: "DPVQ2X986Z",
+        signingStyle: "manual",
         provisioningProfiles: {
           "com.notelayer.app" => profile_name
         }

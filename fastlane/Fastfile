@@ -23,7 +23,18 @@ platform :ios do
       is_key_content_base64: is_base64
     )
 
-    setup_ci if ENV["CI"] == "true"
+    # Set up CI environment manually to avoid readonly mode
+    if ENV["CI"] == "true"
+      UI.message("Setting up CI keychain...")
+      create_keychain(
+        name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+        password: "",
+        default_keychain: true,
+        unlock: true,
+        timeout: 3600,
+        lock_when_sleeps: false
+      )
+    end
 
     UI.message("🔐 Syncing code signing certificates...")
     sync_code_signing(

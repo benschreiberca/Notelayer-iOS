@@ -24,11 +24,14 @@ platform :ios do
     )
 
     # Set up CI environment manually to avoid readonly mode
+    keychain_name = "fastlane_tmp_keychain"
+    keychain_password = SecureRandom.uuid
+    
     if ENV["CI"] == "true"
       UI.message("Setting up CI keychain...")
       create_keychain(
-        name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-        password: "",
+        name: keychain_name,
+        password: keychain_password,
         default_keychain: true,
         unlock: true,
         timeout: 3600,
@@ -41,7 +44,9 @@ platform :ios do
       type: "appstore",
       app_identifier: "com.notelayer.app",
       readonly: false,  # Allow certificate generation on first run
-      force_for_new_devices: true
+      force_for_new_devices: true,
+      keychain_name: keychain_name,
+      keychain_password: keychain_password
     )
 
     run_number = ENV["GITHUB_RUN_NUMBER"]
@@ -74,7 +79,13 @@ platform :ios do
       scheme: "Notelayer",
       export_method: "app-store",
       output_directory: "./build",
-      clean: true
+      clean: true,
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          "com.notelayer.app" => ENV["SIGH_PROFILE_NAME"] || "match AppStore com.notelayer.app"
+        }
+      }
     )
 
     # Generate changelog from git commits

@@ -177,6 +177,7 @@ Review this file quarterly to ensure exceptions are still valid and necessary.
 - Custom layouts that could use standard label/link/row components
 - Custom shapes that could use platform icon sets
 - Any manual styling (backgrounds, padding, spacing) that overrides platform defaults
+- Unnecessary dividers caused by splitting descriptive text across multiple list rows
 
 **Provide a detailed assessment report:**
 
@@ -603,6 +604,7 @@ When reviewing assessment report, reply: "Deprecate [exception name]" and AI wil
 - Custom shapes for status indicators (use platform icons)
 - Custom backgrounds on list/table views
 - Custom card styling on settings/config pages
+- Divider lines between descriptive text that should read as a single block
 - Unnecessary width constraints where natural width is better
 - Unnecessary spacers that prevent content from extending
 
@@ -619,6 +621,11 @@ When reviewing assessment report, reply: "Deprecate [exception name]" and AI wil
 - **Check:** All headers use platform Section mechanism
 - **Fix:** Replace any custom header components with platform `Section("Header")`
 - **Verify:** No custom Text() views with manual font/color for headers
+
+**Issue: Unnecessary dividers inside a single explanation block**
+- **Check:** Descriptive text split across multiple list rows (each row adds a divider)
+- **Fix:** Merge descriptive text into a single row (e.g., VStack) so it reads as one block
+- **Example:** Danger Zone copy should be one row, not separate `Text()` rows with dividers
 
 **Issue: Lost functionality after removing wrappers**
 - **Check:** Wrapper contained multiple interactive elements or complex layout

@@ -18,11 +18,14 @@ struct ManageAccountView: View {
         List {
             // iOS-standard Section (no custom wrappers)
             Section("Data") {
-                Text("Export Your Data")
-                    .font(.headline)
-                Text("Download all your notes, tasks, and categories in a CSV format.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Export Your Data")
+                        .font(.headline)
+                    Text("Download all your notes, tasks, and categories in a CSV format.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
                 
                 Button {
                     exportData()
@@ -38,33 +41,45 @@ struct ManageAccountView: View {
                 .disabled(isExporting)
             }
             
-            // iOS-standard Section (no custom wrappers)
-            Section("Danger Zone") {
-                Text("Delete Account")
-                    .font(.headline)
-                    .foregroundStyle(.red)
-                
-                Text("Permanently delete your NoteLayer account and all associated data. This includes all your tasks and categories stored in the cloud and on this device.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                Text("This action cannot be undone.")
-                    .font(.caption.bold())
-                    .foregroundStyle(.red)
-                
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Text("Delete Account...")
-                }
-                .buttonStyle(PrimaryButtonStyle(isDestructive: true))
-                
+            Section {
                 Button(role: .destructive) {
                     signOut()
                 } label: {
                     Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
                 .buttonStyle(PrimaryButtonStyle(isDestructive: true))
+            }
+            
+            // iOS-standard Section (no custom wrappers)
+            Section("Danger Zone") {
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Delete Account")
+                                .font(.headline)
+                                .foregroundStyle(.red)
+
+                            Text("Permanently delete your NoteLayer account and all associated data. This includes all your tasks and categories stored in the cloud and on this device.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            Text("This action cannot be undone.")
+                                .font(.caption.bold())
+                                .foregroundStyle(.red)
+                        }
+                        
+                        Button(role: .destructive) {
+                            showingDeleteConfirmation = true
+                        } label: {
+                            Text("Delete Account...")
+                        }
+                        .buttonStyle(PrimaryButtonStyle(isDestructive: true))
+                    }
+                    .padding(.vertical, 8)
+                } label: {
+                    Label("The Big Red Button", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                }
             }
         }
         .listStyle(.insetGrouped)

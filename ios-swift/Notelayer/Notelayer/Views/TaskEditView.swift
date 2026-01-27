@@ -64,7 +64,7 @@ struct TaskEditView: View {
                 
                 Section("Priority") {
                     Picker("Priority", selection: $priority) {
-                        ForEach(Priority.allCases, id: \.self) { p in
+                        ForEach(Priority.allCases, id: \.id) { p in
                             Text(p.label).tag(p)
                         }
                     }

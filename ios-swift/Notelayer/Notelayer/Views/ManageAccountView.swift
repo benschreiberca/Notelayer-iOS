@@ -187,24 +187,6 @@ extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
 }
 
-/// Universal button style for the entire app
-struct PrimaryButtonStyle: ButtonStyle {
-    @EnvironmentObject var theme: ThemeManager
-    var isDestructive: Bool = false
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(isDestructive ? Color.red.opacity(0.1) : theme.tokens.accent)
-            .foregroundColor(isDestructive ? .red : .white)
-            .cornerRadius(12)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
-    }
-}
-
 struct ActivityViewWrapper: View {
     let activityItems: [Any]
     @State private var isPresented = false

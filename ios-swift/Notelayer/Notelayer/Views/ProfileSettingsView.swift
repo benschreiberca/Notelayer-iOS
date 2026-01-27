@@ -52,10 +52,7 @@ struct ProfileSettingsView: View {
     
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Account")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+            SettingsSectionHeader(title: "Account")
             
             VStack(spacing: 0) {
                 // User Info Row
@@ -127,10 +124,7 @@ struct ProfileSettingsView: View {
     
     private var signedOutSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Account")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+            SettingsSectionHeader(title: "Account")
                 
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -189,10 +183,7 @@ struct ProfileSettingsView: View {
     
     private var preferencesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Pending Nags")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+            SettingsSectionHeader(title: "Pending Nags")
             
             NavigationLink {
                 RemindersSettingsView()
@@ -232,10 +223,7 @@ struct ProfileSettingsView: View {
     
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("About")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+            SettingsSectionHeader(title: "About")
             
             VStack(spacing: 0) {
                 DisclosureGroup(isExpanded: $isAboutExpanded) {

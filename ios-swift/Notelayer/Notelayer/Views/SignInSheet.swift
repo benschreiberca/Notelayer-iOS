@@ -104,10 +104,12 @@ struct SignInSheet: View {
                         }
                 }
 
-                Button("Send code") {
+                Button {
                     _Concurrency.Task { await startPhoneVerification() }
+                } label: {
+                    Text("Send code")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryButtonStyle())
                 .disabled(isBusy || phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             case .enterCode:
@@ -117,18 +119,22 @@ struct SignInSheet: View {
                     .textContentType(.oneTimeCode)
 
                 HStack(spacing: 12) {
-                    Button("Verify") {
+                    Button {
                         _Concurrency.Task { await verifyPhoneCode() }
+                    } label: {
+                        Text("Verify")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(PrimaryButtonStyle())
                     .disabled(isBusy || verificationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                    Button("Back") {
+                    Button {
                         phoneStep = .enterNumber
                         phoneError = ""
                         stopResendTimer()
+                    } label: {
+                        Text("Back")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PrimaryButtonStyle(isDestructive: true))
                     .disabled(isBusy)
                 }
                 

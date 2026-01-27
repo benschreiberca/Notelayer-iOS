@@ -18,7 +18,7 @@ struct RemindersSettingsView: View {
                     Section {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 12) {
-                                Image(systemName: "exclamationmark.bell.fill")
+                                Image(systemName: "bell.badge.slash.fill")
                                     .font(.title2)
                                     .foregroundColor(.orange)
                                 
@@ -63,7 +63,7 @@ struct RemindersSettingsView: View {
                         .padding(.vertical, 40)
                     } else {
                         ForEach(sortedTasksWithReminders, id: \.id) { task in
-                            NagCardView(task: task)
+                            NagCardView(task: task, categoryLookup: categoryLookup)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     taskToNag = task
@@ -76,7 +76,7 @@ struct RemindersSettingsView: View {
                                     }
                                 }
                         }
-                        .listRowInsets(EdgeInsets())
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     }
@@ -106,6 +106,11 @@ struct RemindersSettingsView: View {
                 .presentationDetents([.medium])
             }
         }
+    }
+    
+    /// Category lookup for efficient rendering
+    private var categoryLookup: [String: Category] {
+        Dictionary(uniqueKeysWithValues: store.categories.map { ($0.id, $0) })
     }
     
     /// Get tasks that have reminders set
@@ -141,41 +146,44 @@ struct RemindersSettingsView: View {
     }
 }
 
-/// A card view for a nag that matches the regular task card style
+/// A card view for a nag that uses EXACT parity with TaskItemView
 struct NagCardView: View {
     @EnvironmentObject private var theme: ThemeManager
     let task: Task
+    let categoryLookup: [String: Category]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
+            // Main content row (matches TaskItemView exactly)
             HStack(alignment: .top, spacing: 12) {
                 // Bell icon in the checkbox position
                 Image(systemName: "bell.fill")
-                    .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.orange)
-                    .frame(width: 24, height: 24)
+                    .font(.system(size: 24))
                 
-                VStack(alignment: .leading, spacing: 4) {
+                // Content (matches TaskItemView structure)
+                VStack(alignment: .leading, spacing: 6) {
                     Text(task.title)
-                        .font(.body.weight(.medium))
                         .foregroundColor(theme.tokens.textPrimary)
                         .lineLimit(2)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    if !task.categories.isEmpty {
-                        HStack(spacing: 6) {
-                            ForEach(task.categories.prefix(3), id: \.self) { catId in
-                                if let category = LocalStore.shared.getCategory(id: catId) {
-                                    HStack(spacing: 4) {
-                                        Text(category.icon)
-                                            .font(.caption2)
-                                        Text(category.name)
-                                            .font(.caption2.weight(.medium))
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color(hex: category.color)?.opacity(0.15) ?? theme.tokens.accent.opacity(0.1))
-                                    .foregroundColor(Color(hex: category.color) ?? theme.tokens.accent)
-                                    .cornerRadius(6)
+                    // Secondary metadata: ONE line; horizontal scroll if needed (EXACT parity)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            if let dueDate = task.dueDate {
+                                Text(DateFormatters.cardDate.string(from: dueDate))
+                                    .font(.caption)
+                                    .foregroundStyle(theme.tokens.textSecondary)
+                            }
+
+                            TaskPriorityBadge(priority: task.priority)
+
+                            // Use the lookup table (same as main list)
+                            ForEach(task.categories, id: \.self) { id in
+                                if let category = categoryLookup[id] {
+                                    TaskCategoryChip(category: category)
                                 }
                             }
                         }
@@ -183,20 +191,9 @@ struct NagCardView: View {
                 }
                 
                 Spacer()
-                
-                // Priority indicator
-                if task.priority != .none {
-                    Text(task.priority.label)
-                        .font(.caption2.weight(.bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(priorityColor.opacity(0.1))
-                        .foregroundColor(priorityColor)
-                        .cornerRadius(4)
-                }
             }
             
-            // Nag details row (matching the Details view style)
+            // Nag details inset (the colored card-within-a-card)
             if let nagDate = task.reminderDate {
                 HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
@@ -221,23 +218,24 @@ struct NagCardView: View {
                 .cornerRadius(8)
             }
         }
-        .padding(16)
-        .background(theme.tokens.cardFill)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(theme.tokens.cardStroke, lineWidth: 1)
+        .padding(.vertical, 1)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(theme.tokens.groupFill)
         )
-        .padding(.vertical, 6)
-    }
-    
-    private var priorityColor: Color {
-        switch task.priority {
-        case .high: return .red
-        case .medium: return .orange
-        case .low: return .blue
-        case .none: return .secondary
+        .background {
+            if theme.preset == .cheetah {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.clear)
+                    .overlay(CheetahCardPattern().opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(theme.tokens.cardStroke, lineWidth: 0.5)
+        )
     }
     
     private func relativeDateText(for date: Date) -> String {

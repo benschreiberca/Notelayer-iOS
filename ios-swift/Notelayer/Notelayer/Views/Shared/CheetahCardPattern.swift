@@ -21,9 +21,17 @@ struct CheetahCardPattern: View {
 
                     context.fill(
                         outerPath,
-                        with: .color(Color.black.opacity(0.06)),
+                        with: .color(Color.black.opacity(0.25)), // Much darker for visible speckles
                         style: FillStyle(eoFill: true)
                     )
+                    
+                    // Add a small solid dot for extra "speckle"
+                    context.fill(
+                        Path(ellipseIn: CGRect(x: center.x + 4, y: center.y + 3, width: 4, height: 3)),
+                        with: .color(Color.black.opacity(0.15))
+                    )
+                    let dotRect = CGRect(x: center.x + 4, y: center.y + 2, width: 3, height: 3)
+                    context.fill(Path(ellipseIn: dotRect), with: .color(Color.black.opacity(0.1)))
 
                     x += step
                 }

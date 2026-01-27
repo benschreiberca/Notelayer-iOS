@@ -10,26 +10,48 @@ struct RootTabsView: View {
     @State private var hasCheckedWelcome = false
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             theme.tokens.screenBackground.ignoresSafeArea()
             ThemeBackground(preset: theme.preset)
-            TabView(selection: $selectedTab) {
-                NotesView()
-                    .tabItem {
-                        Label("Notes", systemImage: "note.text")
-                    }
-                    .tag(AppTab.notes)
-                
-                TodosView()
-                    .tabItem {
-                        Label("To-Dos", systemImage: "checklist")
-                    }
-                    .tag(AppTab.todos)
+            
+            // Content
+            Group {
+                switch selectedTab {
+                case .notes:
+                    NotesView()
+                case .todos:
+                    TodosView()
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(UndoShakeHost())
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: 80) // Reserve space for floating bar
+            }
+            
+            // Floating Tab Bar (Pill style like iOS Settings Search)
+            HStack(spacing: 0) {
+                tabButton(tab: .notes, icon: "note.text", label: "Notes")
+                tabButton(tab: .todos, icon: "checklist", label: "To-Dos")
+            }
+            .padding(4)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 60) // Narrower pill
+            .padding(.bottom, 24)
         }
         .tint(theme.tokens.accent)
         .preferredColorScheme(theme.preferredColorScheme)
+        .onAppear {
+            checkAndShowWelcome()
+        }
         .sheet(isPresented: $showWelcome) {
             WelcomeView(onDismiss: {
                 welcomeCoordinator.markWelcomeAsSeen()
@@ -39,9 +61,6 @@ struct RootTabsView: View {
             .presentationDetents([.large])
             .interactiveDismissDisabled()
         }
-        .onAppear {
-            checkAndShowWelcome()
-        }
         .onChange(of: authService.user) { newValue in
             // Dismiss welcome if user signs in
             if newValue != nil && showWelcome {
@@ -50,6 +69,37 @@ struct RootTabsView: View {
             }
         }
     }
+    
+    private func tabButton(tab: AppTab, icon: String, label: String) -> some View {
+        let isSelected = selectedTab == tab
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                selectedTab = tab
+            }
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: isSelected ? .bold : .medium))
+                Text(label)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+            }
+            .foregroundColor(isSelected ? theme.tokens.accent : .secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                ZStack {
+                    if isSelected {
+                        Capsule()
+                            .fill(theme.tokens.accent.opacity(0.12))
+                            .matchedGeometryEffect(id: "tabHighlight", in: tabNamespace)
+                    }
+                }
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @Namespace private var tabNamespace
     
     private func checkAndShowWelcome() {
         guard !hasCheckedWelcome else { return }

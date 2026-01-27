@@ -8,23 +8,26 @@ struct ProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var showingSignIn = false
-    @State private var showAbout = false
     @State private var isBusy = false
     @State private var errorMessage = ""
     @State private var isRefreshing = false
+    @State private var isAboutExpanded = false
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    // 1. Pending Nags (Top)
+                    preferencesSection
+                    
+                    // 2. Account
                     if authService.user != nil {
                         accountSection
                     } else {
                         signedOutSection
                     }
                     
-                    preferencesSection
-                    
+                    // 3. About (Accordion)
                     aboutSection
                 }
                 .padding(20)
@@ -74,23 +77,23 @@ struct ProfileSettingsView: View {
                             syncStatusText
                                 .opacity(isRefreshing ? 0.7 : 1.0)
                                 .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
-                            
-                            Button {
-                                forceRefresh()
-                            } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.caption2)
-                                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                                    .scaleEffect(isRefreshing ? 1.1 : 1.0)
-                                    .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(theme.tokens.accent)
-                            .disabled(isRefreshing)
                         }
                     }
                     
                     Spacer()
+                    
+                    Button {
+                        forceRefresh()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.subheadline.weight(.bold))
+                            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                            .scaleEffect(isRefreshing ? 1.1 : 1.0)
+                            .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.tokens.accent)
+                    .disabled(isRefreshing)
                 }
                 .padding(16)
                 
@@ -101,28 +104,12 @@ struct ProfileSettingsView: View {
                     ManageAccountView()
                 } label: {
                     HStack {
-                        Label("Manage Account", systemImage: "person.badge.key")
+                        Label("Manage Data & Account", systemImage: "person.badge.key")
                             .font(.subheadline)
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
-                    }
-                    .padding(16)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                
-                Divider().padding(.leading, 56)
-                
-                // Sign Out
-                Button(role: .destructive) {
-                    signOut()
-                } label: {
-                    HStack {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                            .font(.subheadline.weight(.semibold))
-                        Spacer()
                     }
                     .padding(16)
                     .contentShape(Rectangle())
@@ -251,35 +238,46 @@ struct ProfileSettingsView: View {
                 .padding(.leading, 4)
             
             VStack(spacing: 0) {
-                HStack {
-                    Text("Version")
-                        .font(.subheadline)
-                    Spacer()
-                    Text(appVersion)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
-                
-                Divider().padding(.leading, 16)
-                
-                Button {
-                    if let url = URL(string: "https://getnotelayer.com/privacy") {
-                        UIApplication.shared.open(url)
+                DisclosureGroup(isExpanded: $isAboutExpanded) {
+                    VStack(spacing: 0) {
+                        Divider().padding(.vertical, 8)
+                        
+                        HStack {
+                            Text("Version")
+                                .font(.subheadline)
+                            Spacer()
+                            Text(appVersion)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                        
+                        Divider().padding(.vertical, 8)
+                        
+                        Button {
+                            if let url = URL(string: "https://getnotelayer.com/privacy") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            HStack {
+                                Text("Privacy Policy")
+                                    .font(.subheadline)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 } label: {
-                    HStack {
-                        Text("Privacy Policy")
-                            .font(.subheadline)
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(16)
-                    .contentShape(Rectangle())
+                    Text("App Information")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
+                .padding(16)
             }
             .background(theme.tokens.cardFill)
             .cornerRadius(16)

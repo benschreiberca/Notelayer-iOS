@@ -8,7 +8,7 @@ struct RemindersSettingsView: View {
     @EnvironmentObject private var theme: ThemeManager
     
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
-    @State private var taskToOpen: Task? = nil
+    @State private var taskToNag: Task? = nil
     
     var body: some View {
         NavigationStack {
@@ -18,7 +18,7 @@ struct RemindersSettingsView: View {
                     Section {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 12) {
-                                Image(systemName: "bell.badge.exclamationmark.fill")
+                                Image(systemName: "exclamationmark.bell.fill")
                                     .font(.title2)
                                     .foregroundColor(.orange)
                                 
@@ -37,14 +37,8 @@ struct RemindersSettingsView: View {
                                 }
                             } label: {
                                 Text("Open Settings")
-                                    .font(.subheadline.weight(.semibold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(theme.tokens.accent.opacity(0.15))
-                                    .foregroundColor(theme.tokens.accent)
-                                    .cornerRadius(10)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(PrimaryButtonStyle())
                         }
                         .padding(.vertical, 8)
                     }
@@ -69,10 +63,10 @@ struct RemindersSettingsView: View {
                         .padding(.vertical, 40)
                     } else {
                         ForEach(sortedTasksWithReminders, id: \.id) { task in
-                            ReminderRowView(task: task)
+                            NagCardView(task: task)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    taskToOpen = task
+                                    taskToNag = task
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
@@ -82,6 +76,9 @@ struct RemindersSettingsView: View {
                                     }
                                 }
                         }
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
                 } header: {
                     if !tasksWithReminders.isEmpty {
@@ -89,15 +86,24 @@ struct RemindersSettingsView: View {
                     }
                 }
             }
+            .listStyle(.plain)
+            .padding(.horizontal, 20)
+            .background(theme.tokens.screenBackground)
             .navigationTitle("Pending Nags")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 checkNotificationStatus()
             }
-            .sheet(item: $taskToOpen) { task in
-                TaskEditView(task: task, categories: store.categories)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+            .sheet(item: $taskToNag) { task in
+                ReminderPickerSheet(
+                    task: task,
+                    onSave: { date in
+                        _Concurrency.Task {
+                            await store.setReminder(for: task.id, at: date)
+                        }
+                    }
+                )
+                .presentationDetents([.medium])
             }
         }
     }
@@ -135,49 +141,105 @@ struct RemindersSettingsView: View {
     }
 }
 
-/// Row view for displaying a task with its reminder
-private struct ReminderRowView: View {
+/// A card view for a nag that matches the regular task card style
+struct NagCardView: View {
     @EnvironmentObject private var theme: ThemeManager
     let task: Task
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Task title
-            Text(task.title)
-                .font(.body)
-                .lineLimit(2)
-                .foregroundColor(theme.tokens.textPrimary)
-            
-            // Reminder date and time
-            if let reminderDate = task.reminderDate {
-                HStack(spacing: 4) {
-                    Image(systemName: "bell.fill")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                // Bell icon in the checkbox position
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.orange)
+                    .frame(width: 24, height: 24)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(task.title)
+                        .font(.body.weight(.medium))
+                        .foregroundColor(theme.tokens.textPrimary)
+                        .lineLimit(2)
                     
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(absoluteDateText(for: reminderDate))
-                            .font(.caption)
-                            .foregroundColor(theme.tokens.textSecondary)
-                        Text(relativeDateText(for: reminderDate))
-                            .font(.caption2)
-                            .foregroundColor(theme.tokens.textSecondary.opacity(0.7))
+                    if !task.categories.isEmpty {
+                        HStack(spacing: 6) {
+                            ForEach(task.categories.prefix(3), id: \.self) { catId in
+                                if let category = LocalStore.shared.getCategory(id: catId) {
+                                    HStack(spacing: 4) {
+                                        Text(category.icon)
+                                            .font(.caption2)
+                                        Text(category.name)
+                                            .font(.caption2.weight(.medium))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color(hex: category.color)?.opacity(0.15) ?? theme.tokens.accent.opacity(0.1))
+                                    .foregroundColor(Color(hex: category.color) ?? theme.tokens.accent)
+                                    .cornerRadius(6)
+                                }
+                            }
+                        }
                     }
                 }
+                
+                Spacer()
+                
+                // Priority indicator
+                if task.priority != .none {
+                    Text(task.priority.label)
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(priorityColor.opacity(0.1))
+                        .foregroundColor(priorityColor)
+                        .cornerRadius(4)
+                }
+            }
+            
+            // Nag details row (matching the Details view style)
+            if let nagDate = task.reminderDate {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    
+                    Text(nagDate.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption.weight(.medium))
+                    
+                    Text("•")
+                        .foregroundColor(.secondary.opacity(0.5))
+                    
+                    Text(relativeDateText(for: nagDate))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.05))
+                .cornerRadius(8)
             }
         }
+        .padding(16)
+        .background(theme.tokens.cardFill)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(theme.tokens.cardStroke, lineWidth: 1)
+        )
         .padding(.vertical, 6)
     }
     
-    /// Format absolute date/time (e.g., "Jan 27, 3:00 PM")
-    private func absoluteDateText(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+    private var priorityColor: Color {
+        switch task.priority {
+        case .high: return .red
+        case .medium: return .orange
+        case .low: return .blue
+        case .none: return .secondary
+        }
     }
     
-    /// Format relative time (e.g., "In 2 hours")
     private func relativeDateText(for date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full

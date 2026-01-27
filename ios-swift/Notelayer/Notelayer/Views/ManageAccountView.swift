@@ -32,11 +32,9 @@ struct ManageAccountView: View {
                                 .controlSize(.small)
                         } else {
                             Label("Export to CSV", systemImage: "square.and.arrow.up")
-                                .font(.subheadline.weight(.semibold))
                         }
                     }
-                    .buttonStyle(.bordered)
-                    .tint(theme.tokens.accent)
+                    .buttonStyle(PrimaryButtonStyle())
                     .disabled(isExporting)
                 }
                 .padding(.vertical, 8)
@@ -50,7 +48,7 @@ struct ManageAccountView: View {
                         .font(.headline)
                         .foregroundStyle(.red)
                     
-                    Text("Permanently delete your NoteLayer account and all associated data. This includes all your notes, tasks, and categories stored in the cloud and on this device.")
+                    Text("Permanently delete your NoteLayer account and all associated data. This includes all your tasks and categories stored in the cloud and on this device.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     
@@ -62,20 +60,23 @@ struct ManageAccountView: View {
                         showingDeleteConfirmation = true
                     } label: {
                         Text("Delete Account...")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(10)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PrimaryButtonStyle(isDestructive: true))
                 }
+                .padding(.vertical, 8)
+                
+                Button(role: .destructive) {
+                    signOut()
+                } label: {
+                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                }
+                .buttonStyle(PrimaryButtonStyle(isDestructive: true))
                 .padding(.vertical, 8)
             } header: {
                 Text("Danger Zone")
             }
         }
-        .navigationTitle("Manage Account")
+        .navigationTitle("Manage Data & Account")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Delete Account?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -86,7 +87,7 @@ struct ManageAccountView: View {
             Text("Are you absolutely sure? All your data will be permanently erased.")
         }
         .sheet(item: $exportURL) { url in
-            ActivityView(activityItems: [url])
+            ActivityViewWrapper(activityItems: [url])
         }
         .overlay {
             if isBusy {
@@ -98,6 +99,19 @@ struct ManageAccountView: View {
                         .cornerRadius(12)
                 }
             }
+        }
+    }
+    
+    private func signOut() {
+        isBusy = true
+        errorMessage = ""
+        defer { isBusy = false }
+        
+        do {
+            try authService.signOut()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
     
@@ -125,7 +139,7 @@ struct ManageAccountView: View {
     }
     
     private func generateCSV() -> String {
-        var csv = "Type,ID,Title/Text,Categories,Priority,Due Date,Completed At,Created At,Notes\n"
+        var csv = "Type,ID,Title,Categories,Priority,Due Date,Nag Date,Completed At,Created At,Notes\n"
         
         // Add Tasks
         for task in store.tasks {
@@ -135,21 +149,12 @@ struct ManageAccountView: View {
             let categories = escapeCSV(task.categories.joined(separator: "; "))
             let priority = task.priority.rawValue
             let dueDate = task.dueDate?.formatted() ?? ""
+            let nagDate = task.reminderDate?.formatted() ?? ""
             let completedAt = task.completedAt?.formatted() ?? ""
             let createdAt = task.createdAt.formatted()
             let taskNotes = escapeCSV(task.taskNotes ?? "")
             
-            csv += "\(type),\(id),\(title),\(categories),\(priority),\(dueDate),\(completedAt),\(createdAt),\(taskNotes)\n"
-        }
-        
-        // Add Notes
-        for note in store.notes {
-            let type = "Note"
-            let id = note.id.uuidString
-            let text = escapeCSV(note.text)
-            let createdAt = note.createdAt.formatted()
-            
-            csv += "\(type),\(id),\(text),,,,,\(createdAt),\n"
+            csv += "\(type),\(id),\(title),\(categories),\(priority),\(dueDate),\(nagDate),\(completedAt),\(createdAt),\(taskNotes)\n"
         }
         
         return csv
@@ -178,17 +183,63 @@ struct ManageAccountView: View {
     }
 }
 
-extension URL: Identifiable {
+extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
 }
 
-struct ActivityView: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    let applicationActivities: [UIActivity]? = nil
+/// Universal button style for the entire app
+struct PrimaryButtonStyle: ButtonStyle {
+    @EnvironmentObject var theme: ThemeManager
+    var isDestructive: Bool = false
     
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(isDestructive ? Color.red.opacity(0.1) : theme.tokens.accent)
+            .foregroundColor(isDestructive ? .red : .white)
+            .cornerRadius(12)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+struct ActivityViewWrapper: View {
+    let activityItems: [Any]
+    @State private var isPresented = false
+    
+    var body: some View {
+        Button {
+            isPresented = true
+        } label: {
+            // This is a dummy view to trigger the UIActivityViewController
+            // from a stable place in the hierarchy.
+            EmptyView()
+        }
+        .background(ActivityViewControllerPresenter(items: activityItems, isPresented: $isPresented))
+    }
+}
+
+private struct ActivityViewControllerPresenter: UIViewControllerRepresentable {
+    let items: [Any]
+    @Binding var isPresented: Bool
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
     }
     
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        if isPresented && uiViewController.presentedViewController == nil {
+            let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            activityVC.completionWithItemsHandler = { _, _, _, _ in
+                isPresented = false
+            }
+            
+            // Present from the nearest view controller
+            DispatchQueue.main.async {
+                uiViewController.present(activityVC, animated: true)
+            }
+        }
+    }
 }

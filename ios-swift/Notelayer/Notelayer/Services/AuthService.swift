@@ -90,7 +90,7 @@ final class AuthService: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        configureFirebaseIfNeeded()
+        // Removed configureFirebaseIfNeeded() call as it's now handled in NotelayerApp.init()
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] auth, user in
             #if DEBUG
             print("👤 [AuthService] Auth state changed - user: \(user?.uid ?? "nil")")
@@ -154,7 +154,6 @@ final class AuthService: NSObject, ObservableObject {
     }
 
     func signOut() throws {
-        configureFirebaseIfNeeded()
         try Auth.auth().signOut()
     }
 
@@ -176,7 +175,6 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("🔵 [AuthService] Starting Google Sign-In...")
         #endif
-        configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
         if user != nil {
@@ -256,7 +254,6 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("🍎 [AuthService] Starting Apple Sign-In...")
         #endif
-        configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
         if user != nil {
@@ -322,7 +319,6 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("📱 [AuthService] Preparing for phone authentication")
         #endif
-        configureFirebaseIfNeeded()
         
         #if targetEnvironment(simulator)
         #if DEBUG
@@ -348,7 +344,6 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("📱 [AuthService] Starting phone number sign-in - phone: \(phoneNumber)")
         #endif
-        configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
         if user != nil {
@@ -388,7 +383,6 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("📱 [AuthService] Verifying phone number with code")
         #endif
-        configureFirebaseIfNeeded()
         let id = verificationID ?? phoneVerificationID
         guard let id else {
             #if DEBUG

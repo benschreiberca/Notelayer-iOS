@@ -101,12 +101,15 @@ struct ProfileSettingsView: View {
     // iOS-standard Section for signed-out state
     private var signedOutSection: some View {
         Section("Account") {
-            Text("Sign in to sync")
-                .font(.headline)
-            
-            Text("Sync your notes and tasks across all your devices securely.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Sign in to sync")
+                    .font(.headline)
+                
+                Text("Sync your notes and tasks across all your devices securely.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
             
             Button {
                 showingSignIn = true
@@ -132,6 +135,21 @@ struct ProfileSettingsView: View {
     // iOS-standard Section for app information
     private var aboutSection: some View {
         Section("About") {
+            // Website link (always visible) - with custom app icon
+            Link(destination: URL(string: "https://getnotelayer.com")!) {
+                HStack(spacing: 12) {
+                    Image("AppIcon")
+                        .resizable()
+                        .frame(width: 28, height: 28)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    Text("Visit getnotelayer.com")
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
             // DisclosureGroup for collapsible app info
             DisclosureGroup("App Information", isExpanded: $isAboutExpanded) {
                 HStack {
@@ -150,11 +168,6 @@ struct ProfileSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-            }
-            
-            // Website link (always visible)
-            Link(destination: URL(string: "https://getnotelayer.com")!) {
-                Label("Visit getnotelayer.com", systemImage: "globe")
             }
         }
     }

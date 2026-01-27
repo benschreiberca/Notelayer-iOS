@@ -85,17 +85,22 @@ This command follows a **two-phase approach** to ensure safe, approved changes:
 
 After completing the assessment, this section will track progress:
 
-- [ ] 🟥 **Component 1: [Name]**
+- [ ] 🟥 **Component 1: [Name]** → [`[File]`](file:///[path]/[File])
   - Issues found: X
   - Lines to remove: Y
-  - Priority: High/Medium/Low
+  - Priority: 🔴 High / 🟡 Medium / 🟢 Low
   
-- [ ] 🟥 **Component 2: [Name]**
+- [ ] 🟨 **Component 2: [Name]** → [`[File]`](file:///[path]/[File])
   - Issues found: X
   - Lines to remove: Y
-  - Priority: High/Medium/Low
+  - Priority: 🔴 High / 🟡 Medium / 🟢 Low
 
 **Progress Calculation:** (Completed components / Total components) × 100%
+
+**Visual Status Indicators:**
+- 🟥 To Do / Not Started
+- 🟨 In Progress
+- 🟩 Done / Completed
 
 ---
 
@@ -177,10 +182,31 @@ Review this file quarterly to ensure exceptions are still valid and necessary.
 
 Use the Assessment Report Template (see section below).
 
-**IMPORTANT:** Include an "Exceptions Skipped" section showing:
-- What custom elements were skipped (from exceptions registry)
-- Why they were skipped (reason from registry)
-- Ask user to confirm: "Are these exceptions still valid? Reply 'yes' to keep, 'no' to flag for fixing"
+**CRITICAL REQUIREMENTS:**
+1. **Always include clickable code links** using format: [`[File]`](file:///[absolute-path]/[File]#L[start]-L[end])
+   - Example: [`ProfileSettingsView.swift`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/ProfileSettingsView.swift#L21-25)
+   - Links should point to the exact line numbers where issues occur
+   - Use absolute file paths for reliable linking
+
+2. **Use visual emoji indicators** for quick scanning:
+   - 🟥 To Do / High Priority / High Risk
+   - 🟨 In Progress / Medium Priority / Medium Risk / Exception
+   - 🟩 Done / Low Priority / Low Risk / Skip
+   - 🔴 High Priority / High Risk
+   - 🟡 Medium Priority / Medium Risk
+   - 🟢 Low Priority / Low Risk
+   - 📄 File
+   - 📍 Location
+   - 📉 Lines saved
+   - ⚠️ Risk
+   - 👤 User impact
+
+3. **Include actual code snippets** in the "Current Code" section showing the problematic code
+
+4. **IMPORTANT:** Include an "Exceptions Skipped" section showing:
+   - What custom elements were skipped (from exceptions registry)
+   - Why they were skipped (reason from registry)
+   - Ask user to confirm: "Are these exceptions still valid? Reply 'yes' to keep, 'no' to flag for fixing"
 
 ### Step 3: Execution (After user approval)
 
@@ -215,60 +241,84 @@ Use this format when providing assessment results:
 
 *(Custom elements that were NOT flagged due to exceptions registry)*
 
-1. **[Exception Name]** (`[File]`)
+1. 🟨 **[Exception Name]** → [`[File]`](file:///[path]/[File]#L[line])
    - Reason: [From registry]
    - Still valid? (Reply "keep" or "deprecate")
 
-2. **[Exception Name]** (`[File]`)
+2. 🟨 **[Exception Name]** → [`[File]`](file:///[path]/[File]#L[line])
    - Reason: [From registry]
    - Still valid? (Reply "keep" or "deprecate")
 
 ---
 
-### File: [ComponentName]
-**Issues Found:** [Number]  
-**Lines to Remove:** [Number]  
-**Priority:** High/Medium/Low
+### 📄 File: [ComponentName]
+**Issues Found:** [Number] | **Lines to Remove:** [Number] | **Priority:** 🔴 High / 🟡 Medium / 🟢 Low
 
-**Issue 1: [Name]**
-- **Location:** Lines X-Y (or component name)
-- **Current:** [Description of custom code]
-- **Replace With:** [Platform-standard approach]
-- **Impact:** 
-  - Lines saved: [X]
-  - Risk: Low/Medium/High
-  - User impact: [Description]
+#### 🔴 Issue 1: [Name]
+**📍 Location:** [`[File]`](file:///[path]/[File]#L[start]-L[end]) - [Section/Component name]
 
-**Issue 2: [Name]**
-...
+**Current Code:**
+```swift
+[Show actual code snippet from lines X-Y]
+```
 
-**Recommendation:** Fix now / Fix later / Skip  
+**Problem:** [Description of custom code issue]
+
+**Replace With:**
+```swift
+[Platform-standard approach code]
+```
+
+**Impact:** 
+- 📉 Lines saved: [X]
+- ⚠️ Risk: 🔴 High / 🟡 Medium / 🟢 Low
+- 👤 User impact: [Description]
+
+**Recommendation:** 🔴 Fix now / 🟡 Fix later / 🟢 Skip  
 **Rationale:** [Why this recommendation]
 
 ---
 
-### File: [ComponentName]
+#### 🟡 Issue 2: [Name]
+[Repeat format with appropriate emoji for priority]
+
+---
+
+### 📄 File: [ComponentName]
 [Repeat format]
 
 ---
 
 ## Summary & Priority Order
 
-**High Priority (Fix Now):**
-1. [Component/File] - [Brief reason]
-2. [Component/File] - [Brief reason]
+### 🔴 High Priority (Fix Now)
+1. 🟥 [`[File]`](file:///[path]/[File]) - [Brief reason]
+2. 🟥 [`[File]`](file:///[path]/[File]) - [Brief reason]
 
-**Medium Priority (Fix Next):**
-1. [Component/File] - [Brief reason]
+### 🟡 Medium Priority (Fix Next)
+1. 🟨 [`[File]`](file:///[path]/[File]) - [Brief reason]
 
-**Low Priority (Optional):**
-1. [Component/File] - [Brief reason]
+### 🟢 Low Priority (Optional)
+1. 🟩 [`[File]`](file:///[path]/[File]) - [Brief reason]
 
 **Overall Impact:**
-- Cleaner codebase: ~[X] lines removed
-- Consistency: [Y] components will match platform standards
-- Risk: [Overall risk assessment]
+- 📉 Cleaner codebase: ~[X] lines removed
+- ✅ Consistency: [Y] components will match platform standards
+- ⚠️ Risk: [Overall risk assessment]
 ```
+
+**Visual Status Indicators:**
+- 🟥 To Do / High Priority
+- 🟨 In Progress / Medium Priority / Exception
+- 🟩 Done / Low Priority / Skip
+- 🔴 High Priority / High Risk
+- 🟡 Medium Priority / Medium Risk
+- 🟢 Low Priority / Low Risk
+- 📄 File
+- 📍 Location
+- 📉 Lines saved
+- ⚠️ Risk
+- 👤 User impact
 
 ---
 

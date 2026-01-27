@@ -35,10 +35,10 @@ struct ReminderPickerSheet: View {
                         }
                     }
                 } header: {
-                    Text("When would you like to be reminded?")
+                    Text("When should we nag you?")
                 }
             }
-            .navigationTitle("Set Reminder")
+            .navigationTitle("Schedule a Nag")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -70,7 +70,7 @@ struct ReminderPickerSheet: View {
                     dismiss()
                 }
             } message: {
-                Text("Notelayer needs notification permission to send reminders. Please enable notifications in Settings.")
+                Text("Notelayer needs notification permission to nag you. Please enable notifications in Settings.")
             }
         }
     }

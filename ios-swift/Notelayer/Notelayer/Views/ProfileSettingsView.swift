@@ -11,24 +11,25 @@ struct ProfileSettingsView: View {
     @State private var showAbout = false
     @State private var isBusy = false
     @State private var errorMessage = ""
-    @State private var showingDeleteConfirmation = false
+    @State private var isRefreshing = false
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     if authService.user != nil {
-                        signedInSection
+                        accountSection
                     } else {
                         signedOutSection
                     }
                     
-                    notificationsSection
+                    preferencesSection
                     
                     aboutSection
                 }
                 .padding(20)
             }
+            .background(theme.tokens.screenBackground)
             .navigationTitle("Profile & Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -46,146 +47,163 @@ struct ProfileSettingsView: View {
         }
     }
     
-    private var signedInSection: some View {
-        InsetCard {
-            VStack(alignment: .leading, spacing: 16) {
-                // Auth method
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Signed in with")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Account")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+            
+            VStack(spacing: 0) {
+                // User Info Row
+                HStack(spacing: 12) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(theme.tokens.accent)
                     
-                    if let method = authService.authMethodDisplay {
-                        Text(method)
-                            .font(.body)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(authService.authMethodDisplay ?? "Signed In")
+                            .font(.subheadline.weight(.semibold))
+                        
+                        HStack(spacing: 4) {
+                            syncStatusIndicator
+                                .scaleEffect(isRefreshing ? 1.2 : 1.0)
+                                .opacity(isRefreshing ? 0.6 : 1.0)
+                                .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
+                            
+                            syncStatusText
+                                .opacity(isRefreshing ? 0.7 : 1.0)
+                                .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
+                            
+                            Button {
+                                forceRefresh()
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption2)
+                                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                                    .scaleEffect(isRefreshing ? 1.1 : 1.0)
+                                    .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(theme.tokens.accent)
+                            .disabled(isRefreshing)
+                        }
                     }
-                }
-                
-                Divider()
-                
-                // Sync status
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Sync Status")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                     
-                    HStack(spacing: 8) {
-                        syncStatusIndicator
-                        syncStatusText
-                    }
+                    Spacer()
                 }
+                .padding(16)
                 
-                Divider()
+                Divider().padding(.leading, 56)
                 
-                // Sign out button
+                // Manage Account Link
+                NavigationLink {
+                    ManageAccountView()
+                } label: {
+                    HStack {
+                        Label("Manage Account", systemImage: "person.badge.key")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(16)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                
+                Divider().padding(.leading, 56)
+                
+                // Sign Out
                 Button(role: .destructive) {
                     signOut()
                 } label: {
-                    Text("Sign Out")
-                        .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isBusy)
-                
-                Divider()
-                
-                // Delete account button
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Text("Delete Account")
-                        .font(.body)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                    }
+                    .padding(16)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, 8)
-                .disabled(isBusy)
-                .alert("Delete Account?", isPresented: $showingDeleteConfirmation) {
-                    Button("Cancel", role: .cancel) { }
-                    Button("Delete Permanently", role: .destructive) {
-                        deleteAccount()
-                    }
-                } message: {
-                    Text("This will permanently delete your account and all your notes and tasks. This action cannot be undone.")
-                }
-                
-                if !errorMessage.isEmpty {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
             }
+            .background(theme.tokens.cardFill)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
+            )
         }
     }
     
     private var signedOutSection: some View {
-        VStack(spacing: 16) {
-            InsetCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Sign in to sync")
-                            .font(.title3.bold())
-                        
-                        Text("Sync your notes and tasks across all your devices")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Account")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+                
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Sign in to sync")
+                        .font(.headline)
                     
-                    Button {
-                        showingSignIn = true
-                    } label: {
-                        Text("Sign In")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-            
-            // Notelayer website link
-            Button {
-                if let url = URL(string: "https://getnotelayer.com") {
-                    UIApplication.shared.open(url)
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Image("NotelayerLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 32, height: 32)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Visit Notelayer")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Text("getnotelayer.com")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "arrow.up.right")
-                        .font(.caption)
+                    Text("Sync your notes and tasks across all your devices securely.")
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
-                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Button {
+                    showingSignIn = true
+                } label: {
+                    Text("Sign In")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(theme.tokens.accent)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    if let url = URL(string: "https://getnotelayer.com") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack {
+                        Image("NotelayerLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                            .cornerRadius(6)
+                        Text("Visit getnotelayer.com")
+                            .font(.footnote.weight(.medium))
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .padding(20)
+            .background(theme.tokens.cardFill)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
+            )
         }
     }
     
-    private var notificationsSection: some View {
+    private var preferencesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Notifications")
-                .font(.caption)
+            Text("Pending Nags")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
             
@@ -194,16 +212,15 @@ struct ProfileSettingsView: View {
                     .environmentObject(theme)
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "bell.badge")
+                    Image(systemName: "bell.badge.fill")
                         .font(.title3)
                         .foregroundColor(theme.tokens.accent)
                         .frame(width: 32)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Reminders")
+                        Text("View all nags")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Text("Manage task notifications")
+                        Text("Manage scheduled task nags")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -215,9 +232,11 @@ struct ProfileSettingsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
+                .background(theme.tokens.cardFill)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(theme.tokens.cardStroke, lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
@@ -225,57 +244,49 @@ struct ProfileSettingsView: View {
     }
     
     private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation {
-                    showAbout.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("About the app")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    Image(systemName: showAbout ? "chevron.down" : "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("About")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
             
-            if showAbout {
-                InsetCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        // App version
-                        HStack {
-                            Text("Version")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(appVersion)
-                        }
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Version")
                         .font(.subheadline)
-                        
-                        Divider()
-                        
-                        // Privacy policy placeholder
-                        Button {
-                            // TODO: Open privacy policy
-                        } label: {
-                            HStack {
-                                Text("Privacy Policy")
-                                Spacer()
-                                Image(systemName: "arrow.up.right")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    Spacer()
+                    Text(appVersion)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(16)
+                
+                Divider().padding(.leading, 16)
+                
+                Button {
+                    if let url = URL(string: "https://getnotelayer.com/privacy") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack {
+                        Text("Privacy Policy")
+                            .font(.subheadline)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(16)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
+            .background(theme.tokens.cardFill)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
+            )
         }
     }
     
@@ -340,24 +351,12 @@ struct ProfileSettingsView: View {
         }
     }
     
-    private func deleteAccount() {
-        isBusy = true
-        errorMessage = ""
-        
+    private func forceRefresh() {
+        isRefreshing = true
         _Concurrency.Task {
-            do {
-                // 1. Delete all user data from Firestore
-                try await backendService.deleteAllUserData()
-                
-                // 2. Delete the Firebase Auth account
-                try await authService.deleteAccount()
-                
-                isBusy = false
-                dismiss()
-            } catch {
-                isBusy = false
-                errorMessage = "Error deleting account: \(error.localizedDescription)"
-            }
+            await backendService.forceSync()
+            try? await _Concurrency.Task.sleep(nanoseconds: 500_000_000) // Small delay for visual feedback
+            isRefreshing = false
         }
     }
 }

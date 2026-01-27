@@ -79,6 +79,34 @@ final class FirebaseBackendService: ObservableObject {
         }
     }
 
+    func forceSync() async {
+        guard let backend = self.backend else { return }
+        
+        // 1. Push local data to Firestore (ensures everything local is backed up)
+        do {
+            if !store.notes.isEmpty {
+                try await backend.upsert(notes: store.notes)
+            }
+            if !store.tasks.isEmpty {
+                try await backend.upsert(tasks: store.tasks)
+            }
+            if !store.categories.isEmpty {
+                try await backend.upsert(categories: store.categories)
+            }
+            
+            // 2. Re-fetch from Firestore to ensure local is in sync with remote
+            await syncInitialData(using: backend)
+            
+            #if DEBUG
+            print("✅ [FirebaseBackendService] Force sync completed successfully")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ [FirebaseBackendService] Force sync failed: \(error)")
+            #endif
+        }
+    }
+
     private     func startListeners(using backend: FirestoreBackend) {
         listeners = [
             backend.listenNotes { [weak self] notes in

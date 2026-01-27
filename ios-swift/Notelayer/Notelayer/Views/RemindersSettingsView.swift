@@ -25,7 +25,7 @@ struct RemindersSettingsView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Notifications Not Permitted")
                                         .font(.headline)
-                                    Text("Reminders are set but won't notify you")
+                                    Text("Nags are set but won't notify you")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -57,10 +57,10 @@ struct RemindersSettingsView: View {
                             Image(systemName: "bell.slash")
                                 .font(.system(size: 48))
                                 .foregroundColor(.secondary)
-                            Text("No Active Reminders")
+                            Text("No Active Nags")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
-                            Text("Set reminders on your tasks to see them here")
+                            Text("Schedule some nags on your tasks to see them here")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -85,11 +85,11 @@ struct RemindersSettingsView: View {
                     }
                 } header: {
                     if !tasksWithReminders.isEmpty {
-                        Text("Upcoming Reminders")
+                        Text("Upcoming Nags")
                     }
                 }
             }
-            .navigationTitle("Reminders")
+            .navigationTitle("Pending Nags")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 checkNotificationStatus()

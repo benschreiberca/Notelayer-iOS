@@ -20,13 +20,13 @@ struct RowContextMenuModifier: ViewModifier {
                     Button("Add to Calendar") { onAddToCalendar() }
                 }
                 
-                // Reminder actions
+                // Nag actions
                 if hasReminder, let onRemoveReminder {
-                    Button("Remove Reminder", role: .destructive) {
+                    Button("Stop nagging me", role: .destructive) {
                         onRemoveReminder()
                     }
                 } else if let onSetReminder {
-                    Button("Set Reminder") {
+                    Button("Nag me later") {
                         onSetReminder()
                     }
                 }

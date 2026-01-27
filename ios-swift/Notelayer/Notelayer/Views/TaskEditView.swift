@@ -101,7 +101,7 @@ struct TaskEditView: View {
                     }
                 }
                 
-                Section("Reminder") {
+                Section("Nag") {
                     if let reminderDate = task.reminderDate {
                         // Tappable reminder row to edit time
                         Button {
@@ -132,14 +132,14 @@ struct TaskEditView: View {
                                 await store.removeReminder(for: task.id)
                             }
                         } label: {
-                            Text("Remove Reminder")
+                            Text("Stop nagging me")
                         }
                     } else {
                         Button {
                             showReminderPicker = true
                         } label: {
                             HStack {
-                                Text("Set Reminder")
+                                Text("Nag me later")
                                 Spacer()
                                 Image(systemName: "bell.badge.plus")
                                     .foregroundColor(.blue)

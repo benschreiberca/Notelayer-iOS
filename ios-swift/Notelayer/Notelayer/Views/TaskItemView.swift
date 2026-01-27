@@ -21,23 +21,13 @@ struct TaskItemView: View {
             
             // Content
             VStack(alignment: .leading, spacing: 6) {
-                // Title row with bell icon
-                HStack(alignment: .top, spacing: 8) {
-                    Text(task.title)
-                        .strikethrough(task.completedAt != nil)
-                        .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Bell icon if reminder is set
-                    if task.reminderDate != nil {
-                        Image(systemName: hasNotificationPermission() ? "bell.fill" : "bell.slash.fill")
-                            .font(.caption)
-                            .foregroundColor(hasNotificationPermission() ? .orange : .gray)
-                            .accessibilityLabel(hasNotificationPermission() ? "Reminder set" : "Reminder set but notifications disabled")
-                    }
-                }
+                // Title
+                Text(task.title)
+                    .strikethrough(task.completedAt != nil)
+                    .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 // Secondary metadata: ONE line; horizontal scroll if needed.
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -61,6 +51,14 @@ struct TaskItemView: View {
             }
             
             Spacer()
+            
+            // Bell icon if reminder is set (far right)
+            if task.reminderDate != nil {
+                Image(systemName: hasNotificationPermission() ? "bell.fill" : "bell.slash.fill")
+                    .font(.caption)
+                    .foregroundColor(hasNotificationPermission() ? .orange : .gray)
+                    .accessibilityLabel(hasNotificationPermission() ? "Reminder set" : "Reminder set but notifications disabled")
+            }
         }
         .padding(.vertical, 1)
         .padding(.horizontal, 10)

@@ -82,7 +82,8 @@ struct RemindersSettingsView: View {
                     }
                 } header: {
                     if !tasksWithReminders.isEmpty {
-                        Text("Upcoming Nags")
+                        SettingsSectionHeader(title: "Upcoming Nags")
+                            .padding(.bottom, 8)
                     }
                 }
             }
@@ -202,6 +203,8 @@ struct NagCardView: View {
                     
                     Text(nagDate.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption.weight(.medium))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Text("•")
                         .foregroundColor(.secondary.opacity(0.5))
@@ -209,6 +212,8 @@ struct NagCardView: View {
                     Text(relativeDateText(for: nagDate))
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Spacer()
                 }
@@ -218,7 +223,7 @@ struct NagCardView: View {
                 .cornerRadius(8)
             }
         }
-        .padding(.vertical, 1)
+        .padding(.vertical, 12)
         .padding(.horizontal, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

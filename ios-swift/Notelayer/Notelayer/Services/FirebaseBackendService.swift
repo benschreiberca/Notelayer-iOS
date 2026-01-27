@@ -79,7 +79,7 @@ final class FirebaseBackendService: ObservableObject {
         }
     }
 
-    private func startListeners(using backend: FirestoreBackend) {
+    private     func startListeners(using backend: FirestoreBackend) {
         listeners = [
             backend.listenNotes { [weak self] notes in
                 _Concurrency.Task { @MainActor in
@@ -97,6 +97,14 @@ final class FirebaseBackendService: ObservableObject {
                 }
             }
         ]
+    }
+
+    func deleteAllUserData() async throws {
+        guard let backend = self.backend else { return }
+        try await backend.deleteAllUserData()
+        
+        // Clear local store as well
+        store.resetForNewUser()
     }
 
     nonisolated private func stopListeners() {
@@ -148,6 +156,29 @@ private final class FirestoreBackend: BackendSyncing {
 
     func deleteNote(id: UUID) async throws {
         try await deleteDocument(notesCollection.document(id.uuidString))
+    }
+
+    func deleteAllUserData() async throws {
+        // Delete notes
+        let notesSnapshot = try await notesCollection.getDocuments()
+        for document in notesSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Delete tasks
+        let tasksSnapshot = try await tasksCollection.getDocuments()
+        for document in tasksSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Delete categories
+        let categoriesSnapshot = try await categoriesCollection.getDocuments()
+        for document in categoriesSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Finally delete the user document itself
+        try await userDocument.delete()
     }
 
     func upsert(task: Task) async throws {

@@ -158,6 +158,20 @@ final class AuthService: NSObject, ObservableObject {
         try Auth.auth().signOut()
     }
 
+    func deleteAccount() async throws {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        // 1. Delete user data from Firestore (handled by backend service)
+        // This will be called from the UI layer before calling this method, 
+        // or we can handle it here if we pass the backend service.
+        // For now, we focus on the Auth part.
+        
+        try await user.delete()
+        #if DEBUG
+        print("✅ [AuthService] Account deleted successfully")
+        #endif
+    }
+
     func signInWithGoogle(presenting viewController: UIViewController) async throws {
         #if DEBUG
         print("🔵 [AuthService] Starting Google Sign-In...")

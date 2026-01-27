@@ -3,6 +3,7 @@ import SwiftUI
 /// Profile & Settings page showing auth status, sync info, and sign-in options.
 struct ProfileSettingsView: View {
     @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var backendService: FirebaseBackendService
     @EnvironmentObject private var theme: ThemeManager
     @Environment(\.dismiss) private var dismiss
     
@@ -10,6 +11,7 @@ struct ProfileSettingsView: View {
     @State private var showAbout = false
     @State private var isBusy = false
     @State private var errorMessage = ""
+    @State private var showingDeleteConfirmation = false
     
     var body: some View {
         NavigationStack {
@@ -85,6 +87,29 @@ struct ProfileSettingsView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isBusy)
+                
+                Divider()
+                
+                // Delete account button
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Text("Delete Account")
+                        .font(.body)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 8)
+                .disabled(isBusy)
+                .alert("Delete Account?", isPresented: $showingDeleteConfirmation) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Delete Permanently", role: .destructive) {
+                        deleteAccount()
+                    }
+                } message: {
+                    Text("This will permanently delete your account and all your notes and tasks. This action cannot be undone.")
+                }
                 
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
@@ -312,6 +337,27 @@ struct ProfileSettingsView: View {
             // dismiss()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func deleteAccount() {
+        isBusy = true
+        errorMessage = ""
+        
+        _Concurrency.Task {
+            do {
+                // 1. Delete all user data from Firestore
+                try await backendService.deleteAllUserData()
+                
+                // 2. Delete the Firebase Auth account
+                try await authService.deleteAccount()
+                
+                isBusy = false
+                dismiss()
+            } catch {
+                isBusy = false
+                errorMessage = "Error deleting account: \(error.localizedDescription)"
+            }
         }
     }
 }

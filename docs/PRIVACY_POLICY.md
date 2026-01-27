@@ -92,10 +92,12 @@ You have the following rights regarding your personal information:
 You can delete individual notes, tasks, or categories at any time through the app. Deleted items are removed from both local storage and cloud storage.
 
 ### Account Deletion
-To delete your account and all associated data:
-1. Sign out of the app
-2. Contact us at ben@benschreiber.ca to request account deletion
-3. We will delete your account and all associated data from our systems within 30 days
+You can delete your account and all associated data directly within the app:
+1. Open the app and go to **Profile & Settings**
+2. Tap **Delete Account**
+3. Confirm the deletion in the dialog
+
+Alternatively, you can contact us at ben@benschreiber.ca to request account deletion. We will delete your account and all associated data from our systems within 30 days.
 
 Please note that account deletion is permanent and cannot be undone. All your notes, tasks, and categories will be permanently deleted.
 

@@ -16,6 +16,28 @@
 
 ## Unreleased
 
+### 2026-01-27 09:18:23 -0500 - Feature: Task Reminders with Notifications (reminders-feature)
+
+#### Added
+- **Task Reminders**: Set reminders for any task with preset times (30 mins, 90 mins, 3 hours, tomorrow 9 AM) or custom date/time picker.
+- **Local Notifications**: Receive notifications with task title and category icons. Notification actions: "Complete Task" or "Open Task".
+- **Bell Icon Indicator**: Tasks with reminders show a 🔔 icon (or bell.slash if permissions denied).
+- **Tap-to-Edit**: Tap reminder row in task details to quickly adjust time without removing and recreating.
+- **Reminders Settings Page**: Dedicated settings page showing all upcoming reminders (soonest first) with swipe-to-cancel. Shows absolute and relative times (e.g., "Jan 27, 3:00 PM • In 2 hours").
+- **Permission Handling**: First-time permission request when setting reminder. Banner in settings if denied with "Open Settings" link.
+- **Context Menu Actions**: Long-press tasks to Set/Remove reminders directly from the list.
+
+#### Changed
+- **Task Model**: Added `reminderDate` and `reminderNotificationId` fields with Firebase sync.
+- **Profile & Settings**: Added "Reminders" navigation link to manage all active reminders.
+- **Notification System**: AppDelegate now handles notification actions (complete task, open task) with deep linking to TaskEditView.
+
+#### Fixed
+- **Smart Cancellation**: Notifications auto-cancel when tasks are completed or deleted.
+- **Past Prevention**: Prevents scheduling reminders in the past.
+- **Restore Logic**: If task uncompleted, reminder restored (but not rescheduled if time passed).
+- **Cross-Device Sync**: Reminders stored in Firebase and rescheduled on device when synced (notifications fire locally on each device).
+
 ### 2026-01-26 20:45:00 -0500 - Overhaul: Authentication & Onboarding (improved-login)
 
 #### Added

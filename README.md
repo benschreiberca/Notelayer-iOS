@@ -6,7 +6,18 @@ Native iOS app for Notelayer, focused on notes and todos. This repo contains the
 
 ## Status
 
-The current app is a prototype. You can view and delete notes and todos, but creating or editing items is not implemented yet. See `docs/STATUS_REPORT.md` for details.
+**Active Development** - Full-featured iOS app with notes, tasks, categories, Firebase sync, and notifications. Ready for TestFlight distribution.
+
+## Features
+
+- **Tasks & Notes**: Create, edit, complete, and organize with categories
+- **Task Reminders**: Set notifications with preset or custom times
+- **Calendar Export**: Send tasks to your calendar with all details
+- **Firebase Sync**: Google, Apple, and Phone authentication with cloud backup
+- **Themes**: 6 color presets including dynamic Cheetah wallpaper
+- **Views**: List, Priority, Category, and Date grouping modes
+- **Shake to Undo**: Restore deleted tasks
+- **iOS 16+**: Native SwiftUI with modern iOS design patterns
 
 ## Quick start
 

@@ -65,6 +65,8 @@ struct AuthButtonView: View {
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1.0 : 0.5)
+        .accessibilityLabel(provider.label)
+        .accessibilityHint(isEnabled ? "" : "Button is disabled")
     }
 }
 

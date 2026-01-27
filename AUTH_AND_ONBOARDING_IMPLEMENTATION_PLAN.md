@@ -1,6 +1,6 @@
 # Auth & Onboarding Implementation Plan
 
-**Overall Progress:** `64%`
+**Overall Progress:** `93%`
 
 ## TLDR
 Complete authentication UX overhaul: Add non-intrusive welcome page with logo animation, redesign auth UI with consistent styling (Phone → Google → Apple), create Profile & Settings page with sync status, add notification badges to gear icons, and fix Firebase crashes. Make auth seamless, clear, and delightful.
@@ -102,36 +102,36 @@ Complete authentication UX overhaul: Add non-intrusive welcome page with logo an
   - [x] 🟩 Keep clean spacing and modern aesthetics
   - [x] 🟩 Maintain two-step phone flow (number → code)
 
-- [ ] 🟥 **Step 10: Fix Auth Flow Logic**
-  - [ ] 🟥 Check if user already authenticated before allowing different method
-  - [ ] 🟥 Show error if trying to sign in with different method than existing account
-  - [ ] 🟥 Auto-dismiss sheet immediately after successful authentication
-  - [ ] 🟥 Clear phone verification state on sheet dismiss
-  - [ ] 🟥 Prevent multiple simultaneous auth attempts
+- [x] 🟩 **Step 10: Fix Auth Flow Logic**
+  - [x] 🟩 Check if user already authenticated before allowing different method
+  - [x] 🟩 Show error if trying to sign in with different method than existing account
+  - [x] 🟩 Auto-dismiss sheet immediately after successful authentication
+  - [x] 🟩 Clear phone verification state on sheet dismiss
+  - [x] 🟩 Prevent multiple simultaneous auth attempts
 
-- [ ] 🟥 **Step 11: Fix Firebase Crashes**
-  - [ ] 🟥 Remove all `Task.sleep()` timing workarounds from SignInSheet
-  - [ ] 🟥 Remove retry loops in `waitForPresenter()` and `findKeyWindow()`
-  - [ ] 🟥 Use proper SwiftUI lifecycle: `.task` modifier instead of `onAppear` with async
-  - [ ] 🟥 Validate Firebase initialization before auth flows
-  - [ ] 🟥 Add proper error handling without presentation timing hacks
-  - [ ] 🟥 Remove `isSheetReady` delay mechanism
+- [x] 🟩 **Step 11: Fix Firebase Crashes**
+  - [x] 🟩 Remove all `Task.sleep()` timing workarounds from SignInSheet
+  - [x] 🟩 Remove retry loops in `waitForPresenter()` and `findKeyWindow()`
+  - [x] 🟩 Use proper SwiftUI lifecycle: `.task` modifier instead of `onAppear` with async
+  - [x] 🟩 Validate Firebase initialization before auth flows
+  - [x] 🟩 Add proper error handling without presentation timing hacks
+  - [x] 🟩 Remove `isSheetReady` delay mechanism
   - [ ] 🟥 Test on iPhone 16e and 17 Pro simulators
 
-- [ ] 🟥 **Step 12: Improve Phone Auth UX**
-  - [ ] 🟥 Add country code picker (default US +1)
-  - [ ] 🟥 Format phone number as user types (add dashes/spaces)
-  - [ ] 🟥 Show verification code step clearly
-  - [ ] 🟥 Add "Resend code" button with countdown timer
-  - [ ] 🟥 Clear error messages for invalid phone numbers
-  - [ ] 🟥 Proper APNS setup validation
+- [x] 🟩 **Step 12: Improve Phone Auth UX**
+  - [x] 🟩 Add country code picker (default US +1)
+  - [x] 🟩 Format phone number as user types (add dashes/spaces)
+  - [x] 🟩 Show verification code step clearly
+  - [x] 🟩 Add "Resend code" button with countdown timer
+  - [x] 🟩 Clear error messages for invalid phone numbers
+  - [x] 🟩 Proper APNS setup validation
 
-- [ ] 🟥 **Step 13: Polish & Visual Consistency**
-  - [ ] 🟥 Ensure all auth buttons match across WelcomeView, ProfileSettings, SignInSheet
-  - [ ] 🟥 Use consistent loading states throughout
-  - [ ] 🟥 Match app's design language for errors
-  - [ ] 🟥 Test logo animation with reduce motion accessibility
-  - [ ] 🟥 Verify VoiceOver labels on all new UI
+- [x] 🟩 **Step 13: Polish & Visual Consistency**
+  - [x] 🟩 Ensure all auth buttons match across WelcomeView, ProfileSettings, SignInSheet
+  - [x] 🟩 Use consistent loading states throughout
+  - [x] 🟩 Match app's design language for errors
+  - [x] 🟩 Test logo animation with reduce motion accessibility
+  - [x] 🟩 Verify VoiceOver labels on all new UI
   - [ ] 🟥 Test Dynamic Type scaling
   - [ ] 🟥 Ensure badge visibility on all theme presets
 

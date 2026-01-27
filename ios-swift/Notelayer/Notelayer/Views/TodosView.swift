@@ -107,6 +107,7 @@ struct TodosView: View {
                                             .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
                                             .frame(width: 8, height: 8)
                                             .offset(x: 4, y: 4)
+                                            .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
                                     }
                                 }
                             }

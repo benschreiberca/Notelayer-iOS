@@ -14,6 +14,9 @@ struct TaskEditView: View {
     @State private var showDatePicker = false
     @State private var calendarExportError: CalendarExportError? = nil
     @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
+    @State private var showReminderPicker = false
+    @State private var showCustomDatePicker = false
+    @State private var customDate = Date()
     
     init(task: Task, categories: [Category]) {
         self.task = task
@@ -94,6 +97,53 @@ struct TaskEditView: View {
                             self.dueDate = nil
                         } label: {
                             Text("Remove Due Date")
+                        }
+                    }
+                }
+                
+                Section("Reminder") {
+                    if let reminderDate = task.reminderDate {
+                        // Tappable reminder row to edit time
+                        Button {
+                            customDate = reminderDate // Pre-populate with current time
+                            showCustomDatePicker = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "bell.fill")
+                                    .foregroundColor(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(reminderDate.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                    Text(relativeTimeText(for: reminderDate))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(role: .destructive) {
+                            _Concurrency.Task {
+                                await store.removeReminder(for: task.id)
+                            }
+                        } label: {
+                            Text("Remove Reminder")
+                        }
+                    } else {
+                        Button {
+                            showReminderPicker = true
+                        } label: {
+                            HStack {
+                                Text("Set Reminder")
+                                Spacer()
+                                Image(systemName: "bell.badge.plus")
+                                    .foregroundColor(.blue)
+                            }
                         }
                     }
                 }
@@ -181,7 +231,38 @@ struct TaskEditView: View {
                     }
                 )
             }
+            .sheet(isPresented: $showReminderPicker) {
+                ReminderPickerSheet(
+                    task: task,
+                    onSave: { date in
+                        _Concurrency.Task {
+                            await store.setReminder(for: task.id, at: date)
+                        }
+                    }
+                )
+            }
+            .sheet(isPresented: $showCustomDatePicker) {
+                CustomDatePickerSheet(
+                    selectedDate: $customDate,
+                    onSave: { date in
+                        _Concurrency.Task {
+                            await store.setReminder(for: task.id, at: date)
+                        }
+                        showCustomDatePicker = false
+                    },
+                    onCancel: {
+                        showCustomDatePicker = false
+                    }
+                )
+            }
         }
+    }
+    
+    /// Format relative time text (e.g., "In 2 hours", "Tomorrow at 9:00 AM")
+    private func relativeTimeText(for date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
     
     private func saveTask() {

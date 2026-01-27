@@ -21,6 +21,7 @@ struct TodosView: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var calendarExportError: CalendarExportError? = nil
     @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
+    @State private var taskToSetReminder: Task? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
@@ -68,7 +69,9 @@ struct TodosView: View {
                         scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
-                        }
+                        },
+                        onSetReminder: { setReminder(for: $0) },
+                        onRemoveReminder: { removeReminder(for: $0) }
                     )
                     .tag(TodoViewMode.list)
                     
@@ -81,7 +84,9 @@ struct TodosView: View {
                         scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
-                        }
+                        },
+                        onSetReminder: { setReminder(for: $0) },
+                        onRemoveReminder: { removeReminder(for: $0) }
                     )
                     .tag(TodoViewMode.priority)
                     
@@ -94,7 +99,9 @@ struct TodosView: View {
                         scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
-                        }
+                        },
+                        onSetReminder: { setReminder(for: $0) },
+                        onRemoveReminder: { removeReminder(for: $0) }
                     )
                     .tag(TodoViewMode.category)
                     
@@ -107,7 +114,9 @@ struct TodosView: View {
                         scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
-                        }
+                        },
+                        onSetReminder: { setReminder(for: $0) },
+                        onRemoveReminder: { removeReminder(for: $0) }
                     )
                     .tag(TodoViewMode.date)
                 }
@@ -274,6 +283,35 @@ struct TodosView: View {
                     }
                 )
             }
+            .sheet(item: $taskToSetReminder) { task in
+                ReminderPickerSheet(
+                    task: task,
+                    onSave: { date in
+                        _Concurrency.Task {
+                            await store.setReminder(for: task.id, at: date)
+                        }
+                    }
+                )
+                .environmentObject(theme)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenTaskFromNotification"))) { notification in
+                if let taskId = notification.userInfo?["taskId"] as? String,
+                   let task = store.tasks.first(where: { $0.id == taskId }) {
+                    editingTask = task
+                }
+            }
+        }
+    }
+    
+    // MARK: - Reminder Handlers
+    
+    private func setReminder(for task: Task) {
+        taskToSetReminder = task
+    }
+    
+    private func removeReminder(for task: Task) {
+        _Concurrency.Task {
+            await store.removeReminder(for: task.id)
         }
     }
     
@@ -436,6 +474,8 @@ private struct TodoListModeView: View {
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
+    let onSetReminder: (Task) -> Void
+    let onRemoveReminder: (Task) -> Void
     
     var body: some View {
         let categoryLookup = makeCategoryLookup(categories)
@@ -468,6 +508,8 @@ private struct TodoListModeView: View {
                         onShare: { sharePayload = SharePayload(items: [$0.title]) },
                         onCopy: { UIPasteboard.general.string = $0.title },
                         onAddToCalendar: onExportToCalendar,
+                        onSetReminder: onSetReminder,
+                        onRemoveReminder: onRemoveReminder,
                         onDropMove: { payload, beforeTaskId in
                             reorderWithinSameGroup(draggedId: payload.taskId, beforeTaskId: beforeTaskId)
                             return true
@@ -520,6 +562,8 @@ private struct TodoPriorityModeView: View {
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
+    let onSetReminder: (Task) -> Void
+    let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -559,6 +603,8 @@ private struct TodoPriorityModeView: View {
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
                             onAddToCalendar: onExportToCalendar,
+                            onSetReminder: onSetReminder,
+                            onRemoveReminder: onRemoveReminder,
                             onDropMove: { payload, beforeTaskId in
                                 applyPriorityDrop(payload: payload, destination: priority, beforeTaskId: beforeTaskId)
                                 return true
@@ -630,6 +676,8 @@ private struct TodoCategoryModeView: View {
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
+    let onSetReminder: (Task) -> Void
+    let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -668,6 +716,8 @@ private struct TodoCategoryModeView: View {
                         onShare: { sharePayload = SharePayload(items: [$0.title]) },
                         onCopy: { UIPasteboard.general.string = $0.title },
                         onAddToCalendar: onExportToCalendar,
+                        onSetReminder: onSetReminder,
+                        onRemoveReminder: onRemoveReminder,
                         onDropMove: { payload, beforeTaskId in
                             applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: beforeTaskId)
                             return true
@@ -712,6 +762,8 @@ private struct TodoCategoryModeView: View {
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
                             onAddToCalendar: onExportToCalendar,
+                            onSetReminder: onSetReminder,
+                            onRemoveReminder: onRemoveReminder,
                             onDropMove: { payload, beforeTaskId in
                                 applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: beforeTaskId)
                                 return true
@@ -798,6 +850,8 @@ private struct TodoDateModeView: View {
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
+    let onSetReminder: (Task) -> Void
+    let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -837,6 +891,8 @@ private struct TodoDateModeView: View {
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
                             onAddToCalendar: onExportToCalendar,
+                            onSetReminder: onSetReminder,
+                            onRemoveReminder: onRemoveReminder,
                             onDropMove: { payload, beforeTaskId in
                                 applyDateDrop(payload: payload, destinationBucket: bucket, beforeTaskId: beforeTaskId)
                                 return true
@@ -1023,6 +1079,8 @@ private struct TodoGroupTaskList: View {
     let onShare: (Task) -> Void
     let onCopy: (Task) -> Void
     let onAddToCalendar: (Task) -> Void
+    let onSetReminder: (Task) -> Void
+    let onRemoveReminder: (Task) -> Void
     /// Called when a payload is dropped; if beforeTaskId is nil, treat as drop-into-container.
     let onDropMove: (TodoDragPayload, String?) -> Bool
     
@@ -1054,6 +1112,9 @@ private struct TodoGroupTaskList: View {
                         onShare: { onShare(task) },
                         onCopy: { onCopy(task) },
                         onAddToCalendar: { onAddToCalendar(task) },
+                        hasReminder: task.reminderDate != nil,
+                        onSetReminder: { onSetReminder(task) },
+                        onRemoveReminder: { onRemoveReminder(task) },
                         onDelete: {
                             store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
                             UndoCoordinator.shared.activateResponder()

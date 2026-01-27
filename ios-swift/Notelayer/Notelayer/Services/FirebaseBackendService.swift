@@ -318,6 +318,19 @@ private final class FirestoreBackend: BackendSyncing {
             data["completedAt"] = FieldValue.delete()
         }
         if let taskNotes = task.taskNotes { data["taskNotes"] = taskNotes }
+        
+        // Reminder fields
+        if let reminderDate = task.reminderDate {
+            data["reminderDate"] = reminderDate
+        } else {
+            data["reminderDate"] = FieldValue.delete()
+        }
+        if let reminderNotificationId = task.reminderNotificationId {
+            data["reminderNotificationId"] = reminderNotificationId
+        } else {
+            data["reminderNotificationId"] = FieldValue.delete()
+        }
+        
         return data
     }
 
@@ -352,6 +365,11 @@ private final class FirestoreBackend: BackendSyncing {
         let createdAt = dateValue(from: data["createdAt"]) ?? Date()
         let updatedAt = dateValue(from: data["updatedAt"]) ?? createdAt
         let orderIndex = intValue(from: data["orderIndex"])
+        
+        // Reminder fields
+        let reminderDate = dateValue(from: data["reminderDate"])
+        let reminderNotificationId = data["reminderNotificationId"] as? String
+        
         return Task(
             id: id,
             title: title,
@@ -362,7 +380,9 @@ private final class FirestoreBackend: BackendSyncing {
             taskNotes: taskNotes,
             createdAt: createdAt,
             updatedAt: updatedAt,
-            orderIndex: orderIndex
+            orderIndex: orderIndex,
+            reminderDate: reminderDate,
+            reminderNotificationId: reminderNotificationId
         )
     }
 

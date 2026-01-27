@@ -96,6 +96,40 @@ class LocalStore: ObservableObject {
         applyRemoteUpdate {
             self.tasks = tasks
             saveTasks()
+            
+            // Reschedule reminders for synced tasks
+            // Notifications don't sync across devices, only reminder data syncs
+            rescheduleRemindersAfterSync(tasks)
+        }
+    }
+    
+    /// Reschedule local notifications for tasks with reminder data from Firebase
+    /// Notifications don't sync across devices automatically, only the reminder metadata syncs
+    private func rescheduleRemindersAfterSync(_ tasks: [Task]) {
+        _Concurrency.Task {
+            for task in tasks {
+                // Only reschedule if task has reminder data and date is in future
+                guard let reminderDate = task.reminderDate,
+                      let notificationId = task.reminderNotificationId,
+                      reminderDate > Date(),
+                      task.completedAt == nil else {
+                    continue
+                }
+                
+                // Reschedule the reminder on this device
+                do {
+                    try await ReminderManager.shared.scheduleReminder(
+                        for: task,
+                        at: reminderDate,
+                        categories: categories,
+                        notificationId: notificationId
+                    )
+                } catch {
+                    #if DEBUG
+                    print("⚠️ [LocalStore] Failed to reschedule reminder for '\(task.title)': \(error)")
+                    #endif
+                }
+            }
         }
     }
 
@@ -223,8 +257,22 @@ class LocalStore: ObservableObject {
     }
     
     func deleteTask(id: String) {
+        // Capture reminder info before deletion
+        let taskToDelete = tasks.first(where: { $0.id == id })
+        let notificationId = taskToDelete?.reminderNotificationId
+        
+        // Remove task
         tasks.removeAll { $0.id == id }
         saveTasks()
+        
+        // Cancel reminder if task had one
+        if let notificationId {
+            _Concurrency.Task {
+                await ReminderManager.shared.cancelReminder(notificationId: notificationId)
+            }
+        }
+        
+        // Sync deletion to backend
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.deleteTask(id: id) }
         }
@@ -254,14 +302,139 @@ class LocalStore: ObservableObject {
     }
     
     func completeTask(id: String) {
-        updateTask(id: id) { task in
-            task.completedAt = Date()
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+        var task = tasks[index]
+        
+        // Capture reminder info before mutation
+        let notificationId = task.reminderNotificationId
+        
+        // Update task state
+        task.completedAt = Date()
+        task.reminderDate = nil
+        task.reminderNotificationId = nil
+        
+        tasks[index] = task
+        saveTasks()
+        
+        // Cancel reminder asynchronously if it existed
+        if let notificationId {
+            _Concurrency.Task {
+                await ReminderManager.shared.cancelReminder(notificationId: notificationId)
+            }
+        }
+        
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: task) }
         }
     }
     
     func restoreTask(id: String) {
-        updateTask(id: id) { task in
-            task.completedAt = nil
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+        var task = tasks[index]
+        
+        // Capture reminder info before mutation
+        let reminderDate = task.reminderDate
+        let notificationId = task.reminderNotificationId
+        let currentCategories = categories
+        
+        // Update completion state
+        task.completedAt = nil
+        
+        // Handle reminder restoration
+        if let reminderDate, let notificationId {
+            if reminderDate > Date() {
+                // Reminder is in the future, reschedule it
+                _Concurrency.Task {
+                    do {
+                        try await ReminderManager.shared.scheduleReminder(
+                            for: task,
+                            at: reminderDate,
+                            categories: currentCategories,
+                            notificationId: notificationId
+                        )
+                    } catch {
+                        print("⚠️ [LocalStore] Failed to restore reminder: \(error)")
+                    }
+                }
+            } else {
+                // Reminder is in the past, clear it
+                task.reminderDate = nil
+                task.reminderNotificationId = nil
+            }
+        }
+        
+        tasks[index] = task
+        saveTasks()
+        
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: task) }
+        }
+    }
+    
+    // MARK: - Reminders
+    
+    /// Set a reminder for a task
+    /// - Parameters:
+    ///   - taskId: The task ID
+    ///   - date: When to fire the reminder
+    func setReminder(for taskId: String, at date: Date) async {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+        var task = tasks[index]
+        
+        // Cancel existing reminder if any
+        if let existingId = task.reminderNotificationId {
+            await ReminderManager.shared.cancelReminder(notificationId: existingId)
+        }
+        
+        // Schedule new reminder
+        do {
+            let notificationId = UUID().uuidString
+            try await ReminderManager.shared.scheduleReminder(
+                for: task,
+                at: date,
+                categories: categories,
+                notificationId: notificationId
+            )
+            
+            // Update task with reminder info
+            task.reminderDate = date
+            task.reminderNotificationId = notificationId
+            task.updatedAt = Date()
+            
+            tasks[index] = task
+            saveTasks()
+            
+            // Sync to backend
+            if let backend, !suppressBackendWrites {
+                _Concurrency.Task { try? await backend.upsert(task: task) }
+            }
+        } catch {
+            print("❌ [LocalStore] Failed to set reminder: \(error)")
+        }
+    }
+    
+    /// Remove a reminder from a task
+    /// - Parameter taskId: The task ID
+    func removeReminder(for taskId: String) async {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+        var task = tasks[index]
+        
+        // Cancel the notification
+        if let notificationId = task.reminderNotificationId {
+            await ReminderManager.shared.cancelReminder(notificationId: notificationId)
+        }
+        
+        // Clear reminder data
+        task.reminderDate = nil
+        task.reminderNotificationId = nil
+        task.updatedAt = Date()
+        
+        tasks[index] = task
+        saveTasks()
+        
+        // Sync to backend
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: task) }
         }
     }
     

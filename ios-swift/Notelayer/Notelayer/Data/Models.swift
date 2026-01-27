@@ -54,6 +54,12 @@ struct Task: Identifiable, Codable {
     var updatedAt: Date
     var orderIndex: Int?
     
+    // Reminder fields
+    /// The date/time when the reminder notification should fire
+    var reminderDate: Date?
+    /// The notification identifier for cancellation (UNNotificationRequest.identifier)
+    var reminderNotificationId: String?
+    
     init(
         id: String = UUID().uuidString,
         title: String,
@@ -64,7 +70,9 @@ struct Task: Identifiable, Codable {
         taskNotes: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        orderIndex: Int? = nil
+        orderIndex: Int? = nil,
+        reminderDate: Date? = nil,
+        reminderNotificationId: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -76,5 +84,7 @@ struct Task: Identifiable, Codable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.orderIndex = orderIndex ?? Int(createdAt.timeIntervalSince1970 * 1000)
+        self.reminderDate = reminderDate
+        self.reminderNotificationId = reminderNotificationId
     }
 }

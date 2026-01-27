@@ -21,6 +21,8 @@ struct ProfileSettingsView: View {
                         signedOutSection
                     }
                     
+                    notificationsSection
+                    
                     aboutSection
                 }
                 .padding(20)
@@ -144,6 +146,48 @@ struct ProfileSettingsView: View {
                     Image(systemName: "arrow.up.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
+    private var notificationsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Notifications")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+            
+            NavigationLink {
+                RemindersSettingsView()
+                    .environmentObject(theme)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "bell.badge")
+                        .font(.title3)
+                        .foregroundColor(theme.tokens.accent)
+                        .frame(width: 32)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Reminders")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Text("Manage task notifications")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
                 .padding(16)
                 .background(

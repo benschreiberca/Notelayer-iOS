@@ -70,5 +70,7 @@
     </array>
     <key>NSCalendarsUsageDescription</key>
     <string>Notelayer needs calendar access to create events from your tasks.</string>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Notelayer sends reminders for your tasks at the times you choose.</string>
 </dict>
 </plist>

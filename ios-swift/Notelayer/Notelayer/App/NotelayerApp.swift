@@ -3,6 +3,7 @@ import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
 import UIKit
+import UserNotifications
 
 private func configureFirebaseIfNeeded() {
     if FirebaseApp.app() == nil {
@@ -22,7 +23,7 @@ private func configureFirebaseIfNeeded() {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -30,6 +31,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         #if DEBUG
         print("🚀 [AppDelegate] Application did finish launching")
         #endif
+        
+        // Set notification center delegate
+        UNUserNotificationCenter.current().delegate = self
+        
+        // Register notification categories and actions
+        registerNotificationActions()
         
         // Verify URL schemes are configured
         #if DEBUG
@@ -53,6 +60,113 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         
         configureFirebaseIfNeeded()
         return true
+    }
+    
+    // MARK: - Notification Actions Registration
+    
+    /// Register notification categories and actions for task reminders
+    private func registerNotificationActions() {
+        let completeAction = UNNotificationAction(
+            identifier: "COMPLETE_TASK",
+            title: "Complete",
+            options: [.foreground]
+        )
+        
+        let openAction = UNNotificationAction(
+            identifier: "OPEN_TASK",
+            title: "Open",
+            options: [.foreground]
+        )
+        
+        let category = UNNotificationCategory(
+            identifier: "TASK_REMINDER",
+            actions: [completeAction, openAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+        
+        #if DEBUG
+        print("🔔 [AppDelegate] Registered notification categories and actions")
+        #endif
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    /// Handle notification tap and action buttons
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        guard let taskId = userInfo["taskId"] as? String else {
+            #if DEBUG
+            print("⚠️ [AppDelegate] No taskId in notification userInfo")
+            #endif
+            completionHandler()
+            return
+        }
+        
+        #if DEBUG
+        print("📬 [AppDelegate] Received notification response for task: \(taskId)")
+        print("   Action: \(response.actionIdentifier)")
+        #endif
+        
+        switch response.actionIdentifier {
+        case "COMPLETE_TASK":
+            completeTask(taskId: taskId)
+        case "OPEN_TASK", UNNotificationDefaultActionIdentifier:
+            openTask(taskId: taskId)
+        default:
+            break
+        }
+        
+        completionHandler()
+    }
+    
+    /// Handle notifications when app is in foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // Show banner and play sound even when app is open
+        #if DEBUG
+        print("🔔 [AppDelegate] Presenting notification while app in foreground")
+        #endif
+        completionHandler([.banner, .sound])
+    }
+    
+    // MARK: - Notification Action Handlers
+    
+    /// Complete a task from notification action
+    private func completeTask(taskId: String) {
+        _Concurrency.Task { @MainActor in
+            let store = LocalStore.shared
+            store.completeTask(id: taskId)
+            #if DEBUG
+            print("✅ [AppDelegate] Completed task from notification: \(taskId)")
+            #endif
+        }
+    }
+    
+    /// Open a task from notification action
+    /// Posts a notification that RootTabsView can observe to present the task
+    private func openTask(taskId: String) {
+        _Concurrency.Task { @MainActor in
+            #if DEBUG
+            print("📂 [AppDelegate] Opening task from notification: \(taskId)")
+            #endif
+            
+            // Post notification for deep linking
+            NotificationCenter.default.post(
+                name: NSNotification.Name("OpenTaskFromNotification"),
+                object: nil,
+                userInfo: ["taskId": taskId]
+            )
+        }
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

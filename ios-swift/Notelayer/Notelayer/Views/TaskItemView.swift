@@ -21,11 +21,23 @@ struct TaskItemView: View {
             
             // Content
             VStack(alignment: .leading, spacing: 6) {
-                Text(task.title)
-                    .strikethrough(task.completedAt != nil)
-                    .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
+                // Title row with bell icon
+                HStack(alignment: .top, spacing: 8) {
+                    Text(task.title)
+                        .strikethrough(task.completedAt != nil)
+                        .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Bell icon if reminder is set
+                    if task.reminderDate != nil {
+                        Image(systemName: hasNotificationPermission() ? "bell.fill" : "bell.slash.fill")
+                            .font(.caption)
+                            .foregroundColor(hasNotificationPermission() ? .orange : .gray)
+                            .accessibilityLabel(hasNotificationPermission() ? "Reminder set" : "Reminder set but notifications disabled")
+                    }
+                }
                 
                 // Secondary metadata: ONE line; horizontal scroll if needed.
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -99,5 +111,13 @@ struct TaskItemView: View {
             .background((Color(hex: category.color) ?? theme.tokens.accent).opacity(0.125))
             .foregroundStyle(theme.tokens.textSecondary.opacity(0.95))
             .clipShape(Capsule(style: .continuous))
+    }
+    
+    /// Check if notification permission is granted (simple sync check)
+    /// Note: This is a best-effort check; actual permission state is async
+    private func hasNotificationPermission() -> Bool {
+        // For UI purposes, show bell.slash if we detect permission issues
+        // The actual async check happens in ReminderManager
+        return task.reminderNotificationId != nil
     }
 }

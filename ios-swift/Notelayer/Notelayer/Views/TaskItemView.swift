@@ -50,8 +50,9 @@ struct TaskItemView: View {
                 }
             }
             
-            // Bell icon if reminder is set (no Spacer, stays close to content)
+            // Bell icon if reminder is set - aligned with section chevron
             if task.reminderDate != nil {
+                Spacer(minLength: 0)
                 Image(systemName: hasNotificationPermission() ? "bell.fill" : "bell.slash.fill")
                     .font(.caption)
                     .foregroundColor(hasNotificationPermission() ? .orange : .gray)
@@ -59,7 +60,8 @@ struct TaskItemView: View {
             }
         }
         .padding(.vertical, 1)
-        .padding(.horizontal, 10)
+        .padding(.leading, 10)
+        .padding(.trailing, 0) // No trailing padding to align bell with chevron
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(theme.tokens.groupFill)

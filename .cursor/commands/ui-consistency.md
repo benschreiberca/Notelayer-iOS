@@ -470,6 +470,62 @@ Use this format when providing assessment results:
 
 ---
 
+## Managing Exceptions
+
+### When to Add an Exception
+
+**Valid reasons for exceptions:**
+- **Brand consistency:** Company logo for website link, branded colors in specific places
+- **UX requirement:** Specific interaction pattern that platform doesn't support well
+- **Technical constraint:** Platform limitation requires custom solution
+- **Intentional design:** Unique visual element that defines app identity
+
+**Invalid reasons (should NOT be exceptions):**
+- "We've always done it this way" - not a valid reason
+- "It looks slightly better" - subjective, use platform standards
+- "I forgot to use platform component" - fix it, don't exception it
+- "It's easier to copy-paste custom code" - wrong approach
+
+### How to Add an Exception
+
+**During assessment (recommended):**
+1. AI flags custom element as issue
+2. You reply: "Keep [element name] as exception - [reason]"
+3. AI adds to `.cursor/ui-consistency-exceptions.md`
+4. AI skips this element in future assessments
+
+**Manually:**
+1. Open `.cursor/ui-consistency-exceptions.md`
+2. Copy exception template from file
+3. Fill in all required fields (location, reason, etc.)
+4. Set Status to "Active"
+5. Save file
+
+### How to Deprecate an Exception
+
+**When you change your mind:**
+1. Open `.cursor/ui-consistency-exceptions.md`
+2. Move exception from "Active Exceptions" to "Deprecated Exceptions"
+3. Change Status from "Active" to "Deprecated"
+4. Next `/ui-consistency` run will flag it for fixing
+
+**Quick deprecation during review:**
+When reviewing assessment report, reply: "Deprecate [exception name]" and AI will update the file automatically.
+
+### Quarterly Exception Review
+
+**Every 3 months, review your exceptions registry:**
+- Are exceptions still necessary?
+- Has platform added new components that make exceptions obsolete?
+- Are there too many exceptions (sign of poor architecture)?
+
+**Health indicators:**
+- ✅ Healthy app: < 5 exceptions total
+- ⚠️ Warning sign: 5-10 exceptions (consider if all are needed)
+- ❌ Red flag: > 10 exceptions (architecture needs refactoring)
+
+---
+
 ## Reference Files
 
 - **Gold Standard:** [Identify a file in the codebase that uses pure platform-standard components]
@@ -499,6 +555,60 @@ Use this format when providing assessment results:
 - Custom card styling on settings/config pages
 - Unnecessary width constraints where natural width is better
 - Unnecessary spacers that prevent content from extending
+
+---
+
+## Troubleshooting
+
+**Issue: Components don't look right after refactor**
+- **Check:** Platform list/table styling is applied
+- **Fix:** Ensure you're using the correct platform style
+- **Example:** iOS: `.listStyle(.insetGrouped)`, Android: Material theme, Web: proper CSS
+
+**Issue: Headers look inconsistent across pages**
+- **Check:** All headers use platform Section mechanism
+- **Fix:** Replace any custom header components with platform `Section("Header")`
+- **Verify:** No custom Text() views with manual font/color for headers
+
+**Issue: Lost functionality after removing wrappers**
+- **Check:** Wrapper contained multiple interactive elements or complex layout
+- **Fix:** Don't flatten wrappers that serve functional purpose - only remove styling-only wrappers
+- **Example:** Keep wrapper if grouping multiple buttons, remove if only adding padding
+
+**Issue: Spacing looks wrong after changes**
+- **Check:** Manual padding was removed but platform isn't adding default spacing
+- **Fix:** Verify platform list/table is properly configured
+- **Example:** Check that rows aren't using zero insets which removes platform spacing
+
+**Issue: Icons misaligned after replacing custom shapes**
+- **Check:** Icon size and alignment properties
+- **Fix:** Use platform's standard icon sizing system
+- **Example:** Use platform-standard icon size modifiers, not manual frame sizing
+
+**Issue: Build errors after changes**
+- **Check:** Missing imports or incorrect component usage
+- **Fix:** Verify all platform components are imported correctly
+- **Example:** Check required imports for platform components
+
+**Issue: Accessibility broken after refactor**
+- **Check:** Accessibility labels were removed during cleanup
+- **Fix:** Add back accessibility labels to all interactive elements
+- **Preserve:** All accessibility labels and identifiers
+
+**Issue: AI keeps flagging something I want to keep custom**
+- **Check:** Is it documented in exceptions registry?
+- **Fix:** Add to `.cursor/ui-consistency-exceptions.md` with clear reason
+- **Verify:** Status is set to "Active"
+
+**Issue: I changed my mind about an exception**
+- **Fix:** Move exception to "Deprecated Exceptions" section in registry file
+- **Update:** Change Status from "Active" to "Deprecated"
+- **Result:** Next `/ui-consistency` run will flag it for fixing
+
+**Issue: Too many exceptions in my project**
+- **Check:** How many exceptions are registered?
+- **Warning:** > 10 exceptions suggests architectural issues
+- **Fix:** Review if exceptions are truly necessary or if architecture needs refactoring
 
 ---
 

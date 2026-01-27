@@ -42,7 +42,7 @@ struct RootTabsView: View {
         .onAppear {
             checkAndShowWelcome()
         }
-        .onChange(of: authService.user) { oldValue, newValue in
+        .onChange(of: authService.user) { newValue in
             // Dismiss welcome if user signs in
             if newValue != nil && showWelcome {
                 showWelcome = false

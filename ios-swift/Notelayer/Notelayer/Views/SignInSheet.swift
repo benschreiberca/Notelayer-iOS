@@ -45,11 +45,11 @@ struct SignInSheet: View {
                 // Social auth buttons
                 VStack(spacing: 12) {
                     AuthButtonView(provider: .google, isEnabled: !isBusy) {
-                        Task { await startGoogleSignIn() }
+                        _Concurrency.Task { await startGoogleSignIn() }
                     }
                     
                     AuthButtonView(provider: .apple, isEnabled: !isBusy) {
-                        Task { await startAppleSignIn() }
+                        _Concurrency.Task { await startAppleSignIn() }
                     }
                 }
             }
@@ -99,13 +99,13 @@ struct SignInSheet: View {
                     TextField("Phone number", text: $phoneNumber)
                         .keyboardType(.phonePad)
                         .textFieldStyle(.roundedBorder)
-                        .onChange(of: phoneNumber) { oldValue, newValue in
+                        .onChange(of: phoneNumber) { newValue in
                             phoneNumber = formatPhoneNumber(newValue)
                         }
                 }
 
                 Button("Send code") {
-                    Task { await startPhoneVerification() }
+                    _Concurrency.Task { await startPhoneVerification() }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isBusy || phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -118,7 +118,7 @@ struct SignInSheet: View {
 
                 HStack(spacing: 12) {
                     Button("Verify") {
-                        Task { await verifyPhoneCode() }
+                        _Concurrency.Task { await verifyPhoneCode() }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(isBusy || verificationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -139,7 +139,7 @@ struct SignInSheet: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Button("Resend code") {
-                        Task { await startPhoneVerification() }
+                        _Concurrency.Task { await startPhoneVerification() }
                     }
                     .font(.caption)
                     .disabled(isBusy)

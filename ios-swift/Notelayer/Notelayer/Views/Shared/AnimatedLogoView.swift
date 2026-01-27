@@ -72,8 +72,8 @@ struct AnimatedLogoView: View {
             let particle = ConfettiParticle(
                 id: UUID(),
                 offset: CGSize(
-                    width: cos(radians) * distance,
-                    height: sin(radians) * distance
+                    width: CGFloat(cos(radians)) * distance,
+                    height: CGFloat(sin(radians)) * distance
                 ),
                 color: colors.randomElement() ?? .blue,
                 size: CGFloat.random(in: 4...8),

@@ -47,11 +47,11 @@ struct WelcomeView: View {
                         }
                         
                         AuthButtonView(provider: .google, isEnabled: !isBusy) {
-                            Task { await signInWithGoogle() }
+                            _Concurrency.Task { await signInWithGoogle() }
                         }
                         
                         AuthButtonView(provider: .apple, isEnabled: !isBusy) {
-                            Task { await signInWithApple() }
+                            _Concurrency.Task { await signInWithApple() }
                         }
                     }
                     .padding(.horizontal, 24)

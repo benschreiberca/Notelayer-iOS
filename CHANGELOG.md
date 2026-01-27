@@ -16,6 +16,23 @@
 
 ## Unreleased
 
+### 2026-01-27 15:30:00 -0500 - Refactor: UI Consistency & Manage Account Overhaul (ios-standard-consistency)
+
+#### Added
+- **"The Big Red Button"**: Implemented a droll accordion-style section (`DisclosureGroup`) for account deletion in `ManageAccountView`, improving safety and visual hierarchy.
+- **Branding**: Added official NoteLayer logo to the website link in `ProfileSettingsView` for brand consistency.
+- **Exceptions Registry**: Created `.cursor/ui-consistency-exceptions.md` to track and justify intentional custom styling (e.g., branded app icons).
+
+#### Changed
+- **Manage Account Layout**: 
+    - Grouped descriptive text in `VStack` blocks to suppress unnecessary `List` dividers, adhering to iOS platform standards for section content.
+    - Relocated **Sign Out** to its own dedicated section between "Data" and "Danger Zone" for better organization.
+- **UI Alignment**: Adjusted `TaskItemView` and `NagCardView` to ensure task reminder bell icons align perfectly with section expansion chevrons on the trailing edge.
+- **Command Tooling**: Enhanced the `/ui-consistency` command with visual indicators (emojis), clickable code links to line numbers, and automated exception handling.
+
+#### Fixed
+- **Asset Referencing**: Corrected `ProfileSettingsView` to use the `NotelayerLogo` asset instead of attempting to reference the app icon directly as a SwiftUI image.
+
 ### 2026-01-27 09:18:23 -0500 - Feature: Task Reminders with Notifications (reminders-feature)
 
 #### Added

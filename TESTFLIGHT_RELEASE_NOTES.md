@@ -1,6 +1,19 @@
 # TestFlight Release Notes
 
-## Version 1.1 - Build [TBD]
+## Version 1.1 - Build 4
+
+---
+
+## 🛠 UI POLISH & CONSISTENCY
+
+We've tightened up the interface to make NoteLayer feel even more native to iOS.
+
+**What's New:**
+- **"The Big Red Button"**: Account deletion is now safely tucked into a droll accordion. No more accidental taps!
+- **Cleaner Settings**: We've removed messy dividers in the Manage Account screen by grouping related information.
+- **Dedicated Sign Out**: Sign Out now has its own home, making it easier to find without cluttering your data settings.
+- **Pixel-Perfect Alignment**: Reminder icons now align perfectly with section headers for a cleaner, more symmetrical look.
+- **Official Branding**: You'll now see the official NoteLayer logo on our website links.
 
 ---
 

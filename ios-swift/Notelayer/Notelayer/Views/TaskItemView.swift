@@ -9,7 +9,8 @@ struct TaskItemView: View {
     
     var body: some View {
         // Use a tap gesture for the row to avoid nested Button conflicts with the checkbox.
-        HStack(alignment: .top, spacing: 12) {
+        // Center alignment ensures checkbox and bell icon are vertically aligned
+        HStack(alignment: .center, spacing: 12) {
             // Checkbox
             Button(action: onToggleComplete) {
                 Image(systemName: task.completedAt != nil ? "checkmark.circle.fill" : "circle")
@@ -19,15 +20,14 @@ struct TaskItemView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("task-checkmark")
             
-            // Content
+            // Content - takes available space, allowing text to extend close to bell
             VStack(alignment: .leading, spacing: 6) {
-                // Title
+                // Title - removed .infinity frame to allow natural width
                 Text(task.title)
                     .strikethrough(task.completedAt != nil)
                     .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
                     .lineLimit(2)
                     .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 // Secondary metadata: ONE line; horizontal scroll if needed.
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -50,9 +50,7 @@ struct TaskItemView: View {
                 }
             }
             
-            Spacer()
-            
-            // Bell icon if reminder is set (far right)
+            // Bell icon if reminder is set (no Spacer, stays close to content)
             if task.reminderDate != nil {
                 Image(systemName: hasNotificationPermission() ? "bell.fill" : "bell.slash.fill")
                     .font(.caption)

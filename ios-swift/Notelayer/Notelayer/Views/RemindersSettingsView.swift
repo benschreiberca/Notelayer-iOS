@@ -44,7 +44,7 @@ struct RemindersSettingsView: View {
                     }
                 }
                 
-                // List of reminders (iOS-standard Section header)
+                // List of reminders (iOS-standard Section with system dividers)
                 Section("Upcoming Nags") {
                     if tasksWithReminders.isEmpty {
                         VStack(spacing: 12) {
@@ -76,8 +76,6 @@ struct RemindersSettingsView: View {
                                     }
                                 }
                         }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
                     }
                 }
             }
@@ -140,16 +138,16 @@ struct RemindersSettingsView: View {
     }
 }
 
-/// A card view for a nag that uses EXACT parity with TaskItemView
+/// A simple row view for nags using iOS-standard List styling (no custom cards)
 struct NagCardView: View {
     @EnvironmentObject private var theme: ThemeManager
     let task: Task
     let categoryLookup: [String: Category]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Main content row (matches TaskItemView exactly)
-            HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
+            // Main content row (iOS List handles all card styling)
+            HStack(alignment: .center, spacing: 12) {
                 // Bell icon in the checkbox position
                 Image(systemName: "bell.fill")
                     .foregroundColor(.orange)
@@ -161,9 +159,8 @@ struct NagCardView: View {
                         .foregroundColor(theme.tokens.textPrimary)
                         .lineLimit(2)
                         .truncationMode(.tail)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    // Secondary metadata: ONE line; horizontal scroll if needed (EXACT parity)
+                    // Secondary metadata: ONE line; horizontal scroll if needed
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             if let dueDate = task.dueDate {
@@ -183,11 +180,9 @@ struct NagCardView: View {
                         }
                     }
                 }
-                
-                Spacer()
             }
             
-            // Nag details inset (the colored card-within-a-card)
+            // Nag details inset (indented to align with title text)
             if let nagDate = task.reminderDate {
                 HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
@@ -197,7 +192,6 @@ struct NagCardView: View {
                     Text(nagDate.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption.weight(.medium))
                         .lineLimit(1)
-                        .fixedSize(horizontal: false, vertical: true)
                     
                     Text("•")
                         .foregroundColor(.secondary.opacity(0.5))
@@ -206,7 +200,6 @@ struct NagCardView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
-                        .fixedSize(horizontal: false, vertical: true)
                     
                     Spacer()
                 }
@@ -214,26 +207,9 @@ struct NagCardView: View {
                 .padding(.vertical, 8)
                 .background(Color.orange.opacity(0.05))
                 .cornerRadius(8)
+                .padding(.leading, 36) // Indent to align with title (bell icon width 24 + spacing 12)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(theme.tokens.groupFill)
-        )
-        .background {
-            if theme.preset == .cheetah {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.clear)
-                    .overlay(CheetahCardPattern().opacity(0.18))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(theme.tokens.cardStroke, lineWidth: 0.5)
-        )
     }
     
     private func relativeDateText(for date: Date) -> String {

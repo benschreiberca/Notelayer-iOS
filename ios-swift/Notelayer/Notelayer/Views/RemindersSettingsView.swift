@@ -44,8 +44,8 @@ struct RemindersSettingsView: View {
                     }
                 }
                 
-                // List of reminders
-                Section {
+                // List of reminders (iOS-standard Section header)
+                Section("Upcoming Nags") {
                     if tasksWithReminders.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "bell.slash")
@@ -76,19 +76,12 @@ struct RemindersSettingsView: View {
                                     }
                                 }
                         }
-                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     }
-                } header: {
-                    if !tasksWithReminders.isEmpty {
-                        SettingsSectionHeader(title: "Upcoming Nags")
-                            .padding(.bottom, 8)
-                    }
                 }
             }
-            .listStyle(.plain)
-            .padding(.horizontal, 20)
+            .listStyle(.insetGrouped)
             .background(theme.tokens.screenBackground)
             .navigationTitle("Pending Nags")
             .navigationBarTitleDisplayMode(.inline)

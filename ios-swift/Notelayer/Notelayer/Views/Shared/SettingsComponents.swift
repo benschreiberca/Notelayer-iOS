@@ -1,18 +1,18 @@
 import SwiftUI
 
-// MARK: - Section Header
+// MARK: - Section Headers
 
-/// Standard section header for settings pages
-struct SettingsSectionHeader: View {
-    let title: String
-    
-    var body: some View {
-        Text(title)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.leading, 4)
-    }
-}
+/// ⚠️ DEPRECATED: Do NOT create custom section header components.
+/// Use native iOS Section() headers instead:
+///
+/// ✅ Correct:   Section("Header Text") { ... }
+/// ❌ Incorrect: SettingsSectionHeader(title: "Header Text")
+///
+/// This ensures:
+/// - Automatic iOS-standard styling
+/// - Consistency with native Settings app
+/// - Scalability (future pages automatically consistent)
+/// - Accessibility (VoiceOver support built-in)
 
 // MARK: - Task Components (Extracted for Reuse)
 

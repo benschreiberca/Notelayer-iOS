@@ -15,24 +15,22 @@ struct ProfileSettingsView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // 1. Pending Nags (Top)
-                    preferencesSection
-                    
-                    // 2. Account
-                    if authService.user != nil {
-                        accountSection
-                    } else {
-                        signedOutSection
-                    }
-                    
-                    // 3. About (Accordion)
-                    aboutSection
+            // iOS-standard List layout (like Settings app)
+            List {
+                // 1. Pending Nags (Top)
+                preferencesSection
+                
+                // 2. Account (conditional: signed in vs signed out)
+                if authService.user != nil {
+                    accountSection
+                } else {
+                    signedOutSection
                 }
-                .padding(20)
+                
+                // 3. About (Accordion)
+                aboutSection
             }
-            .background(theme.tokens.screenBackground)
+            .listStyle(.insetGrouped)
             .navigationTitle("Profile & Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -50,105 +48,73 @@ struct ProfileSettingsView: View {
         }
     }
     
+    // iOS-standard Section for signed-in account
     private var accountSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionHeader(title: "Account")
-            
-            VStack(spacing: 0) {
-                // User Info Row
-                HStack(spacing: 12) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(theme.tokens.accent)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(authService.authMethodDisplay ?? "Signed In")
-                            .font(.subheadline.weight(.semibold))
-                        
-                        HStack(spacing: 4) {
-                            syncStatusIndicator
-                                .scaleEffect(isRefreshing ? 1.2 : 1.0)
-                                .opacity(isRefreshing ? 0.6 : 1.0)
-                                .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
-                            
-                            syncStatusText
-                                .opacity(isRefreshing ? 0.7 : 1.0)
-                                .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        forceRefresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.subheadline.weight(.bold))
-                            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                            .scaleEffect(isRefreshing ? 1.1 : 1.0)
-                            .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
-                    }
-                    .buttonStyle(.plain)
+        Section("Account") {
+            // User Info Row with sync status
+            HStack(spacing: 12) {
+                Image(systemName: "person.circle.fill")
+                    .font(.title)
                     .foregroundStyle(theme.tokens.accent)
-                    .disabled(isRefreshing)
-                }
-                .padding(16)
                 
-                Divider().padding(.leading, 56)
-                
-                // Manage Account Link
-                NavigationLink {
-                    ManageAccountView()
-                } label: {
-                    HStack {
-                        Label("Manage Data & Account", systemImage: "person.badge.key")
-                            .font(.subheadline)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(authService.authMethodDisplay ?? "Signed In")
+                        .font(.subheadline.weight(.semibold))
+                    
+                    HStack(spacing: 4) {
+                        syncStatusIndicator
+                            .scaleEffect(isRefreshing ? 1.2 : 1.0)
+                            .opacity(isRefreshing ? 0.6 : 1.0)
+                            .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
+                        
+                        syncStatusText
+                            .opacity(isRefreshing ? 0.7 : 1.0)
+                            .animation(isRefreshing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default, value: isRefreshing)
                     }
-                    .padding(16)
-                    .contentShape(Rectangle())
+                }
+                
+                Spacer()
+                
+                Button {
+                    forceRefresh()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.subheadline.weight(.bold))
+                        .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                        .scaleEffect(isRefreshing ? 1.1 : 1.0)
+                        .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(theme.tokens.accent)
+                .disabled(isRefreshing)
             }
-            .background(theme.tokens.cardFill)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
-            )
+            
+            // Manage Account Link
+            NavigationLink {
+                ManageAccountView()
+            } label: {
+                Label("Manage Data & Account", systemImage: "person.badge.key")
+            }
         }
     }
     
+    // iOS-standard Section for signed-out state
     private var signedOutSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionHeader(title: "Account")
+        Section("Account") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Sign in to sync")
+                    .font(.headline)
                 
-            VStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Sign in to sync")
-                        .font(.headline)
-                    
-                    Text("Sync your notes and tasks across all your devices securely.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Text("Sync your notes and tasks across all your devices securely.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 
                 Button {
                     showingSignIn = true
                 } label: {
                     Text("Sign In")
-                        .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(theme.tokens.accent)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PrimaryButtonStyle())
                 
                 Button {
                     if let url = URL(string: "https://getnotelayer.com") {
@@ -171,20 +137,13 @@ struct ProfileSettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(20)
-            .background(theme.tokens.cardFill)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
-            )
+            .padding(.vertical, 8)
         }
     }
     
+    // iOS-standard Section for reminders/nags
     private var preferencesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionHeader(title: "Pending Nags")
-            
+        Section("Pending Nags") {
             NavigationLink {
                 RemindersSettingsView()
                     .environmentObject(theme)
@@ -193,7 +152,6 @@ struct ProfileSettingsView: View {
                     Image(systemName: "bell.badge.fill")
                         .font(.title3)
                         .foregroundColor(theme.tokens.accent)
-                        .frame(width: 32)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("View all nags")
@@ -202,77 +160,37 @@ struct ProfileSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
                 }
-                .padding(16)
-                .background(theme.tokens.cardFill)
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(theme.tokens.cardStroke, lineWidth: 1)
-                )
             }
-            .buttonStyle(.plain)
         }
     }
     
+    // iOS-standard Section for app information
     private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionHeader(title: "About")
-            
-            VStack(spacing: 0) {
-                DisclosureGroup(isExpanded: $isAboutExpanded) {
-                    VStack(spacing: 0) {
-                        Divider().padding(.vertical, 8)
-                        
-                        HStack {
-                            Text("Version")
-                                .font(.subheadline)
-                            Spacer()
-                            Text(appVersion)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 8)
-                        
-                        Divider().padding(.vertical, 8)
-                        
-                        Button {
-                            if let url = URL(string: "https://getnotelayer.com/privacy") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            HStack {
-                                Text("Privacy Policy")
-                                    .font(.subheadline)
-                                Spacer()
-                                Image(systemName: "arrow.up.right")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 8)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
+        Section("About") {
+            // DisclosureGroup for collapsible app info
+            DisclosureGroup("App Information", isExpanded: $isAboutExpanded) {
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text(appVersion)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Button {
+                    if let url = URL(string: "https://getnotelayer.com/privacy") {
+                        UIApplication.shared.open(url)
                     }
                 } label: {
-                    Text("App Information")
-                        .font(.subheadline)
-                        .foregroundStyle(.primary)
+                    HStack {
+                        Text("Privacy Policy")
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .padding(16)
             }
-            .background(theme.tokens.cardFill)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(theme.tokens.cardStroke, lineWidth: 1)
-            )
         }
     }
     

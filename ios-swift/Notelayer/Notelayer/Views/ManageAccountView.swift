@@ -16,7 +16,8 @@ struct ManageAccountView: View {
     
     var body: some View {
         List {
-            Section {
+            // iOS-standard Section with string header
+            Section("Data") {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Export Your Data")
                         .font(.headline)
@@ -38,11 +39,10 @@ struct ManageAccountView: View {
                     .disabled(isExporting)
                 }
                 .padding(.vertical, 8)
-            } header: {
-                Text("Data")
             }
             
-            Section {
+            // iOS-standard Section with string header
+            Section("Danger Zone") {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Delete Account")
                         .font(.headline)
@@ -72,10 +72,9 @@ struct ManageAccountView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle(isDestructive: true))
                 .padding(.vertical, 8)
-            } header: {
-                Text("Danger Zone")
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Manage Data & Account")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Delete Account?", isPresented: $showingDeleteConfirmation) {

@@ -4,12 +4,52 @@
 
 This document defines the standard UI components used across NoteLayer to ensure visual consistency. When building new features or settings pages, always reuse these components instead of creating custom layouts.
 
-## Core Principle
-**"Zero Custom Layouts"** - If a component exists in this guide, use it. If you need something new, extract it from an existing view and add it here first.
+## Core Principles
+
+1. **"Use Native iOS Components"** - Always prefer iOS-standard List, Section, and NavigationLink over custom layouts.
+2. **"Zero Custom Headers"** - NEVER create custom section header components. Use native `Section("Header")` syntax.
+3. **"Reuse Task Components"** - For task-specific UI (chips, badges), use the shared components below.
 
 ---
 
-## Components Library
+## Page Layout Pattern
+
+### Settings/Detail Pages (Universal Pattern)
+
+**✅ ALWAYS use this pattern for ALL settings and detail pages:**
+
+```swift
+struct MySettingsView: View {
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("First Section") {
+                    // content rows
+                }
+                
+                Section("Second Section") {
+                    // content rows
+                }
+            }
+            .listStyle(.insetGrouped)  // iOS Settings appearance
+            .navigationTitle("My Settings")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+```
+
+**Reference:** `TaskEditView.swift` - This is the gold standard for all pages.
+
+**❌ NEVER do this:**
+- Custom `ScrollView` + `VStack` layouts
+- Custom section header components (`SettingsSectionHeader`)
+- Manual padding calculations
+- Custom card width styling
+
+---
+
+## Reusable Components Library
 
 ### 1. Task Display Components
 
@@ -46,25 +86,7 @@ TaskPriorityBadge(priority: task.priority)
 
 ---
 
-### 2. Settings Components
-
-#### `SettingsSectionHeader`
-**Location:** `Views/Shared/SettingsComponents.swift`  
-**Usage:** All section headers in settings pages.
-
-```swift
-SettingsSectionHeader(title: "Pending Nags")
-```
-
-**Style:**
-- Font: `.caption.weight(.semibold)`
-- Color: `.secondary`
-- Padding: 4px leading
-
-**When to Use:**
-- ✅ "Account", "Pending Nags", "About" sections
-- ✅ Any future settings groups
-- ❌ Never use custom Text() for headers
+### 2. Action Button Component
 
 #### `PrimaryButtonStyle`
 **Location:** `Views/Shared/SettingsComponents.swift`  
@@ -111,9 +133,11 @@ Button("Sign Out") { /* action */ }
 
 ## Usage Rules
 
-### Headers
-- **Always** use `SettingsSectionHeader` for section titles.
-- **Never** create inline `Text()` with custom font/color for headers.
+### Page Layout
+- **Always** use `List` + `Section("Header")` for settings/detail pages.
+- **Always** use `.listStyle(.insetGrouped)` for iOS Settings appearance.
+- **Never** create custom ScrollView + VStack layouts.
+- **Never** create custom section header components.
 
 ### Buttons
 - **Always** use `PrimaryButtonStyle` for primary actions.
@@ -135,7 +159,8 @@ Button("Sign Out") { /* action */ }
 
 | Element | Component | File |
 | :--- | :--- | :--- |
-| Section Header | `SettingsSectionHeader` | `Shared/SettingsComponents.swift` |
+| Page Layout | `List { Section("Header") { ... } }` | Native iOS |
+| Section Header | Native `Section("Title")` | Native iOS |
 | Primary Button | `PrimaryButtonStyle` | `Shared/SettingsComponents.swift` |
 | Category Chip | `TaskCategoryChip` | `Shared/SettingsComponents.swift` |
 | Priority Badge | `TaskPriorityBadge` | `Shared/SettingsComponents.swift` |
@@ -146,43 +171,36 @@ Button("Sign Out") { /* action */ }
 
 ## Examples
 
-### Creating a New Settings Section
+### Creating a New Settings Page
 ```swift
-VStack(alignment: .leading, spacing: 8) {
-    SettingsSectionHeader(title: "New Feature")
-    
-    NavigationLink {
-        NewFeatureView()
-    } label: {
-        HStack(spacing: 12) {
-            Image(systemName: "star.fill")
-                .font(.title3)
-                .foregroundColor(theme.tokens.accent)
-                .frame(width: 32)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Feature Name")
-                    .font(.subheadline.weight(.semibold))
-                Text("Feature description")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+struct MySettingsView: View {
+    var body: some View {
+        NavigationStack {
+            List {
+                // Simple navigation link
+                Section("Features") {
+                    NavigationLink {
+                        NewFeatureView()
+                    } label: {
+                        Label("New Feature", systemImage: "star.fill")
+                    }
+                }
+                
+                // Action button
+                Section("Actions") {
+                    Button {
+                        performAction()
+                    } label: {
+                        Text("Perform Action")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
             }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+            .listStyle(.insetGrouped)
+            .navigationTitle("My Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .padding(16)
-        .background(theme.tokens.cardFill)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(theme.tokens.cardStroke, lineWidth: 1)
-        )
     }
-    .buttonStyle(.plain)
 }
 ```
 
@@ -210,12 +228,54 @@ Button {
 
 ---
 
-## Enforcement
+## Enforcement Checklist
 
 Before submitting any new feature or settings page:
-1. **Audit Headers**: All section headers must use `SettingsSectionHeader`.
-2. **Audit Buttons**: All primary actions must use `PrimaryButtonStyle`.
-3. **Audit Cards**: All task-like cards must reuse `TaskCategoryChip` and `TaskPriorityBadge`.
-4. **Visual Test**: Compare side-by-side with the main To-Do list to ensure pixel-perfect parity.
+
+### Page Structure
+- [ ] Uses `List` wrapper (not ScrollView + VStack)
+- [ ] Uses `Section("Header")` syntax (not custom components)
+- [ ] Uses `.listStyle(.insetGrouped)` for iOS Settings appearance
+- [ ] Uses `.navigationTitle()` and `.navigationBarTitleDisplayMode(.inline)`
+
+### Components
+- [ ] All primary action buttons use `PrimaryButtonStyle`
+- [ ] All task chips use `TaskCategoryChip`
+- [ ] All priority badges use `TaskPriorityBadge`
+- [ ] No custom section header components created
+
+### Visual Consistency
+- [ ] Card widths match iOS standard (List-managed)
+- [ ] Headers match iOS Settings app style
+- [ ] Compare with TaskEditView.swift (gold standard)
 
 **Failure to follow this guide will result in visual regressions and inconsistency.**
+
+---
+
+## Migration from Custom Layouts
+
+If you encounter old code using custom layouts, refactor it:
+
+### Before (Custom):
+```swift
+ScrollView {
+    VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionHeader(title: "Account")
+            // custom card with manual padding
+        }
+    }
+    .padding(20)
+}
+```
+
+### After (iOS Standard):
+```swift
+List {
+    Section("Account") {
+        // content rows (List manages layout)
+    }
+}
+.listStyle(.insetGrouped)
+```

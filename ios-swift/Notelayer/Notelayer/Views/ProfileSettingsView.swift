@@ -138,8 +138,9 @@ struct ProfileSettingsView: View {
             // Website link (always visible) - with custom app icon
             Link(destination: URL(string: "https://getnotelayer.com")!) {
                 HStack(spacing: 12) {
-                    Image("AppIcon")
+                    Image("NotelayerLogo")
                         .resizable()
+                        .aspectRatio(contentMode: .fit)
                         .frame(width: 28, height: 28)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     Text("Visit getnotelayer.com")

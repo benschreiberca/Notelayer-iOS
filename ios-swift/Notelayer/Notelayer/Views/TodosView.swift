@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import EventKit
 
 enum TodoViewMode: String, CaseIterable {
     case list = "List"
@@ -18,6 +19,8 @@ struct TodosView: View {
     @State private var viewMode: TodoViewMode = .list
     @State private var sharePayload: SharePayload? = nil
     @State private var scrollOffset: CGFloat = 0
+    @State private var calendarExportError: CalendarExportError? = nil
+    @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
@@ -62,7 +65,10 @@ struct TodosView: View {
                         categories: store.categories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset
+                        scrollOffset: $scrollOffset,
+                        onExportToCalendar: { task in
+                            _Concurrency.Task { await exportTaskToCalendar(task) }
+                        }
                     )
                     .tag(TodoViewMode.list)
                     
@@ -72,7 +78,10 @@ struct TodosView: View {
                         categories: store.categories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset
+                        scrollOffset: $scrollOffset,
+                        onExportToCalendar: { task in
+                            _Concurrency.Task { await exportTaskToCalendar(task) }
+                        }
                     )
                     .tag(TodoViewMode.priority)
                     
@@ -82,7 +91,10 @@ struct TodosView: View {
                         categories: store.categories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset
+                        scrollOffset: $scrollOffset,
+                        onExportToCalendar: { task in
+                            _Concurrency.Task { await exportTaskToCalendar(task) }
+                        }
                     )
                     .tag(TodoViewMode.category)
                     
@@ -92,7 +104,10 @@ struct TodosView: View {
                         categories: store.categories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset
+                        scrollOffset: $scrollOffset,
+                        onExportToCalendar: { task in
+                            _Concurrency.Task { await exportTaskToCalendar(task) }
+                        }
                     )
                     .tag(TodoViewMode.date)
                 }
@@ -229,9 +244,67 @@ struct TodosView: View {
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)
             }
+            .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                    calendarExportError = nil
+                }
+                Button("OK") {
+                    calendarExportError = nil
+                }
+            } message: {
+                if let error = calendarExportError {
+                    Text(error.localizedDescription)
+                }
+            }
+            .sheet(item: Binding(
+                get: { calendarEventToEdit.map { SheetIdentifier(event: $0.event, store: $0.store) } },
+                set: { calendarEventToEdit = $0.map { ($0.event, $0.store) } }
+            )) { identifier in
+                CalendarEventEditView(
+                    event: identifier.event,
+                    eventStore: identifier.store,
+                    onSaved: {
+                        calendarEventToEdit = nil
+                    },
+                    onCancelled: {
+                        calendarEventToEdit = nil
+                    }
+                )
+            }
         }
     }
-
+    
+    private func exportTaskToCalendar(_ task: Task) async {
+        let manager = CalendarExportManager.shared
+        
+        // Request permission if needed
+        guard await manager.requestCalendarAccess() else {
+            await MainActor.run {
+                calendarExportError = .permissionDenied
+            }
+            return
+        }
+        
+        // Prepare the event
+        do {
+            let event = try await manager.prepareEvent(for: task, categories: store.categories)
+            await MainActor.run {
+                calendarEventToEdit = (event, manager.eventStoreForUI)
+            }
+        } catch let error as CalendarExportError {
+            await MainActor.run {
+                calendarExportError = error
+            }
+        } catch {
+            await MainActor.run {
+                calendarExportError = .unknown(error)
+            }
+        }
+    }
+    
     private struct ScreenEdgeGlow: View {
         let accent: Color
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -257,6 +330,13 @@ struct TodosView: View {
             )
         }
     }
+}
+
+// Helper struct to make the event identifiable for the sheet
+private struct SheetIdentifier: Identifiable {
+    let id = UUID()
+    let event: EKEvent
+    let store: EKEventStore
 }
 
 // MARK: - Shared helpers
@@ -355,6 +435,7 @@ private struct TodoListModeView: View {
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
+    let onExportToCalendar: (Task) -> Void
     
     var body: some View {
         let categoryLookup = makeCategoryLookup(categories)
@@ -386,6 +467,7 @@ private struct TodoListModeView: View {
                         onTap: { editingTask = $0 },
                         onShare: { sharePayload = SharePayload(items: [$0.title]) },
                         onCopy: { UIPasteboard.general.string = $0.title },
+                        onAddToCalendar: onExportToCalendar,
                         onDropMove: { payload, beforeTaskId in
                             reorderWithinSameGroup(draggedId: payload.taskId, beforeTaskId: beforeTaskId)
                             return true
@@ -437,6 +519,7 @@ private struct TodoPriorityModeView: View {
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
+    let onExportToCalendar: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -475,6 +558,7 @@ private struct TodoPriorityModeView: View {
                             onTap: { editingTask = $0 },
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
+                            onAddToCalendar: onExportToCalendar,
                             onDropMove: { payload, beforeTaskId in
                                 applyPriorityDrop(payload: payload, destination: priority, beforeTaskId: beforeTaskId)
                                 return true
@@ -545,6 +629,7 @@ private struct TodoCategoryModeView: View {
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
+    let onExportToCalendar: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -582,6 +667,7 @@ private struct TodoCategoryModeView: View {
                         onTap: { editingTask = $0 },
                         onShare: { sharePayload = SharePayload(items: [$0.title]) },
                         onCopy: { UIPasteboard.general.string = $0.title },
+                        onAddToCalendar: onExportToCalendar,
                         onDropMove: { payload, beforeTaskId in
                             applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: beforeTaskId)
                             return true
@@ -625,6 +711,7 @@ private struct TodoCategoryModeView: View {
                             onTap: { editingTask = $0 },
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
+                            onAddToCalendar: onExportToCalendar,
                             onDropMove: { payload, beforeTaskId in
                                 applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: beforeTaskId)
                                 return true
@@ -710,6 +797,7 @@ private struct TodoDateModeView: View {
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
     @Binding var scrollOffset: CGFloat
+    let onExportToCalendar: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -748,6 +836,7 @@ private struct TodoDateModeView: View {
                             onTap: { editingTask = $0 },
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
+                            onAddToCalendar: onExportToCalendar,
                             onDropMove: { payload, beforeTaskId in
                                 applyDateDrop(payload: payload, destinationBucket: bucket, beforeTaskId: beforeTaskId)
                                 return true
@@ -933,6 +1022,7 @@ private struct TodoGroupTaskList: View {
     let onTap: (Task) -> Void
     let onShare: (Task) -> Void
     let onCopy: (Task) -> Void
+    let onAddToCalendar: (Task) -> Void
     /// Called when a payload is dropped; if beforeTaskId is nil, treat as drop-into-container.
     let onDropMove: (TodoDragPayload, String?) -> Bool
     
@@ -963,6 +1053,7 @@ private struct TodoGroupTaskList: View {
                         shareTitle: "Share…",
                         onShare: { onShare(task) },
                         onCopy: { onCopy(task) },
+                        onAddToCalendar: { onAddToCalendar(task) },
                         onDelete: {
                             store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
                             UndoCoordinator.shared.activateResponder()

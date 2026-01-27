@@ -1,4 +1,5 @@
 import SwiftUI
+import EventKit
 
 struct TaskEditView: View {
     @Environment(\.dismiss) var dismiss
@@ -11,6 +12,8 @@ struct TaskEditView: View {
     @State private var dueDate: Date?
     @State private var taskNotes: String
     @State private var showDatePicker = false
+    @State private var calendarExportError: CalendarExportError? = nil
+    @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
     
     init(task: Task, categories: [Category]) {
         self.task = task
@@ -122,6 +125,17 @@ struct TaskEditView: View {
                         dismiss()
                     }
                 }
+                
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        _Concurrency.Task {
+                            await exportTaskToCalendar()
+                        }
+                    } label: {
+                        Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                    }
+                }
+                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveTask()
@@ -137,6 +151,36 @@ struct TaskEditView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
+            .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                    calendarExportError = nil
+                }
+                Button("OK") {
+                    calendarExportError = nil
+                }
+            } message: {
+                if let error = calendarExportError {
+                    Text(error.localizedDescription)
+                }
+            }
+            .sheet(item: Binding(
+                get: { calendarEventToEdit.map { TaskEditSheetIdentifier(event: $0.event, store: $0.store) } },
+                set: { calendarEventToEdit = $0.map { ($0.event, $0.store) } }
+            )) { identifier in
+                CalendarEventEditView(
+                    event: identifier.event,
+                    eventStore: identifier.store,
+                    onSaved: {
+                        calendarEventToEdit = nil
+                    },
+                    onCancelled: {
+                        calendarEventToEdit = nil
+                    }
+                )
+            }
         }
     }
     
@@ -149,12 +193,46 @@ struct TaskEditView: View {
             task.taskNotes = taskNotes.isEmpty ? nil : taskNotes
         }
     }
-
+    
+    private func exportTaskToCalendar() async {
+        let manager = CalendarExportManager.shared
+        
+        // Request permission if needed
+        guard await manager.requestCalendarAccess() else {
+            await MainActor.run {
+                calendarExportError = .permissionDenied
+            }
+            return
+        }
+        
+        // Prepare the event
+        do {
+            let event = try await manager.prepareEvent(for: task, categories: store.categories)
+            await MainActor.run {
+                calendarEventToEdit = (event, manager.eventStoreForUI)
+            }
+        } catch let error as CalendarExportError {
+            await MainActor.run {
+                calendarExportError = error
+            }
+        } catch {
+            await MainActor.run {
+                calendarExportError = .unknown(error)
+            }
+        }
+    }
+    
     private var resolvedUndoManager: UndoManager? {
         // Route delete undo registration through the same manager used by the shake responder.
         UndoCoordinator.shared.undoManager
     }
-    
+}
+
+// Helper struct to make the event identifiable for the sheet
+private struct TaskEditSheetIdentifier: Identifiable {
+    let id = UUID()
+    let event: EKEvent
+    let store: EKEventStore
 }
 
 struct DatePickerSheet: View {

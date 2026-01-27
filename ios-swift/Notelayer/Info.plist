@@ -55,5 +55,20 @@
             </array>
         </dict>
     </array>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.notelayer.todo.dragpayload</string>
+            <key>UTTypeDescription</key>
+            <string>Notelayer Todo Drag Payload</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+        </dict>
+    </array>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Notelayer needs calendar access to create events from your tasks.</string>
 </dict>
 </plist>

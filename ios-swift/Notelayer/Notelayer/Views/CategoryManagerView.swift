@@ -141,7 +141,7 @@ struct CategoryEditView: View {
                 }
                 
                 Section("Icon") {
-                    TextField("Emoji icon", text: $icon)
+                    EmojiTextField(text: $icon, placeholder: "Emoji icon")
                 }
 
                 Section("Color") {
@@ -187,7 +187,7 @@ struct CategoryAddView: View {
                 }
                 
                 Section("Icon") {
-                    TextField("Emoji icon", text: $icon)
+                    EmojiTextField(text: $icon, placeholder: "Emoji icon")
                 }
 
                 Section("Color") {

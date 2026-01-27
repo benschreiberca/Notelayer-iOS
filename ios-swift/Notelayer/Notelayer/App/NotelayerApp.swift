@@ -69,9 +69,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         print("   Phone authentication will not work on simulator")
         #endif
         return
-        #endif
-        
-        // Safely set the APNS token with error handling (device only)
+        #else
+        // Device-only: Safely set the APNS token with error handling
         guard FirebaseApp.app() != nil else {
             #if DEBUG
             print("⚠️ [AppDelegate] Firebase not configured, skipping APNS token")
@@ -101,6 +100,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         auth.setAPNSToken(deviceToken, type: tokenType)
         #if DEBUG
         print("✅ [AppDelegate] APNS token set successfully")
+        #endif
         #endif
     }
 

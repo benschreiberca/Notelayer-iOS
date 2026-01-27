@@ -71,16 +71,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return
         #endif
         
-        // Determine APNS token type based on build configuration
-        // In debug builds, use .sandbox; in release builds, use .prod
-        #if DEBUG
-        let tokenType: AuthAPNSTokenType = .sandbox
-        print("📱 [AppDelegate] Using APNS token type: .sandbox (DEBUG)")
-        #else
-        let tokenType: AuthAPNSTokenType = .prod
-        #endif
-        
-        // Safely set the APNS token with error handling
+        // Safely set the APNS token with error handling (device only)
         guard FirebaseApp.app() != nil else {
             #if DEBUG
             print("⚠️ [AppDelegate] Firebase not configured, skipping APNS token")
@@ -96,6 +87,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             #endif
             return
         }
+        
+        // Determine APNS token type based on build configuration
+        // In debug builds, use .sandbox; in release builds, use .prod
+        #if DEBUG
+        let tokenType: AuthAPNSTokenType = .sandbox
+        print("📱 [AppDelegate] Using APNS token type: .sandbox (DEBUG)")
+        #else
+        let tokenType: AuthAPNSTokenType = .prod
+        #endif
         
         // Set the APNS token on real device
         auth.setAPNSToken(deviceToken, type: tokenType)

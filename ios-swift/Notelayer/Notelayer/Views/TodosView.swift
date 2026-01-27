@@ -166,7 +166,7 @@ struct TodosView: View {
                                             Circle()
                                                 .stroke(Color(.systemBackground), lineWidth: 1.5)
                                         )
-                                        .offset(x: 2, y: -2)
+                                        .offset(x: -6, y: 6) // Aggressive overlap from top-right corner
                                         .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
                                 }
                             }
@@ -191,16 +191,20 @@ struct TodosView: View {
                         .opacity(isSqueezed ? 1 : 0)
                 }
                 .background(
-                    theme.tokens.screenBackground
-                        .opacity(isSqueezed ? 0.95 : 0)
-                        .blur(radius: isSqueezed ? 10 : 0)
-                        .ignoresSafeArea()
+                    ZStack {
+                        theme.tokens.screenBackground
+                        ThemeBackground(preset: theme.preset)
+                    }
+                    .opacity(isSqueezed ? 0.95 : 0)
+                    .blur(radius: isSqueezed ? 10 : 0)
+                    .ignoresSafeArea()
                 )
                 .background(.ultraThinMaterial.opacity(isSqueezed ? 1 : 0))
                 .offset(y: headerOffset)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSqueezed)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: headerOffset)
             }
+            .background(ThemeBackground(preset: theme.preset)) // Apply wallpaper here too
             .navigationBarHidden(true)
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.categories)

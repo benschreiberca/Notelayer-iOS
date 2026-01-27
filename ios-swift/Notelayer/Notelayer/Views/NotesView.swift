@@ -12,6 +12,8 @@ struct NotesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                ThemeBackground(preset: theme.preset) // Apply wallpaper background
+                
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(store.notes) { note in
@@ -64,7 +66,7 @@ struct NotesView: View {
                                     .foregroundStyle(.secondary)
                                     .padding(8)
                                 
-                                // Notification badge
+                                // Notification badge (iOS Home Screen style overlap)
                                 if authService.syncStatus.shouldShowBadge {
                                     Circle()
                                         .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
@@ -73,7 +75,7 @@ struct NotesView: View {
                                             Circle()
                                                 .stroke(Color(.systemBackground), lineWidth: 1.5)
                                         )
-                                        .offset(x: -2, y: 2)
+                                        .offset(x: -6, y: 6) // Aggressive overlap from top-right corner
                                         .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
                                 }
                             }

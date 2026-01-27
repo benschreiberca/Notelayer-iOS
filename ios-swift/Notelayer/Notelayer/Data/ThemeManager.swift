@@ -4,7 +4,7 @@ import UIKit
 
 enum ThemePreset: String, CaseIterable, Codable, Identifiable {
     case barbie
-    case fast
+    case cheetah
     case iridescent
     case arctic
     case ocean
@@ -19,14 +19,13 @@ enum ThemePreset: String, CaseIterable, Codable, Identifiable {
     case citrus
     case slate
     case mono
-    case cheetah
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .barbie: return "Barbie"
-        case .fast: return "Fast"
+        case .cheetah: return "Cheetah"
         case .iridescent: return "Iridescent"
         case .arctic: return "Arctic"
         case .ocean: return "Ocean"
@@ -41,7 +40,6 @@ enum ThemePreset: String, CaseIterable, Codable, Identifiable {
         case .citrus: return "Citrus"
         case .slate: return "Slate"
         case .mono: return "Mono"
-        case .cheetah: return "Cheetah"
         }
     }
 }
@@ -103,7 +101,7 @@ struct ThemeTokens: Equatable {
     var accent: Color {
         switch preset {
         case .barbie: return Color(hex: "#FF4FD8") ?? .pink
-        case .fast: return Color(hex: "#FFB000") ?? .orange
+        case .cheetah: return Color(hex: "#FFB000") ?? .orange
         case .iridescent: return Color(hex: "#00D2FF") ?? .cyan
         case .arctic: return Color(hex: "#4DA3FF") ?? .blue
         case .ocean: return Color(hex: "#0077B6") ?? .blue
@@ -118,7 +116,6 @@ struct ThemeTokens: Equatable {
         case .citrus: return Color(hex: "#FFBE0B") ?? .yellow
         case .slate: return Color(hex: "#334155") ?? .gray
         case .mono: return Color(hex: "#111827") ?? .primary
-        case .cheetah: return Color(hex: "#A16207") ?? .brown
         }
     }
 
@@ -126,6 +123,10 @@ struct ThemeTokens: Equatable {
     var screenBackground: Color {
         dynamicColor(light: paletteLightBackgroundHex, dark: paletteDarkBackgroundHex)
     }
+
+    // Explicit access for contrast checks
+    var lightBackground: Color { Color(hex: paletteLightBackgroundHex) ?? .white }
+    var darkBackground: Color { Color(hex: paletteDarkBackgroundHex) ?? .black }
 
     var textPrimary: Color {
         Color(.label)
@@ -148,13 +149,17 @@ struct ThemeTokens: Equatable {
         dynamicColor(light: paletteLightSurfaceHex, dark: paletteDarkSurfaceHex)
     }
 
+    var groupPatternOpacity: Double {
+        0 // Removed from cards/groups, moved to wallpaper
+    }
+
     var badgeText: Color { textSecondary }
 
     // MARK: - Palette definitions
     private var paletteLightBackgroundHex: String {
         switch preset {
         case .barbie: return "#FFE9F6"
-        case .fast: return "#FFF7E6"
+        case .cheetah: return "#FFF7E6"
         case .iridescent: return "#F4F8FF"
         case .arctic: return "#EEF7FF"
         case .ocean: return "#EAF6FF"
@@ -169,7 +174,6 @@ struct ThemeTokens: Equatable {
         case .citrus: return "#FFF9DB"
         case .slate: return "#F1F5F9"
         case .mono: return "#F5F5F5"
-        case .cheetah: return "#FFF7E6"
         }
     }
 
@@ -177,7 +181,7 @@ struct ThemeTokens: Equatable {
         // Dark-mode companions (avoid light-mode whites).
         switch preset {
         case .barbie: return "#1A0E16"
-        case .fast: return "#15110B"
+        case .cheetah: return "#15110B"
         case .iridescent: return "#0B1020"
         case .arctic: return "#0A121A"
         case .ocean: return "#07131B"
@@ -192,7 +196,6 @@ struct ThemeTokens: Equatable {
         case .citrus: return "#14120A"
         case .slate: return "#0B1119"
         case .mono: return "#0B0B0B"
-        case .cheetah: return "#120D07"
         }
     }
 
@@ -200,7 +203,7 @@ struct ThemeTokens: Equatable {
         // Same color used for group containers AND todo cards (tinted in light mode).
         switch preset {
         case .barbie: return "#FFF6FB"
-        case .fast: return "#FFF8EE"
+        case .cheetah: return "#FFF8EE"
         case .iridescent: return "#F7FAFF"
         case .arctic: return "#F5FBFF"
         case .ocean: return "#F2FAFF"
@@ -215,7 +218,6 @@ struct ThemeTokens: Equatable {
         case .citrus: return "#FFFBEE"
         case .slate: return "#FFFFFF"
         case .mono: return "#FFFFFF"
-        case .cheetah: return "#FFF9F0"
         }
     }
 
@@ -223,13 +225,13 @@ struct ThemeTokens: Equatable {
         // Palette-specific dark surfaces (not the same across palettes).
         switch preset {
         case .barbie: return "#24131F"
-        case .fast: return "#20180F"
+        case .cheetah: return "#20180F"
         case .iridescent: return "#121A2F"
         case .arctic: return "#101A22"
         case .ocean: return "#0E1B25"
         case .forest: return "#0F1C15"
         case .sunset: return "#22140F"
-        case .lavender: return "#1A1424"
+        case .lavender: return "#121424"
         case .graphite: return "#151A22"
         case .sand: return "#201B12"
         case .mint: return "#0E1B16"
@@ -238,7 +240,6 @@ struct ThemeTokens: Equatable {
         case .citrus: return "#1E1A10"
         case .slate: return "#111A25"
         case .mono: return "#151515"
-        case .cheetah: return "#1F170F"
         }
     }
 
@@ -266,11 +267,18 @@ struct ThemeBackground: View {
             )
             .ignoresSafeArea()
 
-        case .fast:
+        case .cheetah:
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
-                FastPattern()
-                    .opacity(0.10)
+                // Background color (dynamic based on light/dark mode)
+                Color(UIColor { traits in
+                    let isDark = traits.userInterfaceStyle == .dark
+                    return UIColor(hex: isDark ? "#15110B" : "#FFF7E6") ?? UIColor.systemBackground
+                })
+                .ignoresSafeArea()
+                
+                // Cheetah pattern overlay
+                CheetahCardPattern()
+                    .opacity(0.4)
                     .ignoresSafeArea()
             }
 
@@ -419,17 +427,11 @@ struct ThemeBackground: View {
         case .mono:
             Color(.systemBackground)
                 .ignoresSafeArea()
-        case .cheetah:
-            ZStack {
-                Color(hex: "#FFF7E6") ?? Color(.systemBackground)
-                CheetahBackground()
-            }
-            .ignoresSafeArea()
         }
     }
 }
 
-private struct FastPattern: View {
+private struct CheetahThemeBackground: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -451,7 +453,7 @@ private struct FastPattern: View {
                     y += step
                 }
             }
-            .fill(Color.primary)
+            .fill(Color.primary.opacity(0.10))
         }
     }
 }

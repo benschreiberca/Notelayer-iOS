@@ -80,7 +80,6 @@ struct RemindersSettingsView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .background(theme.tokens.screenBackground)
             .navigationTitle("Pending Nags")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

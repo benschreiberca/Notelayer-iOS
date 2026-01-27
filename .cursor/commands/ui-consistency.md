@@ -362,53 +362,61 @@ Use this format when providing assessment results:
 
 ---
 
-### Pattern 4: Custom Link → Platform Link Component
+### Pattern 4: Custom Button for URLs → Platform Link
 
-**Bad (Custom Button):**
-```pseudocode
-Button {
-  action: openURL("https://example.com")
-  content: {
-    Text("Visit Website")
-    Icon("arrow.up.right")
-  }
-}
+**BAD: Button that opens URL**
+```
+<Button onPress={() => openURL("https://example.com")}>
+  <Row>
+    <Text>Visit Website</Text>
+    <Icon name="arrow.up.right" />
+  </Row>
+</Button>
 ```
 
-**Good (Platform Link):**
-```pseudocode
-Link(url: "https://example.com") {
-  Label("Visit Website", icon: "globe")
-}
+**GOOD: Platform link component**
+```
+<Link url="https://example.com">
+  <Label text="Visit Website" icon="globe" />
+</Link>
 ```
 
-**Key Principle:** Use platform's standard link component for external URLs, not custom buttons.
+**WHY:** Links have built-in behaviors (long-press preview, accessibility, browser context). Custom buttons don't provide these features.
+
+**Platform Examples:**
+- iOS: `Link(destination: URL) { Label(...) }`
+- Android: `Intent.ACTION_VIEW` with styled TextView
+- Web: `<a href="...">` tag
 
 ---
 
-### Pattern 5: Custom Label Layout → Platform Label Component
+### Pattern 5: Manual Icon+Text Layout → Platform Label
 
-**Bad (Custom Layout):**
-```pseudocode
-Row {
-  Icon("bell")
-  Column {
-    Text("Notifications")
-    Text("Manage alerts")
-  }
-}
+**BAD: Manual layout**
+```
+<Row spacing="12">
+  <Icon name="bell" size="20" />
+  <Column spacing="2">
+    <Text font="semibold">Notifications</Text>
+    <Text font="caption" color="secondary">Manage alerts</Text>
+  </Column>
+</Row>
 ```
 
-**Good (Platform Label):**
-```pseudocode
-Label(
-  text: "Notifications",
-  icon: "bell",
-  subtitle: "Manage alerts"
-)
+**GOOD: Platform label component**
+```
+<Label 
+  title="Notifications"
+  subtitle="Manage alerts"
+  icon="bell" />
 ```
 
-**Key Principle:** Use platform's standard label component that combines icon + text, rather than manually laying them out.
+**WHY:** Label components handle icon alignment, text hierarchy, and RTL automatically. Manual layouts require individual updates for design changes.
+
+**Platform Examples:**
+- iOS: `Label("Text", systemImage: "icon")` or custom `Label` view
+- Android: Material `ListItem` with icon and two-line text
+- Web: Semantic HTML with CSS Grid for layout
 
 ---
 
@@ -526,14 +534,23 @@ A refactor is successful when:
 
 ## Quick Reference Card
 
-**Replace This** → **With This**
-- Custom wrapper with padding → Direct list/table rows
-- Custom section header → Platform Section("Header")
-- Custom shape (Circle, etc.) → Platform icon
-- Custom button for URL → Platform Link component
-- Manual icon + text layout → Platform Label component
-- Custom background on list → Remove it
-- Manual padding in sections → Remove it
+**Pattern** | **Replace With** | **When to Apply** | **Exception?**
+---|---|---|---
+Custom wrapper with padding | Direct list/table rows | Always in settings/config | Check exceptions file
+Custom section header component | Platform Section("Header") | Always - use platform headers | Never allow exceptions
+Custom Circle/Rectangle shape | Platform icon (e.g., SF Symbol) | For status indicators, badges | Rare - must document
+Custom Button opening URL | Platform Link component | For external links | Check for brand icons
+Manual Row(Icon + Text) | Platform Label component | For navigation links | Check for brand elements
+Custom .background() on list | Remove modifier | Always - let platform handle | Never allow exceptions
+Manual .padding() in sections | Remove modifier | Unless functionally necessary | Rare - must justify
+VStack wrapping single element | Remove wrapper | Unless grouping multiple | Never allow exceptions
+Custom font/color on headers | Remove overrides | Always - use platform | Never allow exceptions
+
+**How to decide:** 
+1. Check exceptions registry FIRST
+2. If documented exception → skip it
+3. If NOT in exceptions → flag for fixing
+4. If user wants to keep it → add to exceptions registry
 
 ---
 

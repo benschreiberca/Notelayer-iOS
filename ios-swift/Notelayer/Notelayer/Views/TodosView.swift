@@ -14,10 +14,11 @@ struct TodosView: View {
     @State private var editingTask: Task? = nil
     @State private var showingCategoryManager = false
     @State private var showingAppearance = false
-    @State private var showingAuthentication = false
+    @State private var showingProfileSettings = false
     @State private var viewMode: TodoViewMode = .list
     @State private var sharePayload: SharePayload? = nil
     @EnvironmentObject private var theme: ThemeManager
+    @EnvironmentObject private var authService: AuthService
     
     var body: some View {
         let tasks = store.tasks
@@ -80,6 +81,11 @@ struct TodosView: View {
                             
                             Menu {
                                 Button {
+                                    showingProfileSettings = true
+                                } label: {
+                                    Label("Profile & Settings", systemImage: "person.circle")
+                                }
+                                Button {
                                     showingAppearance = true
                                 } label: {
                                     Label("Appearance", systemImage: "paintbrush")
@@ -89,15 +95,20 @@ struct TodosView: View {
                                 } label: {
                                     Label("Manage Categories", systemImage: "tag")
                                 }
-                                Button {
-                                    showingAuthentication = true
-                                } label: {
-                                    Label("Authentication", systemImage: "person.badge.key")
-                                }
                             } label: {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .padding(10) // large hit target
+                                ZStack(alignment: .topTrailing) {
+                                    Image(systemName: "gearshape")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .padding(10) // large hit target
+                                    
+                                    // Notification badge
+                                    if authService.syncStatus.shouldShowBadge {
+                                        Circle()
+                                            .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
+                                            .frame(width: 8, height: 8)
+                                            .offset(x: 4, y: 4)
+                                    }
+                                }
                             }
                             .buttonStyle(.plain)
                         }
@@ -178,10 +189,10 @@ struct TodosView: View {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $showingAuthentication) {
-                SignInSheet()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+            .sheet(isPresented: $showingProfileSettings) {
+                ProfileSettingsView()
+                    .environmentObject(authService)
+                    .environmentObject(theme)
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)

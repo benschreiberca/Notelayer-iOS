@@ -52,10 +52,38 @@ private func configureFirebaseIfNeeded() {
     }
 }
 
+enum SyncStatus {
+    case notSignedIn
+    case signedInSynced(lastSync: Date)
+    case signedInSyncError(error: String)
+    
+    var shouldShowBadge: Bool {
+        switch self {
+        case .notSignedIn, .signedInSyncError:
+            return true
+        case .signedInSynced:
+            return false
+        }
+    }
+    
+    var badgeColor: String {
+        switch self {
+        case .notSignedIn:
+            return "red"
+        case .signedInSyncError:
+            return "yellow"
+        case .signedInSynced:
+            return ""
+        }
+    }
+}
+
 @MainActor
 final class AuthService: NSObject, ObservableObject {
     @Published private(set) var user: User?
     @Published private(set) var phoneVerificationID: String?
+    @Published private(set) var syncStatus: SyncStatus = .notSignedIn
+    @Published private(set) var lastSyncTime: Date?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private let appleCoordinator = AppleSignInCoordinator()
@@ -73,7 +101,50 @@ final class AuthService: NSObject, ObservableObject {
             }
             #endif
             self?.user = user
+            self?.updateSyncStatus()
         }
+    }
+    
+    func updateSyncStatus() {
+        if user == nil {
+            syncStatus = .notSignedIn
+        } else {
+            // Default to synced - backend service will update if there's an error
+            syncStatus = .signedInSynced(lastSync: lastSyncTime ?? Date())
+        }
+    }
+    
+    func updateLastSyncTime(_ date: Date) {
+        lastSyncTime = date
+        if user != nil {
+            syncStatus = .signedInSynced(lastSync: date)
+        }
+    }
+    
+    func reportSyncError(_ error: String) {
+        if user != nil {
+            syncStatus = .signedInSyncError(error: error)
+        }
+    }
+    
+    var authMethodDisplay: String? {
+        guard let user = user else { return nil }
+        
+        if let email = user.email {
+            if user.providerData.contains(where: { $0.providerID == "google.com" }) {
+                return "Google (\(email))"
+            }
+            if user.providerData.contains(where: { $0.providerID == "apple.com" }) {
+                return "Apple (\(email))"
+            }
+            return email
+        }
+        
+        if let phone = user.phoneNumber {
+            return "Phone (\(phone))"
+        }
+        
+        return "Unknown method"
     }
 
     deinit {
@@ -92,6 +163,14 @@ final class AuthService: NSObject, ObservableObject {
         print("🔵 [AuthService] Starting Google Sign-In...")
         #endif
         configureFirebaseIfNeeded()
+        
+        // Check if user is already signed in with a different method
+        if let existingUser = user {
+            #if DEBUG
+            print("⚠️ [AuthService] User already signed in with different method")
+            #endif
+            throw AuthServiceError.alreadySignedInWithDifferentMethod
+        }
         
         guard let app = FirebaseApp.app() else {
             #if DEBUG
@@ -164,6 +243,14 @@ final class AuthService: NSObject, ObservableObject {
         print("🍎 [AuthService] Starting Apple Sign-In...")
         #endif
         configureFirebaseIfNeeded()
+        
+        // Check if user is already signed in with a different method
+        if let existingUser = user {
+            #if DEBUG
+            print("⚠️ [AuthService] User already signed in with different method")
+            #endif
+            throw AuthServiceError.alreadySignedInWithDifferentMethod
+        }
         
         // Try to get a presentation anchor
         var anchor = presentationAnchor
@@ -248,6 +335,14 @@ final class AuthService: NSObject, ObservableObject {
         print("📱 [AuthService] Starting phone number sign-in - phone: \(phoneNumber)")
         #endif
         configureFirebaseIfNeeded()
+        
+        // Check if user is already signed in with a different method
+        if let existingUser = user {
+            #if DEBUG
+            print("⚠️ [AuthService] User already signed in with different method")
+            #endif
+            throw AuthServiceError.alreadySignedInWithDifferentMethod
+        }
         let verificationID = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { id, error in
                 if let error {
@@ -313,6 +408,7 @@ enum AuthServiceError: LocalizedError {
     case missingAppleIDToken
     case missingPresentationAnchor
     case missingPhoneVerificationID
+    case alreadySignedInWithDifferentMethod
 
     var errorDescription: String? {
         switch self {
@@ -326,6 +422,8 @@ enum AuthServiceError: LocalizedError {
             return "Missing presentation anchor for Sign in with Apple."
         case .missingPhoneVerificationID:
             return "Missing phone verification ID."
+        case .alreadySignedInWithDifferentMethod:
+            return "You're already signed in. Sign out first to use a different method."
         }
     }
 }

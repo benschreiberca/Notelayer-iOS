@@ -1,6 +1,6 @@
 # Auth & Onboarding Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `64%`
 
 ## TLDR
 Complete authentication UX overhaul: Add non-intrusive welcome page with logo animation, redesign auth UI with consistent styling (Phone → Google → Apple), create Profile & Settings page with sync status, add notification badges to gear icons, and fix Firebase crashes. Make auth seamless, clear, and delightful.
@@ -17,90 +17,90 @@ Complete authentication UX overhaul: Add non-intrusive welcome page with logo an
 
 ## Tasks
 
-- [ ] 🟥 **Step 1: Create Reusable Auth Button Component**
-  - [ ] 🟥 Create `AuthButtonView.swift` with consistent styling
-  - [ ] 🟥 Support Phone, Google, Apple variants with proper icons
-  - [ ] 🟥 Rounded style, 48pt height, icon + centered text
-  - [ ] 🟥 Match Instagram/Airbnb reference designs
-  - [ ] 🟥 Handle enabled/disabled states
-  - [ ] 🟥 Add proper tap handling closure
+- [x] 🟩 **Step 1: Create Reusable Auth Button Component**
+  - [x] 🟩 Create `AuthButtonView.swift` with consistent styling
+  - [x] 🟩 Support Phone, Google, Apple variants with proper icons
+  - [x] 🟩 Rounded style, 48pt height, icon + centered text
+  - [x] 🟩 Match Instagram/Airbnb reference designs
+  - [x] 🟩 Handle enabled/disabled states
+  - [x] 🟩 Add proper tap handling closure
 
-- [ ] 🟥 **Step 2: Create Welcome Page with Logo Animation**
-  - [ ] 🟥 Create `WelcomeView.swift`
-  - [ ] 🟥 Add "Welcome to Notelayer" text + Notelayer logo (centered)
-  - [ ] 🟥 Create `AnimatedLogoView` with spin + confetti shatter effect
-  - [ ] 🟥 Add auth buttons using `AuthButtonView` (Phone, Google, Apple order)
-  - [ ] 🟥 Add "Nah, I don't want to backup" dismiss button at bottom
-  - [ ] 🟥 Brief sync benefit text (regular language, not technical)
-  - [ ] 🟥 Use themed background consistent with app
-  - [ ] 🟥 Sheet presentation with drag indicator
+- [x] 🟩 **Step 2: Create Welcome Page with Logo Animation**
+  - [x] 🟩 Create `WelcomeView.swift`
+  - [x] 🟩 Add "Welcome to Notelayer" text + Notelayer logo (centered)
+  - [x] 🟩 Create `AnimatedLogoView` with spin + confetti shatter effect
+  - [x] 🟩 Add auth buttons using `AuthButtonView` (Phone, Google, Apple order)
+  - [x] 🟩 Add "Nah, I don't want to backup" dismiss button at bottom
+  - [x] 🟩 Brief sync benefit text (regular language, not technical)
+  - [x] 🟩 Use themed background consistent with app
+  - [x] 🟩 Sheet presentation with drag indicator
 
-- [ ] 🟥 **Step 3: Create Welcome Coordinator & State Management**
-  - [ ] 🟥 Create `WelcomeCoordinator.swift` to track dismissal state
-  - [ ] 🟥 Use UserDefaults with app group: `group.com.notelayer.app`
-  - [ ] 🟥 Add `hasSeenWelcome` boolean key
-  - [ ] 🟥 Logic: Show welcome if NOT signed in AND NOT dismissed before
-  - [ ] 🟥 Permanent dismissal on "Nah, I don't want to backup" tap
+- [x] 🟩 **Step 3: Create Welcome Coordinator & State Management**
+  - [x] 🟩 Create `WelcomeCoordinator.swift` to track dismissal state
+  - [x] 🟩 Use UserDefaults with app group: `group.com.notelayer.app`
+  - [x] 🟩 Add `hasSeenWelcome` boolean key
+  - [x] 🟩 Logic: Show welcome if NOT signed in AND NOT dismissed before
+  - [x] 🟩 Permanent dismissal on "Nah, I don't want to backup" tap
 
-- [ ] 🟥 **Step 4: Integrate Welcome Page into App Launch**
-  - [ ] 🟥 Modify `RootTabsView.swift` to check welcome state
-  - [ ] 🟥 Add 0.5s delay before showing welcome sheet
-  - [ ] 🟥 Pass `AuthService` as environment object to welcome
-  - [ ] 🟥 Auto-dismiss welcome after successful sign-in
-  - [ ] 🟥 Never show again after dismissal
+- [x] 🟩 **Step 4: Integrate Welcome Page into App Launch**
+  - [x] 🟩 Modify `RootTabsView.swift` to check welcome state
+  - [x] 🟩 Add 0.5s delay before showing welcome sheet
+  - [x] 🟩 Pass `AuthService` as environment object to welcome
+  - [x] 🟩 Auto-dismiss welcome after successful sign-in
+  - [x] 🟩 Never show again after dismissal
 
-- [ ] 🟥 **Step 5: Create Profile & Settings Page**
-  - [ ] 🟥 Create `ProfileSettingsView.swift`
-  - [ ] 🟥 **When NOT signed in:**
-    - [ ] 🟥 "Sign in to sync" prominent message
-    - [ ] 🟥 Auth buttons (Phone, Google, Apple) using `AuthButtonView`
-    - [ ] 🟥 Brief explanation of sync benefits
-  - [ ] 🟥 **When signed in:**
-    - [ ] 🟥 Auth status section: "Signed in with [method]"
-    - [ ] 🟥 Display user identifier (email/phone)
-    - [ ] 🟥 Last sync time: "Last synced: X mins ago" or "Syncing..." or "Sync error"
-    - [ ] 🟥 Sign out button (destructive style)
-  - [ ] 🟥 **About section (not prominent):**
-    - [ ] 🟥 "About the app" collapsible section
-    - [ ] 🟥 App version from Bundle
-    - [ ] 🟥 Privacy policy link placeholder
-  - [ ] 🟥 Use `InsetCard` for sections
-  - [ ] 🟥 Sheet presentation with medium/large detents
+- [x] 🟩 **Step 5: Create Profile & Settings Page**
+  - [x] 🟩 Create `ProfileSettingsView.swift`
+  - [x] 🟩 **When NOT signed in:**
+    - [x] 🟩 "Sign in to sync" prominent message
+    - [x] 🟩 Auth buttons (Phone, Google, Apple) using `AuthButtonView`
+    - [x] 🟩 Brief explanation of sync benefits
+  - [x] 🟩 **When signed in:**
+    - [x] 🟩 Auth status section: "Signed in with [method]"
+    - [x] 🟩 Display user identifier (email/phone)
+    - [x] 🟩 Last sync time: "Last synced: X mins ago" or "Syncing..." or "Sync error"
+    - [x] 🟩 Sign out button (destructive style)
+  - [x] 🟩 **About section (not prominent):**
+    - [x] 🟩 "About the app" collapsible section
+    - [x] 🟩 App version from Bundle
+    - [x] 🟩 Privacy policy link placeholder
+  - [x] 🟩 Use `InsetCard` for sections
+  - [x] 🟩 Sheet presentation with medium/large detents
 
-- [ ] 🟥 **Step 6: Add Sync Status Tracking & Badge Logic**
-  - [ ] 🟥 Add sync status enum to `AuthService` or `SyncService`
-  - [ ] 🟥 States: `notSignedIn`, `signedInSynced`, `signedInSyncError`
-  - [ ] 🟥 Publish sync status changes
-  - [ ] 🟥 Create computed property: `shouldShowBadge` (true if not signed in or sync error)
-  - [ ] 🟥 Create computed property: `badgeColor` (red = not signed in, yellow = sync error)
-  - [ ] 🟥 Track last sync timestamp
-  - [ ] 🟥 Detect sync errors from Firebase
+- [x] 🟩 **Step 6: Add Sync Status Tracking & Badge Logic**
+  - [x] 🟩 Add sync status enum to `AuthService` or `SyncService`
+  - [x] 🟩 States: `notSignedIn`, `signedInSynced`, `signedInSyncError`
+  - [x] 🟩 Publish sync status changes
+  - [x] 🟩 Create computed property: `shouldShowBadge` (true if not signed in or sync error)
+  - [x] 🟩 Create computed property: `badgeColor` (red = not signed in, yellow = sync error)
+  - [x] 🟩 Track last sync timestamp
+  - [x] 🟩 Detect sync errors from Firebase
 
-- [ ] 🟥 **Step 7: Update TodosView Gear Menu**
-  - [ ] 🟥 Add notification badge overlay on gear icon
-  - [ ] 🟥 Badge shows red/yellow dot based on sync status
-  - [ ] 🟥 Replace "Authentication" menu item with "Profile & Settings"
-  - [ ] 🟥 Keep "Appearance" and "Manage Categories" as-is
-  - [ ] 🟥 Add sheet presentation for Profile & Settings
-  - [ ] 🟥 Remove `showingAuthentication` state
-  - [ ] 🟥 Add `showingProfileSettings` state
+- [x] 🟩 **Step 7: Update TodosView Gear Menu**
+  - [x] 🟩 Add notification badge overlay on gear icon
+  - [x] 🟩 Badge shows red/yellow dot based on sync status
+  - [x] 🟩 Replace "Authentication" menu item with "Profile & Settings"
+  - [x] 🟩 Keep "Appearance" and "Manage Categories" as-is
+  - [x] 🟩 Add sheet presentation for Profile & Settings
+  - [x] 🟩 Remove `showingAuthentication` state
+  - [x] 🟩 Add `showingProfileSettings` state
 
-- [ ] 🟥 **Step 8: Add Gear Menu to NotesView**
-  - [ ] 🟥 Add gear icon to top-right (match TodosView position)
-  - [ ] 🟥 Add notification badge overlay (same logic as TodosView)
-  - [ ] 🟥 Add identical menu: Profile & Settings, Appearance, Manage Categories
-  - [ ] 🟥 Add sheet presentations for all menu items
-  - [ ] 🟥 Share sync status from AuthService
-  - [ ] 🟥 Ensure consistent styling with TodosView
+- [x] 🟩 **Step 8: Add Gear Menu to NotesView**
+  - [x] 🟩 Add gear icon to top-right (match TodosView position)
+  - [x] 🟩 Add notification badge overlay (same logic as TodosView)
+  - [x] 🟩 Add identical menu: Profile & Settings, Appearance, Manage Categories
+  - [x] 🟩 Add sheet presentations for all menu items
+  - [x] 🟩 Share sync status from AuthService
+  - [x] 🟩 Ensure consistent styling with TodosView
 
-- [ ] 🟥 **Step 9: Redesign SignInSheet UI**
-  - [ ] 🟥 Replace native Apple/Google buttons with custom `AuthButtonView`
-  - [ ] 🟥 Reorder: Phone (top), Google, Apple
-  - [ ] 🟥 Keep phone auth as inline input (country picker + number field)
-  - [ ] 🟥 Ensure numeric keypad for phone input
-  - [ ] 🟥 Remove signed-in state display from SignInSheet
-  - [ ] 🟥 Keep clean spacing and modern aesthetics
-  - [ ] 🟥 Maintain two-step phone flow (number → code)
+- [x] 🟩 **Step 9: Redesign SignInSheet UI**
+  - [x] 🟩 Replace native Apple/Google buttons with custom `AuthButtonView`
+  - [x] 🟩 Reorder: Phone (top), Google, Apple
+  - [x] 🟩 Keep phone auth as inline input (country picker + number field)
+  - [x] 🟩 Ensure numeric keypad for phone input
+  - [x] 🟩 Remove signed-in state display from SignInSheet
+  - [x] 🟩 Keep clean spacing and modern aesthetics
+  - [x] 🟩 Maintain two-step phone flow (number → code)
 
 - [ ] 🟥 **Step 10: Fix Auth Flow Logic**
   - [ ] 🟥 Check if user already authenticated before allowing different method

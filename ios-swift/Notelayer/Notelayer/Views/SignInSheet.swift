@@ -10,13 +10,15 @@ struct SignInSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     // Two-step phone flow keeps verification state explicit and reduces edge cases.
-    @State private var phoneStep: PhoneStep = .inactive
+    @State private var phoneStep: PhoneStep = .enterNumber
+    @State private var countryCode = "+1"
     @State private var phoneNumber = ""
     @State private var verificationCode = ""
     @State private var phoneError = ""
     @State private var generalError = ""
     @State private var isBusy = false
-    @State private var isSheetReady = false
+    @State private var resendCountdown = 0
+    @State private var resendTimer: Timer?
 
     var body: some View {
         ScrollView {
@@ -31,59 +33,32 @@ struct SignInSheet: View {
 
                 if isBusy {
                     ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
 
-                AppleIDSignInButton(isEnabled: !isBusy && isSheetReady) {
-                    _Concurrency.Task { await startAppleSignIn() }
-                }
-                .frame(height: 48)
-
-                GoogleSignInButton(isEnabled: !isBusy && isSheetReady) {
-                    _Concurrency.Task { await startGoogleSignIn() }
-                }
-                .frame(height: 48)
-
-                Button {
-                    phoneStep = .enterNumber
-                    phoneError = ""
-                    generalError = ""
-                } label: {
-                    HStack {
-                        Image(systemName: "phone")
-                        Text("Continue with Phone")
-                            .font(.headline)
-                        Spacer()
+                // Phone auth section (always visible, inline)
+                phoneSection
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
+                // Social auth buttons
+                VStack(spacing: 12) {
+                    AuthButtonView(provider: .google, isEnabled: !isBusy) {
+                        Task { await startGoogleSignIn() }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(.primary)
-                .disabled(isBusy)
-
-                if phoneStep != .inactive {
-                    phoneSection
-                }
-
-                if let user = authService.user {
-                    signedInSection(user: user)
+                    
+                    AuthButtonView(provider: .apple, isEnabled: !isBusy) {
+                        Task { await startAppleSignIn() }
+                    }
                 }
             }
             .padding(20)
         }
         .scrollDismissesKeyboard(.interactively)
-        .onAppear {
+        .task {
             // Phone auth requires APNS registration before verification.
             authService.prepareForPhoneAuth()
-            
-            // Wait for sheet to fully present before enabling auth buttons
-            // This prevents crashes from trying to present auth UI too early
-            _Concurrency.Task {
-                try? await _Concurrency.Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
-                isSheetReady = true
-            }
         }
     }
 
@@ -101,12 +76,36 @@ struct SignInSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             switch phoneStep {
             case .enterNumber:
-                TextField("Phone number", text: $phoneNumber)
-                    .keyboardType(.phonePad)
-                    .textFieldStyle(.roundedBorder)
+                // Country code + Phone number input
+                HStack(spacing: 8) {
+                    // Country code picker
+                    Menu {
+                        Button("+1 (US)") { countryCode = "+1" }
+                        Button("+44 (UK)") { countryCode = "+44" }
+                        Button("+91 (IN)") { countryCode = "+91" }
+                        Button("+61 (AU)") { countryCode = "+61" }
+                        Button("+86 (CN)") { countryCode = "+86" }
+                    } label: {
+                        Text(countryCode)
+                            .font(.body)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.secondarySystemBackground))
+                            )
+                    }
+                    
+                    TextField("Phone number", text: $phoneNumber)
+                        .keyboardType(.phonePad)
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: phoneNumber) { oldValue, newValue in
+                            phoneNumber = formatPhoneNumber(newValue)
+                        }
+                }
 
                 Button("Send code") {
-                    _Concurrency.Task { await startPhoneVerification() }
+                    Task { await startPhoneVerification() }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isBusy || phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -115,10 +114,11 @@ struct SignInSheet: View {
                 TextField("Verification code", text: $verificationCode)
                     .keyboardType(.numberPad)
                     .textFieldStyle(.roundedBorder)
+                    .textContentType(.oneTimeCode)
 
                 HStack(spacing: 12) {
                     Button("Verify") {
-                        _Concurrency.Task { await verifyPhoneCode() }
+                        Task { await verifyPhoneCode() }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(isBusy || verificationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -126,8 +126,22 @@ struct SignInSheet: View {
                     Button("Back") {
                         phoneStep = .enterNumber
                         phoneError = ""
+                        stopResendTimer()
                     }
                     .buttonStyle(.bordered)
+                    .disabled(isBusy)
+                }
+                
+                // Resend code button
+                if resendCountdown > 0 {
+                    Text("Resend code in \(resendCountdown)s")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Resend code") {
+                        Task { await startPhoneVerification() }
+                    }
+                    .font(.caption)
                     .disabled(isBusy)
                 }
 
@@ -142,22 +156,46 @@ struct SignInSheet: View {
             }
         }
     }
-
-    private func signedInSection(user: User) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Signed in as: \(user.email ?? user.phoneNumber ?? user.uid)")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-
-            Button(role: .destructive) {
-                runSignOut()
-            } label: {
-                Text("Sign out")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
+    
+    private func formatPhoneNumber(_ number: String) -> String {
+        // Remove non-numeric characters
+        let digits = number.filter { $0.isNumber }
+        
+        // Limit to 10 digits for US numbers
+        let limited = String(digits.prefix(10))
+        
+        // Format as (XXX) XXX-XXXX
+        if limited.count >= 6 {
+            let areaCode = limited.prefix(3)
+            let prefix = limited.dropFirst(3).prefix(3)
+            let suffix = limited.dropFirst(6)
+            return "(\(areaCode)) \(prefix)-\(suffix)"
+        } else if limited.count >= 3 {
+            let areaCode = limited.prefix(3)
+            let rest = limited.dropFirst(3)
+            return "(\(areaCode)) \(rest)"
+        } else {
+            return limited
         }
     }
+    
+    private func startResendTimer() {
+        resendCountdown = 60
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if resendCountdown > 0 {
+                resendCountdown -= 1
+            } else {
+                stopResendTimer()
+            }
+        }
+    }
+    
+    private func stopResendTimer() {
+        resendTimer?.invalidate()
+        resendTimer = nil
+        resendCountdown = 0
+    }
+
 
     @MainActor
     private func runAuthAction(_ action: @escaping () async throws -> Void) async {
@@ -188,8 +226,7 @@ struct SignInSheet: View {
     @MainActor
     private func startAppleSignIn() async {
         await runAuthAction {
-            // Get the window for presentation anchor
-            guard let window = await findKeyWindow() else {
+            guard let window = findKeyWindow() else {
                 throw AuthViewError.missingWindow
             }
             try await authService.signInWithApple(presentationAnchor: window)
@@ -199,7 +236,7 @@ struct SignInSheet: View {
     @MainActor
     private func startGoogleSignIn() async {
         await runAuthAction {
-            guard let controller = await waitForPresenter() else {
+            guard let controller = findTopViewController() else {
                 throw AuthViewError.missingPresenter
             }
             try await authService.signInWithGoogle(presenting: controller)
@@ -209,8 +246,12 @@ struct SignInSheet: View {
     @MainActor
     private func startPhoneVerification() async {
         await runPhoneAction {
-            _ = try await authService.startPhoneNumberSignIn(phoneNumber: phoneNumber)
+            // Combine country code with phone number
+            let digitsOnly = phoneNumber.filter { $0.isNumber }
+            let fullNumber = "\(countryCode)\(digitsOnly)"
+            _ = try await authService.startPhoneNumberSignIn(phoneNumber: fullNumber)
             phoneStep = .enterCode
+            startResendTimer()
         }
     }
 
@@ -222,55 +263,22 @@ struct SignInSheet: View {
         }
     }
 
-    private func runSignOut() {
-        generalError = ""
-        do {
-            try authService.signOut()
-        } catch {
-            generalError = error.localizedDescription
+    @MainActor
+    private func findTopViewController() -> UIViewController? {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+            return nil
         }
+        return window.rootViewController?.topMostViewController
     }
 
     @MainActor
-    private func waitForPresenter() async -> UIViewController? {
-        // Avoid presenting Google sign-in before the sheet is fully in place.
-        // Increased timeout to handle slower devices and animations
-        for attempt in 0..<10 {
-            if let controller = UIApplication.shared.topViewController,
-               let window = controller.view.window,
-               window.isKeyWindow,
-               controller.view.superview != nil {
-                // Extra validation: ensure view is actually in the hierarchy
-                return controller
-            }
-            // Longer sleep intervals for better reliability
-            if attempt < 9 {
-                try? await _Concurrency.Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-            }
-            await _Concurrency.Task.yield()
+    private func findKeyWindow() -> UIWindow? {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return nil
         }
-        return nil
-    }
-
-    @MainActor
-    private func findKeyWindow() async -> UIWindow? {
-        // Wait for the window to be available and stable
-        for attempt in 0..<10 {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.isKeyWindow && $0.rootViewController != nil }) {
-                return window
-            }
-            // Also try finding any available window as fallback
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first(where: { $0.rootViewController != nil }) {
-                return window
-            }
-            if attempt < 9 {
-                try? await _Concurrency.Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-            }
-            await _Concurrency.Task.yield()
-        }
-        return nil
+        return windowScene.windows.first(where: { $0.isKeyWindow })
+            ?? windowScene.windows.first
     }
 }
 
@@ -294,79 +302,6 @@ private enum AuthViewError: LocalizedError {
     }
 }
 
-private struct AppleIDSignInButton: UIViewRepresentable {
-    let isEnabled: Bool
-    let onTap: () -> Void
-
-    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
-        let button = ASAuthorizationAppleIDButton(type: .signIn, style: .black)
-        button.addTarget(context.coordinator, action: #selector(Coordinator.didTap), for: .touchUpInside)
-        return button
-    }
-
-    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {
-        uiView.isEnabled = isEnabled
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onTap: onTap)
-    }
-
-    final class Coordinator: NSObject {
-        private let onTap: () -> Void
-
-        init(onTap: @escaping () -> Void) {
-            self.onTap = onTap
-        }
-
-        @objc func didTap() {
-            onTap()
-        }
-    }
-}
-
-private struct GoogleSignInButton: UIViewRepresentable {
-    let isEnabled: Bool
-    let onTap: () -> Void
-
-    func makeUIView(context: Context) -> GIDSignInButton {
-        let button = GIDSignInButton()
-        button.addTarget(context.coordinator, action: #selector(Coordinator.didTap), for: .touchUpInside)
-        return button
-    }
-
-    func updateUIView(_ uiView: GIDSignInButton, context: Context) {
-        uiView.isEnabled = isEnabled
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onTap: onTap)
-    }
-
-    final class Coordinator: NSObject {
-        private let onTap: () -> Void
-
-        init(onTap: @escaping () -> Void) {
-            self.onTap = onTap
-        }
-
-        @objc func didTap() {
-            onTap()
-        }
-    }
-}
-
-private extension UIApplication {
-    var topViewController: UIViewController? {
-        let scenes = connectedScenes.compactMap { $0 as? UIWindowScene }
-        let window = scenes.flatMap { $0.windows }.first(where: { $0.isKeyWindow })
-            ?? scenes.first?.windows.first
-        guard let window else {
-            return nil
-        }
-        return window.rootViewController?.topMostViewController
-    }
-}
 
 private extension UIViewController {
     var topMostViewController: UIViewController {

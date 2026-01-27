@@ -16,6 +16,27 @@
 
 ## Unreleased
 
+### 2026-01-26 20:45:00 -0500 - Overhaul: Authentication & Onboarding (improved-login)
+
+#### Added
+- **Welcome Experience**: First-launch `WelcomeView` with playful `AnimatedLogoView` (spin + confetti shatter effect).
+- **Profile & Settings**: New comprehensive management page for account status, sync info, and sign-out.
+- **Auth Components**: Reusable `AuthButtonView` with consistent Phone, Google, and Apple styling.
+- **Notification Badges**: Red (not signed in) and Yellow (sync error) badges on gear icons in both tabs.
+- **Website Link**: Prominent "Visit Notelayer" button in Profile settings.
+
+#### Changed
+- **Sign-In Redesign**: Rebuilt `SignInSheet` with inline Phone auth, country picker, and auto-formatting.
+- **Header Branding**: Replaced "To-Dos" text with Notelayer logo in the main header.
+- **Dynamic Header**: Implemented "squeeze" interaction that compresses the header on scroll while keeping controls visible.
+- **Menu Reorg**: Renamed "Appearance" to "Colour Theme" and reordered gear menu items.
+- **Terminology**: Updated "Todos" to "To-Dos" across the entire application.
+
+#### Fixed
+- **Stability**: Eliminated Firebase-related crashes by removing timing hacks and using proper async/await lifecycle.
+- **Auth Logic**: Prevented linking multiple authentication providers to a single account.
+- **Build Errors**: Resolved ambiguous math functions and task naming conflicts.
+
 ### 2026-01-25 17:12:45 -0500 - Update: New Task placement in grouped views
 
 #### Changed

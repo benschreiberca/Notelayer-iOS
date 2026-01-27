@@ -94,26 +94,64 @@ struct ProfileSettingsView: View {
     }
     
     private var signedOutSection: some View {
-        InsetCard {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Sign in to sync")
-                        .font(.title3.bold())
+        VStack(spacing: 16) {
+            InsetCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Sign in to sync")
+                            .font(.title3.bold())
+                        
+                        Text("Sync your notes and tasks across all your devices")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     
-                    Text("Sync your notes and tasks across all your devices")
-                        .font(.subheadline)
+                    Button {
+                        showingSignIn = true
+                    } label: {
+                        Text("Sign In")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+            
+            // Notelayer website link
+            Button {
+                if let url = URL(string: "https://getnotelayer.com") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image("notelayer-logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 32, height: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Visit Notelayer")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Text("getnotelayer.com")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
-                Button {
-                    showingSignIn = true
-                } label: {
-                    Text("Sign In")
-                        .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                )
             }
+            .buttonStyle(.plain)
         }
     }
     
@@ -126,13 +164,13 @@ struct ProfileSettingsView: View {
             } label: {
                 HStack {
                     Text("About the app")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                     
                     Spacer()
                     
                     Image(systemName: showAbout ? "chevron.down" : "chevron.right")
-                        .font(.caption)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
             }

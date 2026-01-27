@@ -22,7 +22,7 @@ struct RootTabsView: View {
                 
                 TodosView()
                     .tabItem {
-                        Label("Todos", systemImage: "checklist")
+                        Label("To-Dos", systemImage: "checklist")
                     }
                     .tag(AppTab.todos)
             }

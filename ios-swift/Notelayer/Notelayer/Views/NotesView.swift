@@ -43,19 +43,19 @@ struct NotesView: View {
                         
                         Menu {
                             Button {
-                                showingProfileSettings = true
-                            } label: {
-                                Label("Profile & Settings", systemImage: "person.circle")
-                            }
-                            Button {
                                 showingAppearance = true
                             } label: {
-                                Label("Appearance", systemImage: "paintbrush")
+                                Label("Colour Theme", systemImage: "paintbrush")
                             }
                             Button {
                                 showingCategoryManager = true
                             } label: {
                                 Label("Manage Categories", systemImage: "tag")
+                            }
+                            Button {
+                                showingProfileSettings = true
+                            } label: {
+                                Label("Profile & Settings", systemImage: "person.circle")
                             }
                         } label: {
                             ZStack(alignment: .topTrailing) {

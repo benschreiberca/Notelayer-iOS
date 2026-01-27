@@ -17,6 +17,7 @@ struct TodosView: View {
     @State private var showingProfileSettings = false
     @State private var viewMode: TodoViewMode = .list
     @State private var sharePayload: SharePayload? = nil
+    @State private var scrollOffset: CGFloat = 0
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
@@ -38,10 +39,15 @@ struct TodosView: View {
                 }
                 
                 VStack(spacing: 0) {
-                    // Header with Todos, Doing/Done toggle, and menu
-                    HStack {
-                        Text("Todos")
-                            .font(.headline)
+                    // Header with Logo, Doing/Done toggle, and menu
+                    let isCompact = scrollOffset > 50
+                    
+                    HStack(spacing: isCompact ? 8 : 12) {
+                        Image("notelayer-logo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: isCompact ? 28 : 36, height: isCompact ? 28 : 36)
+                            .clipShape(RoundedRectangle(cornerRadius: isCompact ? 6 : 8, style: .continuous))
                             .padding(.leading, 16)
                         
                         Spacer()
@@ -49,14 +55,14 @@ struct TodosView: View {
                         HStack {
                             Spacer()
                             
-                            HStack(spacing: 8) {
+                            HStack(spacing: isCompact ? 6 : 8) {
                                 Button(action: { showingDone = false }) {
-                                    VStack(spacing: 3) {
+                                    VStack(spacing: isCompact ? 2 : 3) {
                                         Text("Doing")
-                                            .font(.subheadline)
+                                            .font(isCompact ? .caption : .subheadline)
                                             .foregroundColor(showingDone ? .secondary : .primary)
                                         Text("\(doingTasks.count)")
-                                            .font(.caption2)
+                                            .font(isCompact ? .caption2 : .caption2)
                                             .foregroundColor(.secondary)
                                     }
                                 }
@@ -64,14 +70,15 @@ struct TodosView: View {
                                 Toggle("", isOn: $showingDone)
                                     .labelsHidden()
                                     .tint(theme.tokens.accent)
+                                    .scaleEffect(isCompact ? 0.9 : 1.0)
                                 
                                 Button(action: { showingDone = true }) {
-                                    VStack(spacing: 3) {
+                                    VStack(spacing: isCompact ? 2 : 3) {
                                         Text("Done")
-                                            .font(.subheadline)
+                                            .font(isCompact ? .caption : .subheadline)
                                             .foregroundColor(showingDone ? .primary : .secondary)
                                         Text("\(doneTasks.count)")
-                                            .font(.caption2)
+                                            .font(isCompact ? .caption2 : .caption2)
                                             .foregroundColor(.secondary)
                                     }
                                 }
@@ -81,25 +88,25 @@ struct TodosView: View {
                             
                             Menu {
                                 Button {
-                                    showingProfileSettings = true
-                                } label: {
-                                    Label("Profile & Settings", systemImage: "person.circle")
-                                }
-                                Button {
                                     showingAppearance = true
                                 } label: {
-                                    Label("Appearance", systemImage: "paintbrush")
+                                    Label("Colour Theme", systemImage: "paintbrush")
                                 }
                                 Button {
                                     showingCategoryManager = true
                                 } label: {
                                     Label("Manage Categories", systemImage: "tag")
                                 }
+                                Button {
+                                    showingProfileSettings = true
+                                } label: {
+                                    Label("Profile & Settings", systemImage: "person.circle")
+                                }
                             } label: {
                                 ZStack(alignment: .topTrailing) {
                                     Image(systemName: "gearshape")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .padding(10) // large hit target
+                                        .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
+                                        .padding(isCompact ? 8 : 10)
                                     
                                     // Notification badge
                                     if authService.syncStatus.shouldShowBadge {
@@ -115,7 +122,8 @@ struct TodosView: View {
                         }
                         .padding(.trailing, 16)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, isCompact ? 6 : 8)
+                    .animation(.easeInOut(duration: 0.2), value: isCompact)
                     
                     // View Mode Tabs (single source of truth = viewMode)
                     Picker("View", selection: $viewMode) {
@@ -125,7 +133,8 @@ struct TodosView: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, isCompact ? 6 : 8)
+                    .animation(.easeInOut(duration: 0.2), value: isCompact)
                     
                     // Page-level swipe (forgiving) — no per-row horizontal swipes.
                     TabView(selection: $viewMode) {
@@ -134,7 +143,8 @@ struct TodosView: View {
                             showingDone: showingDone,
                             categories: store.categories,
                             editingTask: $editingTask,
-                            sharePayload: $sharePayload
+                            sharePayload: $sharePayload,
+                            scrollOffset: $scrollOffset
                         )
                         .tag(TodoViewMode.list)
                         
@@ -143,7 +153,8 @@ struct TodosView: View {
                             showingDone: showingDone,
                             categories: store.categories,
                             editingTask: $editingTask,
-                            sharePayload: $sharePayload
+                            sharePayload: $sharePayload,
+                            scrollOffset: $scrollOffset
                         )
                         .tag(TodoViewMode.priority)
                         
@@ -152,7 +163,8 @@ struct TodosView: View {
                             showingDone: showingDone,
                             categories: store.categories,
                             editingTask: $editingTask,
-                            sharePayload: $sharePayload
+                            sharePayload: $sharePayload,
+                            scrollOffset: $scrollOffset
                         )
                         .tag(TodoViewMode.category)
                         
@@ -161,7 +173,8 @@ struct TodosView: View {
                             showingDone: showingDone,
                             categories: store.categories,
                             editingTask: $editingTask,
-                            sharePayload: $sharePayload
+                            sharePayload: $sharePayload,
+                            scrollOffset: $scrollOffset
                         )
                         .tag(TodoViewMode.date)
                     }
@@ -314,10 +327,18 @@ private struct TodoListModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
+    @Binding var scrollOffset: CGFloat
     
     var body: some View {
         let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: geometry.frame(in: .named("scroll")).minY
+                )
+            }
+            .frame(height: 0)
             LazyVStack(spacing: 12) {
                 TodoGroupCard(
                     mode: .list,
@@ -353,6 +374,10 @@ private struct TodoListModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+        }
     }
     
     private func toggleComplete(_ task: Task) {
@@ -384,6 +409,7 @@ private struct TodoPriorityModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
+    @Binding var scrollOffset: CGFloat
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -391,6 +417,13 @@ private struct TodoPriorityModeView: View {
         let tasksByPriority = Dictionary(grouping: tasks, by: { $0.priority })
         let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: geometry.frame(in: .named("scroll")).minY
+                )
+            }
+            .frame(height: 0)
             LazyVStack(spacing: 12) {
                 ForEach(Priority.allCases, id: \.self) { priority in
                     let groupTasks = tasksByPriority[priority] ?? []
@@ -439,6 +472,10 @@ private struct TodoPriorityModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+        }
     }
     
     private func toggleComplete(_ task: Task) {
@@ -480,6 +517,7 @@ private struct TodoCategoryModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
+    @Binding var scrollOffset: CGFloat
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -487,6 +525,13 @@ private struct TodoCategoryModeView: View {
         let grouped = groupTasksByCategory(tasks)
         let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: geometry.frame(in: .named("scroll")).minY
+                )
+            }
+            .frame(height: 0)
             LazyVStack(spacing: 12) {
                 // Uncategorized group (so tasks with no categories remain visible + droppable)
                 let uncategorizedTasks = grouped.uncategorized
@@ -577,6 +622,10 @@ private struct TodoCategoryModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+        }
     }
     
     private func toggleComplete(_ task: Task) {
@@ -642,6 +691,7 @@ private struct TodoDateModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
+    @Binding var scrollOffset: CGFloat
     @StateObject private var collapse = GroupCollapseStore.shared
     
     var body: some View {
@@ -649,6 +699,13 @@ private struct TodoDateModeView: View {
         let tasksByBucket = groupTasksByDateBucket(tasks)
         let categoryLookup = makeCategoryLookup(categories)
         ScrollView {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: geometry.frame(in: .named("scroll")).minY
+                )
+            }
+            .frame(height: 0)
             LazyVStack(spacing: 12) {
                 ForEach(TodoDateBucket.allCases, id: \.self) { bucket in
                     let groupTasks = tasksByBucket[bucket] ?? []
@@ -697,6 +754,10 @@ private struct TodoDateModeView: View {
                 }
             }
             .padding(.vertical, 12)
+        }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
         }
     }
     
@@ -904,5 +965,13 @@ private struct TodoGroupTaskList: View {
     private var resolvedUndoManager: UndoManager? {
         // Route delete undo registration through the same manager used by the shake responder.
         UndoCoordinator.shared.undoManager
+    }
+}
+
+// Preference key for tracking scroll offset
+private struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

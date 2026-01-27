@@ -24,16 +24,12 @@ struct AnimatedLogoView: View {
                     .opacity(particle.opacity)
             }
             
-            // Logo (placeholder - replace with actual Notelayer logo)
-            Image(systemName: "note.text")
+            // Notelayer logo
+            Image("notelayer-logo")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: logoSize, height: logoSize)
-                .foregroundStyle(.linearGradient(
-                    colors: [.blue, .purple],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
+                .clipShape(RoundedRectangle(cornerRadius: logoSize * 0.2, style: .continuous))
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
                 .scaleEffect(isAnimating ? 1.0 : 0.5)
         }

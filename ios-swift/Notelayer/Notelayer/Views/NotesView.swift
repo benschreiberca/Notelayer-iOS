@@ -59,16 +59,21 @@ struct NotesView: View {
                             }
                         } label: {
                             ZStack(alignment: .topTrailing) {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .padding(10)
+                                Image(systemName: "gearshape.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundStyle(.secondary)
+                                    .padding(8)
                                 
                                 // Notification badge
                                 if authService.syncStatus.shouldShowBadge {
                                     Circle()
                                         .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
-                                        .frame(width: 8, height: 8)
-                                        .offset(x: 4, y: 4)
+                                        .frame(width: 10, height: 10)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color(.systemBackground), lineWidth: 1.5)
+                                        )
+                                        .offset(x: -2, y: 2)
                                         .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
                                 }
                             }

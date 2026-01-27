@@ -59,8 +59,8 @@ class ScreenshotGenerationTests: XCTestCase {
     // MARK: - Screenshot Tests
     
     func testScreenshot1_TodosListView() throws {
-        // Navigate to Todos tab
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -91,8 +91,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
     
     func testScreenshot2_SignInSheet() throws {
-        // Navigate to Todos tab first
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab first
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -121,8 +121,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
     
     func testScreenshot3_TaskEditView() throws {
-        // Navigate to Todos tab
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -147,8 +147,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
     
     func testScreenshot4_CategoryView() throws {
-        // Navigate to Todos tab
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -177,8 +177,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
     
     func testScreenshot5_AppearanceView() throws {
-        // Navigate to Todos tab first
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab first
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -206,8 +206,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
     
     func testScreenshot6_PriorityView() throws {
-        // Navigate to Todos tab
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
         
@@ -318,8 +318,8 @@ class ScreenshotGenerationTests: XCTestCase {
     }
 
     func testGestureDemoVideo() throws {
-        // Navigate to Todos tab
-        let todosTab = app.tabBars.buttons["Todos"]
+        // Navigate to To-Dos tab
+        let todosTab = app.tabBars.buttons["To-Dos"]
         waitForElement(todosTab)
         todosTab.tap()
 

@@ -239,7 +239,7 @@ class LocalStore: ObservableObject {
     private func registerUndoForTaskDeletion(_ task: Task, undoManager: UndoManager?) {
         // Restore the task and register a redo that deletes it again.
         undoManager?.registerUndo(withTarget: self) { store in
-            store.addTask(task)
+            _ = store.addTask(task)
             store.registerRedoForTaskDeletion(task, undoManager: undoManager)
         }
         undoManager?.setActionName("Delete Task")

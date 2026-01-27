@@ -55,18 +55,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        #if DEBUG
-        print("🔗 [AppDelegate] Handling URL: \(url)")
-        #endif
-        configureFirebaseIfNeeded()
-        let handled = GIDSignIn.sharedInstance.handle(url)
-        #if DEBUG
-        print("🔗 [AppDelegate] Google Sign-In URL handled: \(handled)")
-        #endif
-        return handled
-    }
-
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         #if DEBUG
         print("📱 [AppDelegate] Received APNS device token: \(deviceToken.count) bytes")

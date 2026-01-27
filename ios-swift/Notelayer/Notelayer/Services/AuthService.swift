@@ -165,7 +165,7 @@ final class AuthService: NSObject, ObservableObject {
         configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
-        if let existingUser = user {
+        if user != nil {
             #if DEBUG
             print("⚠️ [AuthService] User already signed in with different method")
             #endif
@@ -245,7 +245,7 @@ final class AuthService: NSObject, ObservableObject {
         configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
-        if let existingUser = user {
+        if user != nil {
             #if DEBUG
             print("⚠️ [AuthService] User already signed in with different method")
             #endif
@@ -337,7 +337,7 @@ final class AuthService: NSObject, ObservableObject {
         configureFirebaseIfNeeded()
         
         // Check if user is already signed in with a different method
-        if let existingUser = user {
+        if user != nil {
             #if DEBUG
             print("⚠️ [AuthService] User already signed in with different method")
             #endif

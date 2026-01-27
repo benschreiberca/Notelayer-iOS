@@ -124,7 +124,7 @@ struct ProfileSettingsView: View {
                 }
             } label: {
                 HStack(spacing: 12) {
-                    Image("notelayer-logo")
+                    Image("NotelayerLogo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 32, height: 32)

@@ -21,111 +21,162 @@ struct TodosView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
+    // Header constants
+    private let expandedHeaderHeight: CGFloat = 130
+    private let collapsedHeaderHeight: CGFloat = 100
+    
+    private var isSqueezed: Bool {
+        scrollOffset < -20
+    }
+    
+    private var headerHeight: CGFloat {
+        isSqueezed ? collapsedHeaderHeight : expandedHeaderHeight
+    }
+    
+    private var logoSize: CGFloat {
+        isSqueezed ? 28 : 36
+    }
+    
+    private var headerOffset: CGFloat {
+        // Allow header to scroll off screen if "squeezed hard"
+        if scrollOffset < -100 {
+            return scrollOffset + 100
+        }
+        return 0
+    }
+
     var body: some View {
         let tasks = store.tasks
-        // Split once per render to avoid multiple passes over the full task list.
         let partitioned = splitTasksByCompletion(tasks)
         let doingTasks = partitioned.doing
         let doneTasks = partitioned.done
         let filteredTasks = showingDone ? doneTasks : doingTasks
 
         NavigationStack {
-            ZStack {
-                // Screen-edge Siri glow when Done is selected (no background color changes)
-                if showingDone {
-                    ScreenEdgeGlow(accent: theme.tokens.accent)
-                        .ignoresSafeArea()
-                        .allowsHitTesting(false)
-                }
-                
-                VStack(spacing: 0) {
-                    // Header with Logo, Doing/Done toggle, and menu
-                    let isCompact = scrollOffset > 50
+            ZStack(alignment: .top) {
+                // Main Content
+                TabView(selection: $viewMode) {
+                    TodoListModeView(
+                        tasks: filteredTasks,
+                        showingDone: showingDone,
+                        categories: store.categories,
+                        editingTask: $editingTask,
+                        sharePayload: $sharePayload,
+                        scrollOffset: $scrollOffset
+                    )
+                    .tag(TodoViewMode.list)
                     
-                    HStack(spacing: isCompact ? 8 : 12) {
-                        Image("notelayer-logo")
+                    TodoPriorityModeView(
+                        tasks: filteredTasks,
+                        showingDone: showingDone,
+                        categories: store.categories,
+                        editingTask: $editingTask,
+                        sharePayload: $sharePayload,
+                        scrollOffset: $scrollOffset
+                    )
+                    .tag(TodoViewMode.priority)
+                    
+                    TodoCategoryModeView(
+                        tasks: filteredTasks,
+                        showingDone: showingDone,
+                        categories: store.categories,
+                        editingTask: $editingTask,
+                        sharePayload: $sharePayload,
+                        scrollOffset: $scrollOffset
+                    )
+                    .tag(TodoViewMode.category)
+                    
+                    TodoDateModeView(
+                        tasks: filteredTasks,
+                        showingDone: showingDone,
+                        categories: store.categories,
+                        editingTask: $editingTask,
+                        sharePayload: $sharePayload,
+                        scrollOffset: $scrollOffset
+                    )
+                    .tag(TodoViewMode.date)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .padding(.top, expandedHeaderHeight) // Fixed spacing to prevent jump
+                
+                // Dynamic Squeezing Header
+                VStack(spacing: 0) {
+                    // Top Row: Logo, Toggle, Gear
+                    HStack(spacing: 12) {
+                        Image("NotelayerLogo")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: isCompact ? 28 : 36, height: isCompact ? 28 : 36)
-                            .clipShape(RoundedRectangle(cornerRadius: isCompact ? 6 : 8, style: .continuous))
-                            .padding(.leading, 16)
+                            .frame(width: logoSize, height: logoSize)
+                            .clipShape(RoundedRectangle(cornerRadius: logoSize * 0.22, style: .continuous))
+                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
                         
                         Spacer()
                         
-                        HStack {
-                            Spacer()
-                            
-                            HStack(spacing: isCompact ? 6 : 8) {
-                                Button(action: { showingDone = false }) {
-                                    VStack(spacing: isCompact ? 2 : 3) {
-                                        Text("Doing")
-                                            .font(isCompact ? .caption : .subheadline)
-                                            .foregroundColor(showingDone ? .secondary : .primary)
-                                        Text("\(doingTasks.count)")
-                                            .font(isCompact ? .caption2 : .caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                
-                                Toggle("", isOn: $showingDone)
-                                    .labelsHidden()
-                                    .tint(theme.tokens.accent)
-                                    .scaleEffect(isCompact ? 0.9 : 1.0)
-                                
-                                Button(action: { showingDone = true }) {
-                                    VStack(spacing: isCompact ? 2 : 3) {
-                                        Text("Done")
-                                            .font(isCompact ? .caption : .subheadline)
-                                            .foregroundColor(showingDone ? .primary : .secondary)
-                                        Text("\(doneTasks.count)")
-                                            .font(isCompact ? .caption2 : .caption2)
-                                            .foregroundColor(.secondary)
-                                    }
+                        // Doing/Done Toggle
+                        HStack(spacing: 8) {
+                            Button(action: { withAnimation { showingDone = false } }) {
+                                VStack(spacing: 2) {
+                                    Text("Doing")
+                                        .font(isSqueezed ? .caption : .subheadline)
+                                        .fontWeight(showingDone ? .regular : .bold)
+                                        .foregroundColor(showingDone ? .secondary : .primary)
+                                    Text("\(doingTasks.count)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
                                 }
                             }
                             
-                            Spacer()
+                            Toggle("", isOn: $showingDone)
+                                .labelsHidden()
+                                .tint(theme.tokens.accent)
+                                .scaleEffect(isSqueezed ? 0.8 : 1.0)
                             
-                            Menu {
-                                Button {
-                                    showingAppearance = true
-                                } label: {
-                                    Label("Colour Theme", systemImage: "paintbrush")
-                                }
-                                Button {
-                                    showingCategoryManager = true
-                                } label: {
-                                    Label("Manage Categories", systemImage: "tag")
-                                }
-                                Button {
-                                    showingProfileSettings = true
-                                } label: {
-                                    Label("Profile & Settings", systemImage: "person.circle")
-                                }
-                            } label: {
-                                ZStack(alignment: .topTrailing) {
-                                    Image(systemName: "gearshape")
-                                        .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
-                                        .padding(isCompact ? 8 : 10)
-                                    
-                                    // Notification badge
-                                    if authService.syncStatus.shouldShowBadge {
-                                        Circle()
-                                            .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
-                                            .frame(width: 8, height: 8)
-                                            .offset(x: 4, y: 4)
-                                            .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
-                                    }
+                            Button(action: { withAnimation { showingDone = true } }) {
+                                VStack(spacing: 2) {
+                                    Text("Done")
+                                        .font(isSqueezed ? .caption : .subheadline)
+                                        .fontWeight(showingDone ? .bold : .regular)
+                                        .foregroundColor(showingDone ? .primary : .secondary)
+                                    Text("\(doneTasks.count)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
                                 }
                             }
-                            .buttonStyle(.plain)
                         }
-                        .padding(.trailing, 16)
+                        
+                        Spacer()
+                        
+                        // Gear Menu
+                        Menu {
+                            Button { showingAppearance = true } label: { Label("Colour Theme", systemImage: "paintbrush") }
+                            Button { showingCategoryManager = true } label: { Label("Manage Categories", systemImage: "tag") }
+                            Button { showingProfileSettings = true } label: { Label("Profile & Settings", systemImage: "person.circle") }
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "gearshape.fill")
+                                    .font(.system(size: isSqueezed ? 18 : 22))
+                                    .foregroundStyle(.secondary)
+                                    .padding(8)
+                                
+                                if authService.syncStatus.shouldShowBadge {
+                                    Circle()
+                                        .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
+                                        .frame(width: 10, height: 10)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color(.systemBackground), lineWidth: 1.5)
+                                        )
+                                        .offset(x: 2, y: -2)
+                                        .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
+                                }
+                            }
+                        }
                     }
-                    .padding(.vertical, isCompact ? 6 : 8)
-                    .animation(.easeInOut(duration: 0.2), value: isCompact)
+                    .padding(.horizontal, 16)
+                    .padding(.top, isSqueezed ? 4 : 12)
+                    .padding(.bottom, isSqueezed ? 4 : 12)
                     
-                    // View Mode Tabs (single source of truth = viewMode)
+                    // Bottom Row: View Picker
                     Picker("View", selection: $viewMode) {
                         ForEach(TodoViewMode.allCases, id: \.self) { mode in
                             Text(mode.rawValue).tag(mode)
@@ -133,61 +184,24 @@ struct TodosView: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, isCompact ? 6 : 8)
-                    .animation(.easeInOut(duration: 0.2), value: isCompact)
+                    .padding(.bottom, isSqueezed ? 8 : 12)
+                    .scaleEffect(isSqueezed ? 0.95 : 1.0)
                     
-                    // Page-level swipe (forgiving) — no per-row horizontal swipes.
-                    TabView(selection: $viewMode) {
-                        TodoListModeView(
-                            tasks: filteredTasks,
-                            showingDone: showingDone,
-                            categories: store.categories,
-                            editingTask: $editingTask,
-                            sharePayload: $sharePayload,
-                            scrollOffset: $scrollOffset
-                        )
-                        .tag(TodoViewMode.list)
-                        
-                        TodoPriorityModeView(
-                            tasks: filteredTasks,
-                            showingDone: showingDone,
-                            categories: store.categories,
-                            editingTask: $editingTask,
-                            sharePayload: $sharePayload,
-                            scrollOffset: $scrollOffset
-                        )
-                        .tag(TodoViewMode.priority)
-                        
-                        TodoCategoryModeView(
-                            tasks: filteredTasks,
-                            showingDone: showingDone,
-                            categories: store.categories,
-                            editingTask: $editingTask,
-                            sharePayload: $sharePayload,
-                            scrollOffset: $scrollOffset
-                        )
-                        .tag(TodoViewMode.category)
-                        
-                        TodoDateModeView(
-                            tasks: filteredTasks,
-                            showingDone: showingDone,
-                            categories: store.categories,
-                            editingTask: $editingTask,
-                            sharePayload: $sharePayload,
-                            scrollOffset: $scrollOffset
-                        )
-                        .tag(TodoViewMode.date)
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    // Keyboard dismiss when tapping outside input
-                    .simultaneousGesture(
-                        TapGesture().onEnded {
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        }
-                    )
+                    Divider()
+                        .opacity(isSqueezed ? 1 : 0)
                 }
+                .background(
+                    theme.tokens.screenBackground
+                        .opacity(isSqueezed ? 0.95 : 0)
+                        .blur(radius: isSqueezed ? 10 : 0)
+                        .ignoresSafeArea()
+                )
+                .background(.ultraThinMaterial.opacity(isSqueezed ? 1 : 0))
+                .offset(y: headerOffset)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSqueezed)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: headerOffset)
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.categories)
                     .presentationDetents([.medium, .large])
@@ -317,6 +331,15 @@ private func bucketForDueDate(_ dueDate: Date?, now: Date = Date(), calendar: Ca
     if dueDate < now { return .overdue }
     if calendar.isDate(dueDate, equalTo: now, toGranularity: .weekOfYear) { return .thisWeek }
     return .later
+}
+
+private enum TodoDateBucket: String, CaseIterable {
+    case overdue = "Overdue"
+    case today = "Today"
+    case tomorrow = "Tomorrow"
+    case thisWeek = "This Week"
+    case later = "Later"
+    case noDate = "No Due Date"
 }
 
 // MARK: - Mode views (ScrollView + inset cards)
@@ -673,15 +696,6 @@ private struct TodoCategoryModeView: View {
             store.reorderTasks(orderedIds: ordered)
         }
     }
-}
-
-private enum TodoDateBucket: String, CaseIterable {
-    case overdue = "Overdue"
-    case today = "Today"
-    case tomorrow = "Tomorrow"
-    case thisWeek = "This Week"
-    case later = "Later"
-    case noDate = "No Due Date"
 }
 
 private struct TodoDateModeView: View {

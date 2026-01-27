@@ -25,7 +25,7 @@ struct AnimatedLogoView: View {
             }
             
             // Notelayer logo
-            Image("notelayer-logo")
+            Image("NotelayerLogo")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: logoSize, height: logoSize)

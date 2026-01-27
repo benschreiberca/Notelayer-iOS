@@ -101,43 +101,19 @@ struct ProfileSettingsView: View {
     // iOS-standard Section for signed-out state
     private var signedOutSection: some View {
         Section("Account") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Sign in to sync")
-                    .font(.headline)
-                
-                Text("Sync your notes and tasks across all your devices securely.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                Button {
-                    showingSignIn = true
-                } label: {
-                    Text("Sign In")
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                
-                Button {
-                    if let url = URL(string: "https://getnotelayer.com") {
-                        UIApplication.shared.open(url)
-                    }
-                } label: {
-                    HStack {
-                        Image("NotelayerLogo")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
-                            .cornerRadius(6)
-                        Text("Visit getnotelayer.com")
-                            .font(.footnote.weight(.medium))
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption2)
-                    }
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
+            Text("Sign in to sync")
+                .font(.headline)
+            
+            Text("Sync your notes and tasks across all your devices securely.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Button {
+                showingSignIn = true
+            } label: {
+                Text("Sign In")
             }
-            .padding(.vertical, 8)
+            .buttonStyle(PrimaryButtonStyle())
         }
     }
     
@@ -148,19 +124,7 @@ struct ProfileSettingsView: View {
                 RemindersSettingsView()
                     .environmentObject(theme)
             } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "bell.badge.fill")
-                        .font(.title3)
-                        .foregroundColor(theme.tokens.accent)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("View all nags")
-                            .font(.subheadline.weight(.semibold))
-                        Text("Manage scheduled task nags")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Label("View all nags", systemImage: "bell.badge.fill")
             }
         }
     }
@@ -177,11 +141,7 @@ struct ProfileSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 
-                Button {
-                    if let url = URL(string: "https://getnotelayer.com/privacy") {
-                        UIApplication.shared.open(url)
-                    }
-                } label: {
+                Link(destination: URL(string: "https://getnotelayer.com/privacy")!) {
                     HStack {
                         Text("Privacy Policy")
                         Spacer()
@@ -191,24 +151,30 @@ struct ProfileSettingsView: View {
                     }
                 }
             }
+            
+            // Website link (always visible)
+            Link(destination: URL(string: "https://getnotelayer.com")!) {
+                Label("Visit getnotelayer.com", systemImage: "globe")
+            }
         }
     }
     
     @ViewBuilder
     private var syncStatusIndicator: some View {
+        // Use iOS-standard badge style (like notification badges)
         switch authService.syncStatus {
         case .signedInSynced:
-            Circle()
-                .fill(.green)
-                .frame(width: 8, height: 8)
+            Image(systemName: "circle.fill")
+                .font(.system(size: 8))
+                .foregroundStyle(.green)
         case .signedInSyncError:
-            Circle()
-                .fill(.yellow)
-                .frame(width: 8, height: 8)
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.yellow)
         case .notSignedIn:
-            Circle()
-                .fill(.red)
-                .frame(width: 8, height: 8)
+            Image(systemName: "circle.fill")
+                .font(.system(size: 8))
+                .foregroundStyle(.red)
         }
     }
     

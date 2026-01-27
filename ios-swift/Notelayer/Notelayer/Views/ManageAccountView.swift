@@ -16,54 +16,48 @@ struct ManageAccountView: View {
     
     var body: some View {
         List {
-            // iOS-standard Section with string header
+            // iOS-standard Section (no custom wrappers)
             Section("Data") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Export Your Data")
-                        .font(.headline)
-                    Text("Download all your notes, tasks, and categories in a CSV format.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
-                    Button {
-                        exportData()
-                    } label: {
-                        if isExporting {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Label("Export to CSV", systemImage: "square.and.arrow.up")
-                        }
+                Text("Export Your Data")
+                    .font(.headline)
+                Text("Download all your notes, tasks, and categories in a CSV format.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                Button {
+                    exportData()
+                } label: {
+                    if isExporting {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("Export to CSV", systemImage: "square.and.arrow.up")
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(isExporting)
                 }
-                .padding(.vertical, 8)
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(isExporting)
             }
             
-            // iOS-standard Section with string header
+            // iOS-standard Section (no custom wrappers)
             Section("Danger Zone") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Delete Account")
-                        .font(.headline)
-                        .foregroundStyle(.red)
-                    
-                    Text("Permanently delete your NoteLayer account and all associated data. This includes all your tasks and categories stored in the cloud and on this device.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("This action cannot be undone.")
-                        .font(.caption.bold())
-                        .foregroundStyle(.red)
-                    
-                    Button(role: .destructive) {
-                        showingDeleteConfirmation = true
-                    } label: {
-                        Text("Delete Account...")
-                    }
-                    .buttonStyle(PrimaryButtonStyle(isDestructive: true))
+                Text("Delete Account")
+                    .font(.headline)
+                    .foregroundStyle(.red)
+                
+                Text("Permanently delete your NoteLayer account and all associated data. This includes all your tasks and categories stored in the cloud and on this device.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                Text("This action cannot be undone.")
+                    .font(.caption.bold())
+                    .foregroundStyle(.red)
+                
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Text("Delete Account...")
                 }
-                .padding(.vertical, 8)
+                .buttonStyle(PrimaryButtonStyle(isDestructive: true))
                 
                 Button(role: .destructive) {
                     signOut()
@@ -71,7 +65,6 @@ struct ManageAccountView: View {
                     Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
                 .buttonStyle(PrimaryButtonStyle(isDestructive: true))
-                .padding(.vertical, 8)
             }
         }
         .listStyle(.insetGrouped)

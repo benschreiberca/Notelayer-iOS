@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BC3A1B1B2F1A000100406D9A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
+		BC5D91F62F29A5BD00C183A4 /* NotelayerShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BC9A4A2B2F70000100D1E2F3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */; };
 		BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */; };
 		BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */; };
@@ -23,20 +24,74 @@
 			remoteGlobalIDString = BC2CCDD52F174A5100406D9A;
 			remoteInfo = Notelayer;
 		};
+		BC5D91F42F29A5BD00C183A4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC2CCDCE2F174A5100406D9A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC5D91EB2F29A5BD00C183A4;
+			remoteInfo = NotelayerShareExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BC5D91FB2F29A5BD00C183A4 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BC5D91F62F29A5BD00C183A4 /* NotelayerShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		313235613231363861323230 /* NotelayerScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenshotGenerationTests.swift; sourceTree = "<group>"; };
 		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotelayerShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB965E1A6487C5856ABC702C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BC5D91EE2F29A5BD00C183A5 /* Exceptions for "NotelayerShareExtension" folder in "NotelayerShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */;
+		};
+	BC5D92012F29A89100C183A4 /* Exceptions for "Notelayer" folder in "NotelayerShareExtension" target */ = {
+		isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+		membershipExceptions = (
+			Data/SharedItem.swift,
+			Data/Models.swift,
+			Data/CategoryColorDefaults.swift,
+			Views/Shared/CategoryChipGridView.swift,
+			Utils/ColorHex.swift,
+		);
+		target = BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */;
+	};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BC2CCDD82F174A5100406D9A /* Notelayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BC5D92012F29A89100C183A4 /* Exceptions for "Notelayer" folder in "NotelayerShareExtension" target */,
+			);
 			path = Notelayer;
+			sourceTree = "<group>";
+		};
+		BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BC5D91EE2F29A5BD00C183A5 /* Exceptions for "NotelayerShareExtension" folder in "NotelayerShareExtension" target */,
+			);
+			path = NotelayerShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -60,6 +115,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BC5D91E92F29A5BD00C183A4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -77,6 +139,7 @@
 			children = (
 				BC2CCDD82F174A5100406D9A /* Notelayer */,
 				BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */,
+				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
 				BC2CCDD72F174A5100406D9A /* Products */,
 				174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */,
 			);
@@ -87,6 +150,7 @@
 			children = (
 				BC2CCDD62F174A5100406D9A /* Notelayer.app */,
 				313235613231363861323230 /* NotelayerScreenshotTests.xctest */,
+				BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -119,10 +183,12 @@
 				BC2CCDD22F174A5100406D9A /* Sources */,
 				BC2CCDD32F174A5100406D9A /* Frameworks */,
 				BC2CCDD42F174A5100406D9A /* Resources */,
+				BC5D91FB2F29A5BD00C183A4 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BC5D91F52F29A5BD00C183A4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				BC2CCDD82F174A5100406D9A /* Notelayer */,
@@ -137,6 +203,28 @@
 			productName = Notelayer;
 			productReference = BC2CCDD62F174A5100406D9A /* Notelayer.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC5D91F82F29A5BD00C183A4 /* Build configuration list for PBXNativeTarget "NotelayerShareExtension" */;
+			buildPhases = (
+				BC5D91E82F29A5BD00C183A4 /* Sources */,
+				BC5D91E92F29A5BD00C183A4 /* Frameworks */,
+				BC5D91EA2F29A5BD00C183A4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
+			);
+			name = NotelayerShareExtension;
+			packageProductDependencies = (
+			);
+			productName = NotelayerShareExtension;
+			productReference = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -163,6 +251,9 @@
 							};
 						};
 					};
+					BC5D91EB2F29A5BD00C183A4 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = BC2CCDD12F174A5100406D9A /* Build configuration list for PBXProject "Notelayer" */;
@@ -185,6 +276,7 @@
 			targets = (
 				BC2CCDD52F174A5100406D9A /* Notelayer */,
 				303233363063333438613162 /* NotelayerScreenshotTests */,
+				BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -202,6 +294,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC3A1B1B2F1A000100406D9A /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC5D91EA2F29A5BD00C183A4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +322,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BC5D91E82F29A5BD00C183A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -230,6 +336,11 @@
 			isa = PBXTargetDependency;
 			target = BC2CCDD52F174A5100406D9A /* Notelayer */;
 			targetProxy = BC2B47932F25421C00F6D5C6 /* PBXContainerItemProxy */;
+		};
+		BC5D91F52F29A5BD00C183A4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */;
+			targetProxy = BC5D91F42F29A5BD00C183A4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -485,6 +596,70 @@
 			};
 			name = Release;
 		};
+		BC5D91F92F29A5BD00C183A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotelayerShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BC5D91FA2F29A5BD00C183A4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotelayerShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -511,6 +686,15 @@
 			buildConfigurations = (
 				BC2CCDE22F174A5200406D9A /* Debug */,
 				BC2CCDE32F174A5200406D9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC5D91F82F29A5BD00C183A4 /* Build configuration list for PBXNativeTarget "NotelayerShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC5D91F92F29A5BD00C183A4 /* Debug */,
+				BC5D91FA2F29A5BD00C183A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

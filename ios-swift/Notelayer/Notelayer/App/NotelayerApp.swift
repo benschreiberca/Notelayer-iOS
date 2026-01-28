@@ -38,6 +38,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Register notification categories and actions
         registerNotificationActions()
         
+        // NOTE: processSharedItems() is now called in TodosView.onAppear
+        // with a delay to ensure backend sync completes first
+        NSLog("========================================")
+        NSLog("🚀 NOTELAYER APP LAUNCHED - DEBUG MODE")
+        NSLog("========================================")
+        
         // Verify URL schemes are configured
         #if DEBUG
         if let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] {
@@ -253,6 +259,9 @@ struct NotelayerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authService: AuthService
     @StateObject private var backendService: FirebaseBackendService
+    
+    // Track scene phase to process shared items when app becomes active
+    @Environment(\.scenePhase) var scenePhase
 
     init() {
         configureFirebaseIfNeeded()
@@ -276,12 +285,18 @@ struct NotelayerApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabsView()
+                .onAppear {
+                    print("⚠️⚠️⚠️ CONSOLE TEST - IF YOU SEE THIS, CONSOLE IS WORKING ⚠️⚠️⚠️")
+                }
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
-                .onAppear {
-                    // Process any shared items from share extension
-                    LocalStore.shared.processSharedItems()
-                }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            print("========================================")
+            print("🔄 [NotelayerApp] Scene phase changed to: \(newPhase)")
+            print("========================================")
+            
+            // NOTE: Shared items are processed in TodosView.onAppear with proper timing
         }
     }
 }

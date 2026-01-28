@@ -1,5 +1,13 @@
 # TestFlight Release Notes
 
+## [2026-01-28] - The Share Sheet Grew a Spine
+- **What's New**: When you share into Notelayer, you can now rename the task, pick categories, set priority, and add due dates or reminders before saving.
+- **Why it matters**: Shared items arrive already organized instead of showing up as a blank shrug.
+
+## [2026-01-27] - The AI Now Has a Personality
+- **What's New**: We've given the internal "shipping" department a personality transplant. It has been instructed to stop sounding like a corporate robot and start sounding like a human with a slightly dry sense of humor.
+- **Why it matters**: Your release notes will now be 15% more eccentric and 100% less boring. You're welcome.
+
 ## [2026-01-27] - Smoother Calendar Sync
 - **What's New**: Fixed a pesky bug that caused the calendar to close unexpectedly when trying to save a task. Now, adding your tasks to your schedule is as smooth as it should be.
 - **Why it matters**: You can now reliably export your tasks to your native iOS calendar without the app getting in your way.

@@ -300,6 +300,17 @@ struct TodosView: View {
                     editingTask = task
                 }
             }
+            .onAppear {
+                // Process shared items AFTER backend has time to sync
+                // This prevents Firebase from overwriting newly added tasks
+                NSLog("👀 [TodosView] onAppear - waiting for backend sync before processing shared items")
+                
+                // Wait 2 seconds for initial sync to complete, then process shared items
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    NSLog("🔄 [TodosView] Backend sync should be done, processing shared items NOW")
+                    LocalStore.shared.processSharedItems()
+                }
+            }
         }
     }
     

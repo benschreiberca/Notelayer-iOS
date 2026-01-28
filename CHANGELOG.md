@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-01-28] - Branch: `share-sheet-feature`
+- **Feature**: Rebuilt the share extension UI with editable title, category chip grid, priority picker, due/reminder pickers, and content preview in `ios-swift/Notelayer/NotelayerShareExtension/ShareViewController.swift` plus new `ios-swift/Notelayer/Notelayer/Views/Shared/CategoryChipGridView.swift`.
+- **Model/Sync**: Added shareable task fields (categories, priority, due date, reminder) and App Group category loading in `ios-swift/Notelayer/Notelayer/Data/SharedItem.swift`, and wired those fields through `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`.
+- **Timing/Flow**: Moved shared-item processing to `ios-swift/Notelayer/Notelayer/Views/TodosView.swift` after backend sync delay, with launch logging in `ios-swift/Notelayer/Notelayer/App/NotelayerApp.swift`.
+- **UI/Polish**: Added an empty-state message for pending nags in `ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift`.
+- **Project/Entitlements**: Added Share Extension app group entitlements and project wiring in `ios-swift/Notelayer/NotelayerShareExtension/NotelayerShareExtension.entitlements`, `ios-swift/Notelayer/NotelayerShareExtension/Info.plist`, and `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`.
+
+## [2026-01-27] - Branch: `main`
+- **Refactor**: Updated the `/ship` command logic in `.codex/prompts/ship.md` to adopt a droll, eccentric tone for public release notes.
+- **Documentation**: Synchronized internal and external documentation rules to prioritize personality over corporate fluff.
+
 ## [2026-01-27] - Branch: `calendar-bug-fix`
 - **Technical Fix**: Resolved a circular state update in the `.sheet(item:)` binding that caused the native iOS calendar event editor to auto-close immediately after presentation.
 - **Files Touched**: `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.

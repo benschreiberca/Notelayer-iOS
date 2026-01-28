@@ -202,9 +202,12 @@ class LocalStore: ObservableObject {
         }
     }
     
+    /// Save categories to local storage and App Group (for share extension access)
     private func saveCategories() {
         if let categoriesData = try? JSONEncoder().encode(categories) {
             userDefaults.set(categoriesData, forKey: categoriesKey)
+            // Categories are automatically synced to App Group since userDefaults
+            // uses the App Group suite name (loadable via SharedItemHelpers)
         }
     }
     
@@ -536,48 +539,64 @@ class LocalStore: ObservableObject {
     /// Process shared items from the share extension
     /// Called on app launch to convert shared items into tasks
     func processSharedItems() {
+        NSLog("========================================")
+        NSLog("🔍 [LocalStore] processSharedItems() START")
+        NSLog("   App Group: %@", appGroupIdentifier)
+        NSLog("========================================")
+        
         guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
-            #if DEBUG
-            print("⚠️ [LocalStore] Failed to access App Group for shared items")
-            #endif
+            NSLog("❌ [LocalStore] Failed to access App Group for shared items")
             return
         }
+        
+        NSLog("✅ [LocalStore] Accessed UserDefaults for App Group")
         
         // Get shared items
-        guard let data = userDefaults.data(forKey: "com.notelayer.app.sharedItems"),
-              let sharedItems = try? JSONDecoder().decode([SharedItem].self, from: data),
-              !sharedItems.isEmpty else {
+        guard let data = userDefaults.data(forKey: "com.notelayer.app.sharedItems") else {
+            NSLog("ℹ️ [LocalStore] No shared items data found")
             return
         }
         
-        #if DEBUG
-        print("📥 [LocalStore] Processing \(sharedItems.count) shared item(s)")
-        #endif
+        guard let sharedItems = try? JSONDecoder().decode([SharedItem].self, from: data) else {
+            NSLog("❌ [LocalStore] Failed to decode shared items")
+            return
+        }
+        
+        guard !sharedItems.isEmpty else {
+            NSLog("ℹ️ [LocalStore] Shared items array is empty")
+            return
+        }
+        
+        NSLog("📥 [LocalStore] Processing %d shared item(s)", sharedItems.count)
+        for (index, item) in sharedItems.enumerated() {
+            NSLog("   Item %d: %@", index + 1, item.title)
+        }
+        
+        // Success! Tasks have been added
+        NSLog("✅ [LocalStore] Successfully processed \(sharedItems.count) shared item(s)")
         
         // Convert to tasks
         for item in sharedItems {
             let taskNotes = buildTaskNotes(from: item)
             let task = Task(
                 title: item.title,
-                categories: [],
-                priority: .medium,
-                dueDate: nil,
-                taskNotes: taskNotes
+                categories: item.categories,
+                priority: item.priority,
+                dueDate: item.dueDate,
+                taskNotes: taskNotes,
+                reminderDate: item.reminderDate
             )
             _ = addTask(task)
             
-            #if DEBUG
-            print("✅ [LocalStore] Created task from shared item: \(item.title)")
-            #endif
+            NSLog("✅ [LocalStore] Created task from shared item: %@", item.title)
         }
         
         // Clear shared items
         userDefaults.removeObject(forKey: "com.notelayer.app.sharedItems")
         userDefaults.synchronize()
         
-        #if DEBUG
-        print("🧹 [LocalStore] Cleared shared items from App Group")
-        #endif
+        NSLog("🧹 [LocalStore] Cleared shared items from App Group")
+        NSLog("========================================")
     }
     
     /// Build task notes from shared item

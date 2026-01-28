@@ -47,6 +47,32 @@ struct RemindersSettingsView: View {
                 // List of reminders (iOS-standard Section with system dividers)
                 Section("Upcoming Nags") {
                     if tasksWithReminders.isEmpty {
+                        Text("No pending nags")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding()
+                    } else {
+                        ForEach(sortedTasksWithReminders) { task in
+                            Button {
+                                taskToNag = task
+                            } label: {
+                                NagCardView(
+                                    task: task,
+                                    categoryLookup: categoryLookup
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    cancelReminder(for: task)
+                                } label: {
+                                    Label("Cancel", systemImage: "bell.slash")
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Pending Nags")

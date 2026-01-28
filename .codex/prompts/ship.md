@@ -16,8 +16,13 @@ Analyze the current `PLAN.md` or `ISSUE.md` and the `git diff` of the changes.
 ### Public Facing (`release_notes.md`)
 - Append a new entry at the top of the file.
 - Translate technical changes into user-centric value propositions.
-- Length: 1-2 lines per change, but provide enough context for a new user.
-- Tone: Professional, benefit-oriented, jargon-free (no "Binding", "State", etc.).
+- **Tone**: Droll, slightly eccentric, and jargon-free. Value dry humor and personality over corporate fluff.
+- **Style**: Use one of these droll styles (rotate or mix):
+  - *The Polite Inconvenience*: Treat bugs as "misunderstandings" or "stage fright."
+  - *The Over-Dramatic Technicality*: Use slightly absurdist logic for why things were broken.
+  - *The Minimalist Shrug*: Punchy, dry, and unimpressed by the fix.
+- **Length**: Shorter but descriptive. 1-2 lines per change, focusing on the benefit to the user.
+- Avoid technical jargon (e.g., "Binding", "State", "API").
 
 ## 2. Git Lifecycle
 

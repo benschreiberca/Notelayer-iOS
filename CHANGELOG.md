@@ -1,10 +1,15 @@
 # Changelog
 
+## [2026-01-27] - Branch: `calendar-bug-fix`
+- **Technical Fix**: Resolved a circular state update in the `.sheet(item:)` binding that caused the native iOS calendar event editor to auto-close immediately after presentation.
+- **Files Touched**: `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.
+- **Refactor**: Updated `Binding` logic to only clear the state when explicitly set to `nil`, preventing SwiftUI from clearing the state during internal presentation updates.
+
 ## Branch: feature/app-store-metadata
 
 **Purpose:** Prepare NoteLayer for App Store submission by completing pre-submission tasks including code cleanup, documentation creation, and verification tooling.
 
-**Intent:** This branch addresses critical App Store launch requirements: production-ready code (debug cleanup), complete metadata (description, keywords, promotional text), legal compliance (privacy policy), reviewer guidance (app review notes), asset preparation (screenshot guide), and submission verification (checklist + script).
+**Intent:** This branch addresses critical App Store launch requirements: productionewn-ready code (debug cleanup), complete metadata (description, keywords, promotional text), legal compliance (privacy policy), reviewer guidance (app review notes), asset preparation (screenshot guide), and submission verification (checklist + script).
 
 **Quick Summary:**
 - **Code Cleanup:** Wrapped 86 debug print statements in `#if DEBUG`, removed TODOs

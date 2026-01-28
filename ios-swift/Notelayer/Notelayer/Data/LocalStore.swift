@@ -530,4 +530,76 @@ class LocalStore: ObservableObject {
     func getCategory(id: String) -> Category? {
         categories.first { $0.id == id }
     }
+    
+    // MARK: - Share Extension Integration
+    
+    /// Process shared items from the share extension
+    /// Called on app launch to convert shared items into tasks
+    func processSharedItems() {
+        guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+            #if DEBUG
+            print("⚠️ [LocalStore] Failed to access App Group for shared items")
+            #endif
+            return
+        }
+        
+        // Get shared items
+        guard let data = userDefaults.data(forKey: "com.notelayer.app.sharedItems"),
+              let sharedItems = try? JSONDecoder().decode([SharedItem].self, from: data),
+              !sharedItems.isEmpty else {
+            return
+        }
+        
+        #if DEBUG
+        print("📥 [LocalStore] Processing \(sharedItems.count) shared item(s)")
+        #endif
+        
+        // Convert to tasks
+        for item in sharedItems {
+            let taskNotes = buildTaskNotes(from: item)
+            let task = Task(
+                title: item.title,
+                categories: [],
+                priority: .medium,
+                dueDate: nil,
+                taskNotes: taskNotes
+            )
+            _ = addTask(task)
+            
+            #if DEBUG
+            print("✅ [LocalStore] Created task from shared item: \(item.title)")
+            #endif
+        }
+        
+        // Clear shared items
+        userDefaults.removeObject(forKey: "com.notelayer.app.sharedItems")
+        userDefaults.synchronize()
+        
+        #if DEBUG
+        print("🧹 [LocalStore] Cleared shared items from App Group")
+        #endif
+    }
+    
+    /// Build task notes from shared item
+    /// Formats URL and text content with attribution
+    private func buildTaskNotes(from item: SharedItem) -> String {
+        var notes = ""
+        
+        // Add URL if present (clickable)
+        if let url = item.url {
+            notes += "\(url)\n\n"
+        }
+        
+        // Add text if present
+        if let text = item.text {
+            notes += "\(text)\n\n"
+        }
+        
+        // Add attribution
+        if let sourceApp = item.sourceApp {
+            notes += "Shared from \(sourceApp)"
+        }
+        
+        return notes.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

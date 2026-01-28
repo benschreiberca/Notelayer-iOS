@@ -149,8 +149,31 @@ struct TaskEditView: View {
                 }
                 
                 Section("Notes") {
-                    TextEditor(text: $taskNotes)
-                        .frame(minHeight: 100)
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextEditor(text: $taskNotes)
+                            .frame(minHeight: 100)
+                        
+                        // Show detected URLs as tappable links below
+                        if !detectedURLs.isEmpty {
+                            Divider()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Links:")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                ForEach(detectedURLs, id: \.self) { url in
+                                    Link(destination: url) {
+                                        HStack {
+                                            Image(systemName: "link")
+                                                .font(.caption2)
+                                            Text(url.absoluteString)
+                                                .font(.caption)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 Section {
@@ -255,6 +278,15 @@ struct TaskEditView: View {
                     }
                 )
             }
+        }
+    }
+    
+    /// Detected URLs in task notes for tappable links
+    private var detectedURLs: [URL] {
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let matches = detector?.matches(in: taskNotes, range: NSRange(taskNotes.startIndex..., in: taskNotes)) ?? []
+        return matches.compactMap { match in
+            Range(match.range, in: taskNotes).flatMap { URL(string: String(taskNotes[$0])) }
         }
     }
     

@@ -278,6 +278,10 @@ struct NotelayerApp: App {
             RootTabsView()
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
+                .onAppear {
+                    // Process any shared items from share extension
+                    LocalStore.shared.processSharedItems()
+                }
         }
     }
 }

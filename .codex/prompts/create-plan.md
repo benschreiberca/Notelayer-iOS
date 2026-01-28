@@ -12,6 +12,7 @@ Requirements for the plan:
 - Include dynamic tracking of overall progress percentage (at top).
 - Do NOT add extra scope or unnecessary complexity beyond explicitly clarified details.
 - Steps should be modular, elegant, minimal, and integrate seamlessly within the existing codebase.
+- **UI Consistency Guardrail**: Before proposing new UI components, check if a platform-standard equivalent (List, Section, Label) exists. If deviating, justify the deviation and note the line-count impact (positive or negative). Use the "Standard-Bearer" approach to benchmark against existing consistent files.
 
 Markdown Template:
 

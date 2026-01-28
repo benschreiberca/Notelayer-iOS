@@ -1,24 +1,11 @@
-# Peer Review Task
+# Peer Review Command
 
-A different team lead within the company has reviewed the current code/implementation and provided findings below. Important context:
+This command performs a collaborative review of proposed changes or plans.
 
-- **They have less context than you** on this project's history and decisions
-- **You are the team lead** - don't accept findings at face value
-- Your job is to critically evaluate each finding
-
-Findings from peer review:
-
-[PASTE FEEDBACK FROM OTHER MODEL]
+## Workflow
+1. Review the proposed changes against project standards.
+2. Provide constructive feedback and alternative approaches.
+3. **Source of Truth**: Strictly follow the review criteria and feedback style defined in `.codex/prompts/peer-review.md`.
 
 ---
-
-For EACH finding above:
-
-1. **Verify it exists** - Actually check the code. Does this issue/bug really exist?
-2. **If it doesn't exist** - Explain clearly why (maybe it's already handled, or they misunderstood the architecture)
-3. **If it does exist** - Assess severity and add to your fix plan
-
-After analysis, provide:
-- Summary of valid findings (confirmed issues)
-- Summary of invalid findings (with explanations)
-- Prioritized action plan for confirmed issues
+*Note: This slash command is a Cursor-specific wrapper for the project-agnostic rules in .codex.*

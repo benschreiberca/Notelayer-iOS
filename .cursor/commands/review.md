@@ -1,35 +1,11 @@
-# Code Review Task
+# Review Command
 
-Perform comprehensive code review. Be thorough but concise.
+This command performs a comprehensive code review for production readiness.
 
-## Check For:
+## Workflow
+1. Check for logging, error handling, performance, and security issues.
+2. Verify adherence to architectural patterns.
+3. **Source of Truth**: Strictly follow the checklist and severity levels defined in `.codex/prompts/review.md`.
 
-**Logging** - No console.log statements, uses proper logger with context
-**Error Handling** - Try-catch for async, centralized handlers, helpful messages
-**TypeScript** - No `any` types, proper interfaces, no @ts-ignore
-**Production Readiness** - No debug statements, no TODOs, no hardcoded secrets
-**React/Hooks** - Effects have cleanup, dependencies complete, no infinite loops
-**Performance** - No unnecessary re-renders, expensive calcs memoized
-**Security** - Auth checked, inputs validated, RLS policies in place
-**Architecture** - Follows existing patterns, code in correct directory
-
-## Output Format
-
-### ✅ Looks Good
-- [Item 1]
-- [Item 2]
-
-### ⚠️ Issues Found
-- **[Severity]** [File:line] - [Issue description]
-  - Fix: [Suggested fix]
-
-### 📊 Summary
-- Files reviewed: X
-- Critical issues: X
-- Warnings: X
-
-## Severity Levels
-- **CRITICAL** - Security, data loss, crashes
-- **HIGH** - Bugs, performance issues, bad UX
-- **MEDIUM** - Code quality, maintainability
-- **LOW** - Style, minor improvements
+---
+*Note: This slash command is a Cursor-specific wrapper for the project-agnostic rules in .codex.*

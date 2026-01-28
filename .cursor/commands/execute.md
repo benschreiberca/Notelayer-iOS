@@ -1,11 +1,12 @@
-# Execute
+# Execute Command
 
-Now implement precisely as planned, in full.
+This command automates the implementation phase of a feature or fix.
 
-Implementation Requirements:
+## Workflow
+1. Read the approved implementation plan.
+2. Implement code changes precisely as planned.
+3. Update tracking documents dynamically as work progresses.
+4. **Source of Truth**: Strictly follow the implementation requirements and modularity rules defined in `.codex/prompts/execute.md`.
 
-- Write elegant, minimal, modular code.
-- Adhere strictly to existing code patterns, conventions, and best practices.
-- Include thorough, clear comments/documentation within the code.
-- As you implement each step:
-  - Update the markdown tracking document with emoji status and overall progress percentage dynamically.
+---
+*Note: This slash command is a Cursor-specific wrapper for the project-agnostic rules in .codex.*

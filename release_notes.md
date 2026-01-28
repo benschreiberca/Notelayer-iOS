@@ -1,5 +1,9 @@
 # TestFlight Release Notes
 
+## [2026-01-27] - Smoother Calendar Sync
+- **What's New**: Fixed a pesky bug that caused the calendar to close unexpectedly when trying to save a task. Now, adding your tasks to your schedule is as smooth as it should be.
+- **Why it matters**: You can now reliably export your tasks to your native iOS calendar without the app getting in your way.
+
 ## Version 1.1 - Build 4
 
 ---

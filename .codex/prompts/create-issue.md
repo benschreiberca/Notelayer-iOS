@@ -32,6 +32,7 @@ Keep questions brief. One message with 2-3 targeted questions beats multiple bac
 
 ## Behavior Rules
 
+- **DO NOT FIX OR IMPLEMENT**: Your only job is to document. Never modify code files unless explicitly asked to do so after the issue is created.
 - Be conversational - ask what makes sense, not a checklist
 - Default priority: normal, effort: medium (ask only if unclear)
 - Max 3 files in context - most relevant only

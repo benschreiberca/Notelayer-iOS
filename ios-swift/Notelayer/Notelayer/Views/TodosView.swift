@@ -270,7 +270,7 @@ struct TodosView: View {
             }
             .sheet(item: Binding(
                 get: { calendarEventToEdit.map { SheetIdentifier(event: $0.event, store: $0.store) } },
-                set: { calendarEventToEdit = $0.map { ($0.event, $0.store) } }
+                set: { if $0 == nil { calendarEventToEdit = nil } }
             )) { identifier in
                 CalendarEventEditView(
                     event: identifier.event,

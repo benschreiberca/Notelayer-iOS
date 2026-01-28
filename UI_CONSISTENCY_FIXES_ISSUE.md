@@ -121,3 +121,66 @@ See attached:
 3. Main to-do list showing bell icon position (needs right alignment)
 4. Nag details row wrapping (needs single-line fix)
 5. Nag card with tight vertical padding (needs breathing room)
+
+---
+
+# 🎯 UI Consistency Assessment: Phase 2
+
+## ⚡ TL;DR Exec Sum
+- **Pattern 1**: Standardized Section Headers across Settings views.
+- **Pattern 2**: Aligned bell icons with platform-standard chevron positions.
+- **Pattern 3**: Improved Nag Card spacing and layout constraints.
+
+---
+
+### Exceptions Skipped
+1. 🟨 **Custom App Icon for Website Link** → [`ProfileSettingsView.swift:141`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/ProfileSettingsView.swift#L141)
+
+---
+
+## 🏗 Issue Type: Component Standardization
+
+### 📍 Header Styling
+**👤 Use-Case**: When a user navigates from Profile & Settings to Pending Nags, the section headers should feel like part of the same app.
+**🔗 Flow**: `Profile & Settings` -> `Pending Nags`
+
+**🔍 Comparison**:
+- **Standard-Bearer**: [`ProfileSettingsView.swift`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/ProfileSettingsView.swift) (Uses `.caption.weight(.semibold)`)
+- **Deviator**: [`RemindersSettingsView.swift:48`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift#L48)
+
+**Problem**: `RemindersSettingsView` used default system header styling which differed from the custom semibold caption style used in `ProfileSettingsView`.
+
+**Impact**: 
+- 📉 Lines saved: Quality Trade-off (+5 lines for explicit header block)
+- ⚠️ Risk: 🟢
+
+---
+
+## 🏗 Issue Type: Layout Alignment
+
+### 📍 Bell Icon Positioning
+**👤 Use-Case**: When viewing the main task list, the reminder bell should align with the trailing edge of the card, consistent with other action indicators.
+**🔗 Flow**: `Main Task List`
+
+**🔍 Comparison**:
+- **Standard-Bearer**: Platform-standard trailing alignment for accessory icons.
+- **Deviator**: [`TaskItemView.swift:54`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/TaskItemView.swift#L54)
+
+**Problem**: Bell icon was positioned immediately after the title text instead of being pushed to the far right.
+
+**Impact**: 
+- 📉 Lines saved: 0
+- ⚠️ Risk: 🟢
+
+---
+
+## 📄 Miscellaneous Observations
+1. [`RemindersSettingsView.swift:206`](file:///Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift#L206) - Increased vertical padding on Nag cards from 8px to 12px for better breathing room.
+
+---
+
+## 🗂 Files Reviewed
+- `ios-swift/Notelayer/Notelayer/Views/ProfileSettingsView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/TaskItemView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/Shared/SettingsComponents.swift`

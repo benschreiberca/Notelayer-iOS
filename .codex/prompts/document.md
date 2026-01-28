@@ -17,9 +17,14 @@ For each changed file:
 
 ## 3. Update Relevant Documentation
 
-- **CHANGELOG.md**: Add entry under "Unreleased" section
-  - Use categories: Added, Changed, Fixed, Security, Removed
-  - Be concise, user-facing language
+- **CHANGELOG.md**: Add entry under a new header with the current date and branch name.
+  - Use categories: Added, Changed, Fixed, Security, Removed.
+  - Be specific and technical (e.g., "Fixed race condition in TaskEditView").
+  - Include files touched and specific logic changes.
+- **release_notes.md**: Update release notes with user-facing, value-oriented descriptions.
+  - Translate technical fixes into benefits (e.g., "Smoother calendar sync" instead of "Fixed state re-render").
+  - Aim for 1-2 lines per change, ensuring a new user can understand the value.
+  - Maintain a professional, marketing-friendly tone.
 
 ## 4. Documentation Style Rules
 

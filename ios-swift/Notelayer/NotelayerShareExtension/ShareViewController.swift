@@ -241,12 +241,14 @@ class ShareViewController: UIViewController {
         
         let swiftUIView = ShareExtensionView(
             contentModel: model,
-            onSave: { [weak self] title, categories, priority, dueDate, reminderDate in
-                NSLog("💾 [ShareViewController] Save tapped - title: %@, categories: %d, priority: %@", 
+            onSave: { [weak self] title, url, notes, categories, priority, dueDate, reminderDate in
+                NSLog("💾 [ShareViewController] Save tapped - title: %@, categories: %d, priority: %@",
                       title, categories.count, priority.label)
                 self?.saveTask(
                     title: title,
                     model: model,
+                    url: url,
+                    notes: notes,
                     categories: categories,
                     priority: priority,
                     dueDate: dueDate,
@@ -292,6 +294,8 @@ class ShareViewController: UIViewController {
     private func saveTask(
         title: String,
         model: ShareContentModel,
+        url: String?,
+        notes: String?,
         categories: [String],
         priority: Priority,
         dueDate: Date?,
@@ -305,8 +309,8 @@ class ShareViewController: UIViewController {
         // Create shared item with all fields
         let sharedItem = SharedItem(
             title: title,
-            url: model.url,
-            text: model.text,
+            url: url,
+            text: notes,
             sourceApp: model.sourceApp,
             categories: categories,
             priority: priority,
@@ -389,7 +393,7 @@ class ShareViewController: UIViewController {
 /// SwiftUI view for the share extension interface
 struct ShareExtensionView: View {
     @ObservedObject var contentModel: ShareViewController.ShareContentModel
-    let onSave: (String, [String], Priority, Date?, Date?) -> Void
+    let onSave: (String, String?, String?, [String], Priority, Date?, Date?) -> Void
     let onCancel: () -> Void
     
     // Field state
@@ -398,6 +402,8 @@ struct ShareExtensionView: View {
     @State private var priority: Priority = .medium
     @State private var dueDate: Date? = nil
     @State private var reminderDate: Date? = nil
+    @State private var notesText: String = ""
+    @State private var urlText: String = ""
     @State private var showingDueDatePicker = false
     @State private var showingReminderPicker = false
     
@@ -406,210 +412,115 @@ struct ShareExtensionView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header with logo
-                    VStack(spacing: 12) {
-                        Image("NotelayerLogo")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                        
-                        Text("Save to Notelayer")
-                            .font(.title3)
-                            .fontWeight(.semibold)
+            List {
+                TaskEditorTitleSection(title: $contentModel.title, focus: $titleFieldFocused)
+
+                if !availableCategories.isEmpty {
+                    TaskEditorCategorySection(
+                        categories: availableCategories,
+                        selectedIds: $selectedCategories,
+                        chipSize: .large
+                    )
+                }
+
+                TaskEditorPrioritySection(priority: $priority)
+
+                Section("Due Date") {
+                    Button {
+                        if dueDate == nil {
+                            dueDate = Date()
+                        }
+                        showingDueDatePicker = true
+                    } label: {
+                        HStack {
+                            Text("Due Date")
+                            Spacer()
+                            if let dueDate = dueDate {
+                                Text(dueDate.formatted(date: .abbreviated, time: .shortened))
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("Tap to set date & time")
+                                    .foregroundColor(.secondary)
+                            }
+                            Image(systemName: "calendar")
+                                .foregroundColor(.blue)
+                        }
                     }
-                    .padding(.top, 20)
-                    
-                    // Main content card
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Title field (editable)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Task Title", systemImage: "checkmark.circle")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                            
-                            TextField("What do you want to remember?", text: $contentModel.title)
-                                .textFieldStyle(.roundedBorder)
-                                .focused($titleFieldFocused)
+
+                    if dueDate != nil {
+                        Button(role: .destructive) {
+                            dueDate = nil
+                        } label: {
+                            Text("Remove Due Date")
                         }
-                        
-                        Divider()
-                        
-                        // Categories - Multi-line grid
-                        if !availableCategories.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Categories", systemImage: "tag")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                
-                                CategoryChipGridView(
-                                    categories: availableCategories,
-                                    selectedIds: $selectedCategories
-                                )
-                            }
-                            
-                            Divider()
-                        }
-                        
-                        // Priority picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Priority", systemImage: "flag")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                            
-                            Picker("Priority", selection: $priority) {
-                                ForEach(Priority.allCases) { p in
-                                    Text(p.label).tag(p)
+                    }
+                }
+
+                Section("Nag") {
+                    if let activeReminderDate = reminderDate {
+                        Button {
+                            showingReminderPicker = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "bell.fill")
+                                    .foregroundColor(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(activeReminderDate.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                    Text(relativeTimeText(for: activeReminderDate))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-                        
-                        Divider()
-                        
-                        // Due date picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Due Date", systemImage: "calendar")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                            
-                            Button(action: { showingDueDatePicker = true }) {
-                                HStack {
-                                    if let date = dueDate {
-                                        Text(formatDate(date))
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Button(action: { dueDate = nil }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.secondary)
-                                        }
-                                    } else {
-                                        Text("Add due date (optional)")
-                                            .foregroundColor(.secondary)
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                }
-                                .padding(12)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        
-                        Divider()
-                        
-                        // Reminder picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Reminder", systemImage: "bell")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                            
-                            Button(action: { showingReminderPicker = true }) {
-                                HStack {
-                                    if let date = reminderDate {
-                                        Text(formatDateTime(date))
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Button(action: { reminderDate = nil }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.secondary)
-                                        }
-                                    } else {
-                                        Text("Set reminder (optional)")
-                                            .foregroundColor(.secondary)
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                }
-                                .padding(12)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        
-                        // URL/Content preview (collapsible)
-                        if contentModel.url != nil || contentModel.text != nil {
-                            Divider()
-                            
-                            DisclosureGroup {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    // URL preview
-                                    if let url = contentModel.url {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Link")
-                                                .font(.caption)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.secondary)
-                                            
-                                            Text(url)
-                                                .font(.caption2)
-                                                .foregroundColor(.blue)
-                                                .lineLimit(2)
-                                        }
-                                    }
-                                    
-                                    // Text preview
-                                    if let text = contentModel.text, !text.isEmpty {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Content")
-                                                .font(.caption)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.secondary)
-                                            
-                                            Text(text)
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(3)
-                                        }
-                                    }
-                                }
-                                .padding(.top, 8)
-                            } label: {
-                                Label("Preview", systemImage: "eye")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                         }
-                        
-                        // Source attribution
-                        if let sourceApp = contentModel.sourceApp {
-                            HStack(spacing: 6) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.caption2)
-                                Text("Shared from \(sourceApp)")
-                                    .font(.caption2)
+                        .buttonStyle(.plain)
+
+                        Button(role: .destructive) {
+                            reminderDate = nil
+                        } label: {
+                            Text("Stop nagging me")
+                        }
+                    } else {
+                        Button {
+                            showingReminderPicker = true
+                        } label: {
+                            HStack {
+                                Text("Nag me later")
+                                Spacer()
+                                Image(systemName: "bell.badge.plus")
+                                    .foregroundColor(.blue)
                             }
+                        }
+                    }
+                }
+
+                TaskEditorNotesSection(notes: $notesText, links: detectedNoteLinks)
+
+                if shouldShowURLSection {
+                    TaskEditorURLSection(urlText: $urlText)
+                }
+
+                if let sourceApp = contentModel.sourceApp {
+                    Section {
+                        Text("Shared from \(sourceApp)")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, 8)
-                        }
                     }
-                    .padding(20)
-                    .background(Color(.systemBackground))
-                    .cornerRadius(16)
-                    .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
-                    .padding(.horizontal, 16)
-                    
-                    Spacer(minLength: 20)
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .scrollDismissesKeyboard(.immediately)
+            .navigationTitle("Share to Notelayer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    headerTitle
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         onCancel()
@@ -619,8 +530,12 @@ struct ShareExtensionView: View {
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        let trimmedNotes = notesText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
                         onSave(
                             contentModel.title,
+                            trimmedURL.isEmpty ? nil : trimmedURL,
+                            trimmedNotes.isEmpty ? nil : trimmedNotes,
                             Array(selectedCategories),
                             priority,
                             dueDate,
@@ -640,6 +555,14 @@ struct ShareExtensionView: View {
             .onAppear {
                 // Load categories from App Group
                 availableCategories = SharedItemHelpers.loadCategoriesFromAppGroup()
+
+                if notesText.isEmpty {
+                    notesText = contentModel.text ?? ""
+                }
+
+                if urlText.isEmpty {
+                    urlText = contentModel.url ?? ""
+                }
                 
                 // Auto-focus title field
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -648,21 +571,36 @@ struct ShareExtensionView: View {
             }
         }
     }
-    
-    // MARK: - Date Formatters
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
+
+    private var headerTitle: some View {
+        HStack(spacing: 8) {
+            Image("NotelayerLogo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            Text("Share to Notelayer")
+                .font(.headline)
+        }
+        .accessibilityElement(children: .combine)
     }
-    
-    private func formatDateTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+
+    private var detectedNoteLinks: [URL] {
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let matches = detector?.matches(in: notesText, range: NSRange(notesText.startIndex..., in: notesText)) ?? []
+        return matches.compactMap { match in
+            Range(match.range, in: notesText).flatMap { URL(string: String(notesText[$0])) }
+        }
+    }
+
+    private var shouldShowURLSection: Bool {
+        !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || contentModel.url != nil
+    }
+
+    private func relativeTimeText(for date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
 
@@ -680,7 +618,7 @@ struct DueDatePickerSheet: View {
                 DatePicker(
                     "Due Date",
                     selection: $selectedDate,
-                    displayedComponents: .date
+                    displayedComponents: [.date, .hourAndMinute]
                 )
                 .datePickerStyle(.graphical)
                 .padding()

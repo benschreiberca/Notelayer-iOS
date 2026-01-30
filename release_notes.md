@@ -1,5 +1,13 @@
 # TestFlight Release Notes
 
+## [2026-01-29] - The Share Sheet Finally Joined the Main Cast
+- **What's New**: The Share Sheet now mirrors the Task Detail layout (standard iOS list, proper Notes + URL fields, same glassy feel), plus larger category chips.
+- **Why it matters**: Shared tasks stop feeling like they were filed in a different universe.
+- **What's New**: Theme selection now survives a force-quit, and dark themes finally got darker wallpapers.
+- **Why it matters**: Your app stops waking up in the wrong outfit.
+- **What's New**: Date/time pickers are consistent everywhere, and the "Add to Calendar" sheet stopped doing the open-close hokey-pokey.
+- **Why it matters**: Scheduling no longer requires deep breathing.
+
 ## [2026-01-28] - The Share Sheet Grew a Spine
 - **What's New**: When you share into Notelayer, you can now rename the task, pick categories, set priority, and add due dates or reminders before saving.
 - **Why it matters**: Shared items arrive already organized instead of showing up as a blank shrug.

@@ -57,9 +57,15 @@ final class ThemeManager: ObservableObject {
     private let appGroupIdentifier = "group.com.notelayer.app"
     private let modeKey = "com.notelayer.app.theme.mode"
     private let presetKey = "com.notelayer.app.theme.preset"
+    // Timestamp used to pick the freshest persisted theme between app group and standard defaults.
+    private let updatedAtKey = "com.notelayer.app.theme.updatedAt"
+
+    private var appGroupDefaults: UserDefaults? {
+        UserDefaults(suiteName: appGroupIdentifier)
+    }
 
     private var userDefaults: UserDefaults {
-        UserDefaults(suiteName: appGroupIdentifier) ?? UserDefaults.standard
+        appGroupDefaults ?? UserDefaults.standard
     }
 
     private init() {
@@ -67,19 +73,78 @@ final class ThemeManager: ObservableObject {
     }
 
     func load() {
-        if let modeString = userDefaults.string(forKey: modeKey),
-           let m = ThemeMode(rawValue: modeString) {
-            mode = m
+        let appGroupState = loadState(from: appGroupDefaults)
+        let standardState = loadState(from: UserDefaults.standard)
+
+        // Prefer the most recently updated state, with a safe fallback when timestamps are missing.
+        let primaryState: ThemePersistenceState?
+        let fallbackState: ThemePersistenceState?
+
+        switch (appGroupState, standardState) {
+        case (nil, nil):
+            primaryState = nil
+            fallbackState = nil
+        case (let appState?, nil):
+            primaryState = appState
+            fallbackState = nil
+        case (nil, let standardState?):
+            primaryState = standardState
+            fallbackState = nil
+        case (let appState?, let standardState?):
+            if appState.updatedAt == 0 && standardState.updatedAt == 0 {
+                primaryState = standardState
+                fallbackState = appState
+            } else if appState.updatedAt >= standardState.updatedAt {
+                primaryState = appState
+                fallbackState = standardState
+            } else {
+                primaryState = standardState
+                fallbackState = appState
+            }
         }
-        if let presetString = userDefaults.string(forKey: presetKey),
-           let p = ThemePreset(rawValue: presetString) {
-            preset = p
+
+        guard let primaryState else { return }
+
+        if let resolvedMode = primaryState.mode ?? fallbackState?.mode {
+            mode = resolvedMode
+        }
+
+        if let resolvedPreset = primaryState.preset ?? fallbackState?.preset {
+            preset = resolvedPreset
         }
     }
 
     private func save() {
-        userDefaults.set(mode.rawValue, forKey: modeKey)
-        userDefaults.set(preset.rawValue, forKey: presetKey)
+        let timestamp = Date().timeIntervalSince1970
+        // Persist to the app group and standard defaults so force-quit restores the preset reliably.
+        let targets = [appGroupDefaults, UserDefaults.standard].compactMap { $0 }
+        for defaults in targets {
+            defaults.set(mode.rawValue, forKey: modeKey)
+            defaults.set(preset.rawValue, forKey: presetKey)
+            defaults.set(timestamp, forKey: updatedAtKey)
+            defaults.synchronize()
+        }
+    }
+
+    private struct ThemePersistenceState {
+        let mode: ThemeMode?
+        let preset: ThemePreset?
+        let updatedAt: TimeInterval
+    }
+
+    private func loadState(from defaults: UserDefaults?) -> ThemePersistenceState? {
+        guard let defaults else { return nil }
+
+        let updatedAt = defaults.double(forKey: updatedAtKey)
+        let mode = defaults.string(forKey: modeKey).flatMap(ThemeMode.init)
+        let preset = defaults.string(forKey: presetKey).flatMap(ThemePreset.init)
+
+        // Ignore empty payloads so we don't overwrite the in-memory defaults.
+        if updatedAt == 0, mode == nil, preset == nil {
+            return nil
+        }
+
+        return ThemePersistenceState(mode: mode, preset: preset, updatedAt: updatedAt)
     }
 
     var preferredColorScheme: ColorScheme? {
@@ -253,19 +318,25 @@ struct ThemeTokens: Equatable {
 
 struct ThemeBackground: View {
     let preset: ThemePreset
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let tokens = ThemeTokens(preset: preset)
         switch preset {
         case .barbie:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFE6F7") ?? Color.pink.opacity(0.12),
-                    Color(hex: "#E6F0FF") ?? Color.blue.opacity(0.10)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFE6F7") ?? Color.pink.opacity(0.12),
+                        Color(hex: "#E6F0FF") ?? Color.blue.opacity(0.10)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
 
         case .cheetah:
             ZStack {
@@ -300,133 +371,185 @@ struct ThemeBackground: View {
                 .ignoresSafeArea()
             }
         case .arctic:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#E6F4FF") ?? Color.blue.opacity(0.08),
-                    Color(hex: "#F2FBFF") ?? Color.cyan.opacity(0.06)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#E6F4FF") ?? Color.blue.opacity(0.08),
+                        Color(hex: "#F2FBFF") ?? Color.cyan.opacity(0.06)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .ocean:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#E6F7FF") ?? Color.cyan.opacity(0.07),
-                    Color(hex: "#E6ECFF") ?? Color.blue.opacity(0.06)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#E6F7FF") ?? Color.cyan.opacity(0.07),
+                        Color(hex: "#E6ECFF") ?? Color.blue.opacity(0.06)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
 
         case .forest:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#ECFDF3") ?? Color.green.opacity(0.06),
-                    Color(hex: "#F7FFE8") ?? Color.mint.opacity(0.05)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#ECFDF3") ?? Color.green.opacity(0.06),
+                        Color(hex: "#F7FFE8") ?? Color.mint.opacity(0.05)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .sunset:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFF1E6") ?? Color.orange.opacity(0.06),
-                    Color(hex: "#FFE6EE") ?? Color.pink.opacity(0.05)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF1E6") ?? Color.orange.opacity(0.06),
+                        Color(hex: "#FFE6EE") ?? Color.pink.opacity(0.05)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
 
         case .lavender:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#F3E8FF") ?? Color.purple.opacity(0.06),
-                    Color(hex: "#E0E7FF") ?? Color.indigo.opacity(0.05)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#F3E8FF") ?? Color.purple.opacity(0.06),
+                        Color(hex: "#E0E7FF") ?? Color.indigo.opacity(0.05)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .graphite:
-            Color(.systemBackground)
-                .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+            }
 
         case .sand:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFF7E6") ?? Color.yellow.opacity(0.05),
-                    Color(hex: "#FFFDF6") ?? Color(.systemBackground)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF7E6") ?? Color.yellow.opacity(0.05),
+                        Color(hex: "#FFFDF6") ?? Color(.systemBackground)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .mint:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#E8FFF8") ?? Color.mint.opacity(0.06),
-                    Color(hex: "#F6FFFB") ?? Color(.systemBackground)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#E8FFF8") ?? Color.mint.opacity(0.06),
+                        Color(hex: "#F6FFFB") ?? Color(.systemBackground)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .ember:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFF1F2") ?? Color.red.opacity(0.05),
-                    Color(hex: "#FFF7ED") ?? Color.orange.opacity(0.04)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF1F2") ?? Color.red.opacity(0.05),
+                        Color(hex: "#FFF7ED") ?? Color.orange.opacity(0.04)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
 
         case .berry:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFE6F7") ?? Color.pink.opacity(0.06),
-                    Color(hex: "#F3E8FF") ?? Color.purple.opacity(0.05)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFE6F7") ?? Color.pink.opacity(0.06),
+                        Color(hex: "#F3E8FF") ?? Color.purple.opacity(0.05)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .citrus:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#FFF9DB") ?? Color.yellow.opacity(0.06),
-                    Color(hex: "#E6FFFA") ?? Color.mint.opacity(0.04)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF9DB") ?? Color.yellow.opacity(0.06),
+                        Color(hex: "#E6FFFA") ?? Color.mint.opacity(0.04)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
 
         case .slate:
-            LinearGradient(
-                colors: [
-                    Color(hex: "#F1F5F9") ?? Color.gray.opacity(0.06),
-                    Color(hex: "#FFFFFF") ?? Color(.systemBackground)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#F1F5F9") ?? Color.gray.opacity(0.06),
+                        Color(hex: "#FFFFFF") ?? Color(.systemBackground)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
 
         case .mono:
-            Color(.systemBackground)
-                .ignoresSafeArea()
+            if colorScheme == .dark {
+                tokens.darkBackground.ignoresSafeArea()
+            } else {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+            }
         }
     }
 }
@@ -457,4 +580,3 @@ private struct CheetahThemeBackground: View {
         }
     }
 }
-

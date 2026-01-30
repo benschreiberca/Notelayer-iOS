@@ -20,7 +20,7 @@ struct TodosView: View {
     @State private var sharePayload: SharePayload? = nil
     @State private var scrollOffset: CGFloat = 0
     @State private var calendarExportError: CalendarExportError? = nil
-    @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
+    @State private var calendarEditSession: CalendarEventEditSession? = nil
     @State private var taskToSetReminder: Task? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
@@ -268,18 +268,15 @@ struct TodosView: View {
                     Text(error.localizedDescription)
                 }
             }
-            .sheet(item: Binding(
-                get: { calendarEventToEdit.map { SheetIdentifier(event: $0.event, store: $0.store) } },
-                set: { if $0 == nil { calendarEventToEdit = nil } }
-            )) { identifier in
+            .sheet(item: $calendarEditSession) { session in
                 CalendarEventEditView(
-                    event: identifier.event,
-                    eventStore: identifier.store,
+                    event: session.event,
+                    eventStore: session.store,
                     onSaved: {
-                        calendarEventToEdit = nil
+                        calendarEditSession = nil
                     },
                     onCancelled: {
-                        calendarEventToEdit = nil
+                        calendarEditSession = nil
                     }
                 )
             }
@@ -341,7 +338,7 @@ struct TodosView: View {
         do {
             let event = try await manager.prepareEvent(for: task, categories: store.categories)
             await MainActor.run {
-                calendarEventToEdit = (event, manager.eventStoreForUI)
+                calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
             }
         } catch let error as CalendarExportError {
             await MainActor.run {
@@ -379,13 +376,6 @@ struct TodosView: View {
             )
         }
     }
-}
-
-// Helper struct to make the event identifiable for the sheet
-private struct SheetIdentifier: Identifiable {
-    let id = UUID()
-    let event: EKEvent
-    let store: EKEventStore
 }
 
 // MARK: - Shared helpers
@@ -536,6 +526,12 @@ private struct TodoListModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { Keyboard.dismiss() }
+        )
         .coordinateSpace(name: "scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
             scrollOffset = value
@@ -640,6 +636,12 @@ private struct TodoPriorityModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { Keyboard.dismiss() }
+        )
         .coordinateSpace(name: "scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
             scrollOffset = value
@@ -799,6 +801,12 @@ private struct TodoCategoryModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { Keyboard.dismiss() }
+        )
         .coordinateSpace(name: "scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
             scrollOffset = value
@@ -929,6 +937,12 @@ private struct TodoDateModeView: View {
             }
             .padding(.vertical, 12)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { Keyboard.dismiss() }
+        )
         .coordinateSpace(name: "scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
             scrollOffset = value
@@ -1003,6 +1017,7 @@ private struct TodoGroupCardHeader: View {
             }
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
     }
 }
 
@@ -1141,6 +1156,7 @@ private struct TodoGroupTaskList: View {
         }
         // Requested: increase padding between group headers and list cards (top & bottom)
         .padding(.vertical, 4)
+        .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
     }
 
     private var resolvedUndoManager: UndoManager? {

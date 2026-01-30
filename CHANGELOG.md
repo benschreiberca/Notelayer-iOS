@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026-01-29] - Branch: `UI-bug-fixes`
+- **UI Unification**: Rebuilt Share Sheet into a List/Section editor aligned with Task Detail, added shared editor sections, editable notes/URL fields, and larger category chips across sheets in `ios-swift/Notelayer/Notelayer/Views/Shared/TaskEditorSections.swift`, `ios-swift/Notelayer/NotelayerShareExtension/ShareViewController.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/Shared/CategoryChipGridView.swift`.
+- **Calendar Export Stability**: Introduced `CalendarEventEditSession` to prevent the native calendar editor from reopening/closing loops in `ios-swift/Notelayer/Notelayer/Views/Shared/CalendarEventEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.
+- **Theme Persistence & Dark Mode**: Timestamped theme persistence across app group + standard defaults and refreshed dark background handling in `ios-swift/Notelayer/Notelayer/Data/ThemeManager.swift`.
+- **Input & Picker Polish**: Added keyboard dismiss helpers, aligned due/reminder pickers to include date+time, and updated task input behaviors in `ios-swift/Notelayer/Notelayer/Utils/KeyboardDismiss.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskInputView.swift`, `ios-swift/Notelayer/NotelayerShareExtension/ShareViewController.swift`.
+- **Project/Versioning**: Synced share extension version string and registered shared editor sources in `ios-swift/Notelayer/NotelayerShareExtension/Info.plist`, `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`.
+
 ## [2026-01-28] - Branch: `share-sheet-feature`
 - **Feature**: Rebuilt the share extension UI with editable title, category chip grid, priority picker, due/reminder pickers, and content preview in `ios-swift/Notelayer/NotelayerShareExtension/ShareViewController.swift` plus new `ios-swift/Notelayer/Notelayer/Views/Shared/CategoryChipGridView.swift`.
 - **Model/Sync**: Added shareable task fields (categories, priority, due date, reminder) and App Group category loading in `ios-swift/Notelayer/Notelayer/Data/SharedItem.swift`, and wired those fields through `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`.

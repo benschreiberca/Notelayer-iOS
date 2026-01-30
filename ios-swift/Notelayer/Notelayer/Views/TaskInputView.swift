@@ -142,7 +142,10 @@ struct TaskInputView: View {
         
         let taskId = store.addTask(task)
         onTaskCreated(taskId)
-        
+
+        // Close the keyboard when a task is submitted.
+        isTitleFocused = false
+
         // Reset
         title = ""
         selectedCategories = defaultCategories
@@ -152,6 +155,7 @@ struct TaskInputView: View {
 }
 
 struct CategoryChip: View {
+    @EnvironmentObject private var theme: ThemeManager
     let category: Category
     let isSelected: Bool
     let onTap: () -> Void
@@ -165,10 +169,14 @@ struct CategoryChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isSelected ? Color.blue.opacity(0.2) : Color(.systemGray5))
-            .foregroundColor(isSelected ? .blue : .primary)
+            .background(categoryColor.opacity(isSelected ? 0.28 : 0.125))
+            .foregroundColor(.primary)
             .cornerRadius(16)
         }
+    }
+
+    private var categoryColor: Color {
+        Color(hex: category.color) ?? theme.tokens.accent
     }
 }
 

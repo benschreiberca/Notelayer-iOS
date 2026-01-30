@@ -51,3 +51,10 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
         }
     }
 }
+
+/// Stable, identifiable session used to present the calendar editor without re-triggering sheets.
+struct CalendarEventEditSession: Identifiable {
+    let id = UUID()
+    let event: EKEvent
+    let store: EKEventStore
+}

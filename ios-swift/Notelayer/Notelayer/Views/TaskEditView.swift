@@ -13,7 +13,7 @@ struct TaskEditView: View {
     @State private var taskNotes: String
     @State private var showDatePicker = false
     @State private var calendarExportError: CalendarExportError? = nil
-    @State private var calendarEventToEdit: (event: EKEvent, store: EKEventStore)? = nil
+    @State private var calendarEditSession: CalendarEventEditSession? = nil
     @State private var showReminderPicker = false
     @State private var showCustomDatePicker = false
     @State private var customDate = Date()
@@ -30,45 +30,17 @@ struct TaskEditView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Title") {
-                    TextField("Task title", text: $title)
-                        .font(.title3.weight(.semibold))
-                        .onChange(of: title) { newValue in
-                            if newValue.count > 200 {
-                                title = String(newValue.prefix(200))
-                            }
-                        }
+                TaskEditorTitleSection(title: $title)
+
+                if !store.categories.isEmpty {
+                    TaskEditorCategorySection(
+                        categories: store.categories,
+                        selectedIds: $selectedCategories,
+                        chipSize: .large
+                    )
                 }
-                
-                Section("Categories") {
-                    ForEach(store.categories) { category in
-                        HStack {
-                            Text(category.icon)
-                            Text(category.name)
-                            Spacer()
-                            if selectedCategories.contains(category.id) {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if selectedCategories.contains(category.id) {
-                                selectedCategories.remove(category.id)
-                            } else {
-                                selectedCategories.insert(category.id)
-                            }
-                        }
-                    }
-                }
-                
-                Section("Priority") {
-                    Picker("Priority", selection: $priority) {
-                        ForEach(Priority.allCases, id: \.id) { p in
-                            Text(p.label).tag(p)
-                        }
-                    }
-                }
+
+                TaskEditorPrioritySection(priority: $priority)
                 
                 Section("Due Date") {
                     Button {
@@ -148,33 +120,7 @@ struct TaskEditView: View {
                     }
                 }
                 
-                Section("Notes") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TextEditor(text: $taskNotes)
-                            .frame(minHeight: 100)
-                        
-                        // Show detected URLs as tappable links below
-                        if !detectedURLs.isEmpty {
-                            Divider()
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Links:")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                ForEach(detectedURLs, id: \.self) { url in
-                                    Link(destination: url) {
-                                        HStack {
-                                            Image(systemName: "link")
-                                                .font(.caption2)
-                                            Text(url.absoluteString)
-                                                .font(.caption)
-                                                .lineLimit(1)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                TaskEditorNotesSection(notes: $taskNotes, links: detectedURLs)
                 
                 Section {
                     Button(role: .destructive) {
@@ -190,6 +136,8 @@ struct TaskEditView: View {
                     }
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
+            .background(KeyboardDismissRecognizer())
             .navigationTitle("Task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -239,18 +187,15 @@ struct TaskEditView: View {
                     Text(error.localizedDescription)
                 }
             }
-            .sheet(item: Binding(
-                get: { calendarEventToEdit.map { TaskEditSheetIdentifier(event: $0.event, store: $0.store) } },
-                set: { if $0 == nil { calendarEventToEdit = nil } }
-            )) { identifier in
+            .sheet(item: $calendarEditSession) { session in
                 CalendarEventEditView(
-                    event: identifier.event,
-                    eventStore: identifier.store,
+                    event: session.event,
+                    eventStore: session.store,
                     onSaved: {
-                        calendarEventToEdit = nil
+                        calendarEditSession = nil
                     },
                     onCancelled: {
-                        calendarEventToEdit = nil
+                        calendarEditSession = nil
                     }
                 )
             }
@@ -322,7 +267,7 @@ struct TaskEditView: View {
         do {
             let event = try await manager.prepareEvent(for: task, categories: store.categories)
             await MainActor.run {
-                calendarEventToEdit = (event, manager.eventStoreForUI)
+                calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
             }
         } catch let error as CalendarExportError {
             await MainActor.run {
@@ -339,13 +284,6 @@ struct TaskEditView: View {
         // Route delete undo registration through the same manager used by the shake responder.
         UndoCoordinator.shared.undoManager
     }
-}
-
-// Helper struct to make the event identifiable for the sheet
-private struct TaskEditSheetIdentifier: Identifiable {
-    let id = UUID()
-    let event: EKEvent
-    let store: EKEventStore
 }
 
 struct DatePickerSheet: View {

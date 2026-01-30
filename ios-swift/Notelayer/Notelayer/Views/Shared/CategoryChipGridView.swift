@@ -6,6 +6,7 @@ import SwiftUI
 struct CategoryChipGridView: View {
     let categories: [Category]
     @Binding var selectedIds: Set<String>
+    var size: CategoryChipSize = .standard
     
     // Visual styling
     private let chipSpacing: CGFloat = 8
@@ -17,6 +18,7 @@ struct CategoryChipGridView: View {
                 CategoryChipButton(
                     category: category,
                     isSelected: selectedIds.contains(category.id),
+                    size: size,
                     onTap: {
                         toggleSelection(category.id)
                     }
@@ -39,19 +41,20 @@ struct CategoryChipGridView: View {
 private struct CategoryChipButton: View {
     let category: Category
     let isSelected: Bool
+    let size: CategoryChipSize
     let onTap: () -> Void
     
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 4) {
                 Text(category.icon)
-                    .font(.caption)
+                    .font(size.font)
                 Text(category.name)
-                    .font(.caption)
+                    .font(size.font)
                     .fontWeight(isSelected ? .semibold : .regular)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
             .background(backgroundColor)
             .foregroundColor(foregroundColor)
             .overlay(
@@ -64,19 +67,11 @@ private struct CategoryChipButton: View {
     }
     
     private var backgroundColor: Color {
-        if isSelected {
-            return categoryColor.opacity(0.2)
-        } else {
-            return Color(.systemBackground)
-        }
+        categoryColor.opacity(isSelected ? 0.28 : 0.125)
     }
     
     private var foregroundColor: Color {
-        if isSelected {
-            return categoryColor
-        } else {
-            return .primary
-        }
+        isSelected ? categoryColor : .primary
     }
     
     private var borderColor: Color {
@@ -89,6 +84,34 @@ private struct CategoryChipButton: View {
     
     private var categoryColor: Color {
         Color(hex: category.color) ?? .blue
+    }
+}
+
+/// Size presets for category chips.
+enum CategoryChipSize {
+    case standard
+    case large
+
+    var horizontalPadding: CGFloat {
+        switch self {
+        case .standard:
+            return 12
+        case .large:
+            return 15
+        }
+    }
+
+    var verticalPadding: CGFloat {
+        switch self {
+        case .standard:
+            return 6
+        case .large:
+            return 7.5
+        }
+    }
+
+    var font: Font {
+        .caption
     }
 }
 

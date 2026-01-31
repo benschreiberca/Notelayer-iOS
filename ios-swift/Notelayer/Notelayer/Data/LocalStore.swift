@@ -21,6 +21,7 @@ class LocalStore: ObservableObject {
     @Published var notes: [Note] = []
     @Published var tasks: [Task] = []
     @Published var categories: [Category] = []
+    @Published private(set) var uncategorizedPosition: Int = 0
 
     private var backend: BackendSyncing?
     private var suppressBackendWrites = false
@@ -28,6 +29,7 @@ class LocalStore: ObservableObject {
     private let notesKey = "com.notelayer.app.notes"
     private let tasksKey = "com.notelayer.app.tasks"
     private let categoriesKey = "com.notelayer.app.categories"
+    private let uncategorizedPositionKey = "com.notelayer.app.todos.uncategorizedPosition"
     private let backendUserIdKey = "com.notelayer.app.backendUserId"
     
     // Use isolated data store for screenshot generation to protect user's real data
@@ -53,6 +55,17 @@ class LocalStore: ObservableObject {
         migrateIfNeeded()
     }
 
+    nonisolated static func categorySort(_ lhs: Category, _ rhs: Category) -> Bool {
+        if lhs.order != rhs.order {
+            return lhs.order < rhs.order
+        }
+        return lhs.id < rhs.id
+    }
+
+    var sortedCategories: [Category] {
+        categories.sorted(by: Self.categorySort)
+    }
+
     func attachBackend(_ backend: BackendSyncing?) {
         self.backend = backend
     }
@@ -66,9 +79,11 @@ class LocalStore: ObservableObject {
             notes = []
             tasks = []
             categories = []
+            uncategorizedPosition = 0
             saveNotes()
             saveTasks()
             saveCategories()
+            saveUncategorizedPosition()
             migrateIfNeeded()
         }
     }
@@ -78,6 +93,7 @@ class LocalStore: ObservableObject {
             self.notes = notes
             self.tasks = tasks
             self.categories = categories
+                .sorted(by: Self.categorySort)
             saveNotes()
             saveTasks()
             saveCategories()
@@ -100,6 +116,13 @@ class LocalStore: ObservableObject {
             // Reschedule reminders for synced tasks
             // Notifications don't sync across devices, only reminder data syncs
             rescheduleRemindersAfterSync(tasks)
+        }
+    }
+
+    func applyRemoteUncategorizedPosition(_ position: Int) {
+        applyRemoteUpdate {
+            uncategorizedPosition = clampUncategorizedPosition(position, categoryCount: categories.count)
+            saveUncategorizedPosition()
         }
     }
     
@@ -136,6 +159,7 @@ class LocalStore: ObservableObject {
     func applyRemoteCategories(_ categories: [Category]) {
         applyRemoteUpdate {
             self.categories = categories
+                .sorted(by: Self.categorySort)
             saveCategories()
             migrateIfNeeded()
         }
@@ -165,6 +189,10 @@ class LocalStore: ObservableObject {
            let decodedCategories = try? JSONDecoder().decode([Category].self, from: categoriesData) {
             categories = decodedCategories
         }
+
+        if let savedPosition = userDefaults.object(forKey: uncategorizedPositionKey) as? Int {
+            uncategorizedPosition = savedPosition
+        }
     }
 
     private func migrateIfNeeded() {
@@ -185,6 +213,19 @@ class LocalStore: ObservableObject {
                 changed = true
             }
         }
+        // Categories: backfill ordering if missing (preserve current array order).
+        if categories.count > 1, categories.allSatisfy({ $0.order == 0 }) {
+            for idx in categories.indices {
+                categories[idx].order = idx
+            }
+            changed = true
+        }
+        // Uncategorized: clamp to valid range after any ordering changes.
+        let clampedPosition = clampUncategorizedPosition(uncategorizedPosition, categoryCount: categories.count)
+        if clampedPosition != uncategorizedPosition {
+            uncategorizedPosition = clampedPosition
+            saveUncategorizedPosition()
+        }
         if changed {
             saveCategories()
         }
@@ -201,7 +242,7 @@ class LocalStore: ObservableObject {
             userDefaults.set(tasksData, forKey: tasksKey)
         }
     }
-    
+
     /// Save categories to local storage and App Group (for share extension access)
     private func saveCategories() {
         if let categoriesData = try? JSONEncoder().encode(categories) {
@@ -209,6 +250,10 @@ class LocalStore: ObservableObject {
             // Categories are automatically synced to App Group since userDefaults
             // uses the App Group suite name (loadable via SharedItemHelpers)
         }
+    }
+
+    private func saveUncategorizedPosition() {
+        userDefaults.set(uncategorizedPosition, forKey: uncategorizedPositionKey)
     }
     
     // MARK: - Notes
@@ -464,10 +509,18 @@ class LocalStore: ObservableObject {
     // MARK: - Categories
     
     func addCategory(_ category: Category) {
-        categories.append(category)
+        // Insert new categories at the top and shift others down to preserve order.
+        for idx in categories.indices {
+            categories[idx].order += 1
+        }
+        var newCategory = category
+        newCategory.order = 0
+        categories.append(newCategory)
+        categories.sort(by: Self.categorySort)
+        setUncategorizedPosition(uncategorizedPosition + 1)
         saveCategories()
         if let backend, !suppressBackendWrites {
-            _Concurrency.Task { try? await backend.upsert(category: category) }
+            _Concurrency.Task { try? await backend.upsert(categories: categories) }
         }
     }
     
@@ -476,6 +529,7 @@ class LocalStore: ObservableObject {
         var category = categories[index]
         updates(&category)
         categories[index] = category
+        categories.sort(by: Self.categorySort)
         saveCategories()
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(category: category) }
@@ -484,11 +538,33 @@ class LocalStore: ObservableObject {
     
     func reorderCategories(orderedIds: [String]) {
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
-        categories = orderedIds.compactMap { categoryMap[$0] }
+        var reordered: [Category] = []
+        reordered.reserveCapacity(orderedIds.count)
+        for (index, id) in orderedIds.enumerated() {
+            guard var category = categoryMap[id] else { continue }
+            category.order = index
+            reordered.append(category)
+        }
+        // Preserve any categories not present in the ordered list.
+        let remaining = categories
+            .filter { !orderedIds.contains($0.id) }
+            .enumerated()
+            .map { offset, category in
+                var updated = category
+                updated.order = reordered.count + offset
+                return updated
+            }
+        categories = (reordered + remaining).sorted(by: Self.categorySort)
         saveCategories()
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(categories: categories) }
         }
+    }
+
+    func setUncategorizedPosition(_ position: Int) {
+        let clamped = clampUncategorizedPosition(position, categoryCount: categories.count)
+        uncategorizedPosition = clamped
+        saveUncategorizedPosition()
     }
 
     func deleteCategory(id: String, reassignTo replacementId: String? = nil) {
@@ -496,8 +572,15 @@ class LocalStore: ObservableObject {
             guard let replacementId, replacementId != id else { return nil }
             return categories.contains(where: { $0.id == replacementId }) ? replacementId : nil
         }()
+        let removedIndex = sortedCategories.firstIndex { $0.id == id }
         let updatedTasks = updateTasksForCategoryRemoval(categoryId: id, replacementId: resolvedReplacementId)
         categories.removeAll { $0.id == id }
+        normalizeCategoryOrder()
+        if let removedIndex, removedIndex < uncategorizedPosition {
+            setUncategorizedPosition(uncategorizedPosition - 1)
+        } else {
+            setUncategorizedPosition(uncategorizedPosition)
+        }
         saveCategories()
         if let backend, !suppressBackendWrites {
             _Concurrency.Task {
@@ -528,6 +611,20 @@ class LocalStore: ObservableObject {
             saveTasks()
         }
         return updatedTasks
+    }
+
+    private func normalizeCategoryOrder() {
+        let sorted = categories.sorted(by: Self.categorySort)
+        categories = sorted.enumerated().map { index, category in
+            var updated = category
+            updated.order = index
+            return updated
+        }
+    }
+
+    private func clampUncategorizedPosition(_ position: Int, categoryCount: Int) -> Int {
+        let maxIndex = max(0, categoryCount)
+        return min(max(position, 0), maxIndex)
     }
     
     func getCategory(id: String) -> Category? {

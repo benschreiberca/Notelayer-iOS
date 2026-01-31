@@ -32,9 +32,9 @@ struct TaskEditView: View {
             List {
                 TaskEditorTitleSection(title: $title)
 
-                if !store.categories.isEmpty {
+                if !store.sortedCategories.isEmpty {
                     TaskEditorCategorySection(
-                        categories: store.categories,
+                        categories: store.sortedCategories,
                         selectedIds: $selectedCategories,
                         chipSize: .large
                     )
@@ -265,7 +265,7 @@ struct TaskEditView: View {
         
         // Prepare the event
         do {
-            let event = try await manager.prepareEvent(for: task, categories: store.categories)
+            let event = try await manager.prepareEvent(for: task, categories: store.sortedCategories)
             await MainActor.run {
                 calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
             }

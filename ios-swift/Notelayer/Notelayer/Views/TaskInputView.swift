@@ -82,7 +82,7 @@ struct TaskInputView: View {
                     // Categories
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(store.categories) { category in
+                            ForEach(store.sortedCategories) { category in
                                 CategoryChip(
                                     category: category,
                                     isSelected: selectedCategories.contains(category.id),

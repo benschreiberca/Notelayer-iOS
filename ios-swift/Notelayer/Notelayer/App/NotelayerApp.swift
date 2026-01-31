@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         
         // Register notification categories and actions
         registerNotificationActions()
+        registerForRemoteNotificationsIfNeeded()
         
         // NOTE: processSharedItems() is now called in TodosView.onAppear
         // with a delay to ensure backend sync completes first
@@ -96,6 +97,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if DEBUG
         print("🔔 [AppDelegate] Registered notification categories and actions")
         #endif
+    }
+
+    private func registerForRemoteNotificationsIfNeeded() {
+        if UIApplication.shared.isRegisteredForRemoteNotifications {
+            #if DEBUG
+            print("📱 [AppDelegate] Already registered for remote notifications")
+            #endif
+            return
+        }
+
+        #if DEBUG
+        print("📱 [AppDelegate] Registering for remote notifications (APNS)")
+        #endif
+        UIApplication.shared.registerForRemoteNotifications()
     }
     
     // MARK: - UNUserNotificationCenterDelegate
@@ -221,6 +236,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if DEBUG
         print("✅ [AppDelegate] APNS token set successfully")
         #endif
+        #endif
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        #if DEBUG
+        print("❌ [AppDelegate] Failed to register for remote notifications: \(error.localizedDescription)")
+        if let nsError = error as NSError? {
+            print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+            print("   UserInfo: \(nsError.userInfo)")
+        }
         #endif
     }
 

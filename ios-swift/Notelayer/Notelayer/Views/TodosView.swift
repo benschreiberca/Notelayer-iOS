@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
 import EventKit
+import UIKit
+import UniformTypeIdentifiers
 
 enum TodoViewMode: String, CaseIterable {
     case list = "List"
@@ -63,7 +65,7 @@ struct TodosView: View {
                     TodoListModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.categories,
+                        categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         scrollOffset: $scrollOffset,
@@ -78,7 +80,7 @@ struct TodosView: View {
                     TodoPriorityModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.categories,
+                        categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         scrollOffset: $scrollOffset,
@@ -93,7 +95,7 @@ struct TodosView: View {
                     TodoCategoryModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.categories,
+                        categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         scrollOffset: $scrollOffset,
@@ -108,7 +110,7 @@ struct TodosView: View {
                     TodoDateModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.categories,
+                        categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         scrollOffset: $scrollOffset,
@@ -231,7 +233,7 @@ struct TodosView: View {
             .background(ThemeBackground(preset: theme.preset)) // Apply wallpaper here too
             .navigationBarHidden(true)
             .sheet(item: $editingTask) { task in
-                TaskEditView(task: task, categories: store.categories)
+                TaskEditView(task: task, categories: store.sortedCategories)
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
@@ -336,7 +338,7 @@ struct TodosView: View {
         
         // Prepare the event
         do {
-            let event = try await manager.prepareEvent(for: task, categories: store.categories)
+            let event = try await manager.prepareEvent(for: task, categories: store.sortedCategories)
             await MainActor.run {
                 calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
             }
@@ -465,6 +467,8 @@ private enum TodoDateBucket: String, CaseIterable {
     case noDate = "No Due Date"
 }
 
+private let endDropTaskId = "__end__"
+
 // MARK: - Mode views (ScrollView + inset cards)
 private struct TodoListModeView: View {
     @StateObject private var store = LocalStore.shared
@@ -549,7 +553,9 @@ private struct TodoListModeView: View {
     private func reorderWithinSameGroup(draggedId: String, beforeTaskId: String?) {
         var ordered = sortedByOrderIndexDesc(tasks).map { $0.id }
         ordered.removeAll { $0 == draggedId }
-        if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
+        if beforeTaskId == endDropTaskId {
+            ordered.append(draggedId)
+        } else if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
             ordered.insert(draggedId, at: idx)
         } else {
             ordered.insert(draggedId, at: 0)
@@ -669,7 +675,9 @@ private struct TodoPriorityModeView: View {
         let groupTasks = visible.filter { $0.priority == destination }
         var ordered = sortedByOrderIndexDesc(groupTasks).map { $0.id }
         ordered.removeAll { $0 == draggedId }
-        if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
+        if beforeTaskId == endDropTaskId {
+            ordered.append(draggedId)
+        } else if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
             ordered.insert(draggedId, at: idx)
         } else {
             ordered.insert(draggedId, at: 0)
@@ -692,11 +700,19 @@ private struct TodoCategoryModeView: View {
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
+    @State private var dragCollapsedGroupIds: Set<String> = []
+    @State private var targetedGroupKey: String? = nil
+    @State private var activeGroupDragKey: String? = nil
     
     var body: some View {
         // Pre-group to avoid scanning the full task list for each category.
         let grouped = groupTasksByCategory(tasks)
         let categoryLookup = makeCategoryLookup(categories)
+        let uncategorizedGroupKey = "uncategorized"
+        let uncategorizedGroupId = "category:Uncategorized"
+        let uncategorizedIndex = min(max(store.uncategorizedPosition, 0), categories.count)
+        let beforeCategories = Array(categories.prefix(uncategorizedIndex))
+        let afterCategories = Array(categories.dropFirst(uncategorizedIndex))
         ScrollView {
             GeometryReader { geometry in
                 Color.clear.preference(
@@ -706,98 +722,34 @@ private struct TodoCategoryModeView: View {
             }
             .frame(height: 0)
             LazyVStack(spacing: 12) {
-                // Uncategorized group (so tasks with no categories remain visible + droppable)
-                let uncategorizedTasks = grouped.uncategorized
-                let uncategorizedGroupId = "category:Uncategorized"
-                let isUncategorizedCollapsed = collapse.isCollapsed(mode: .category, groupId: uncategorizedGroupId)
-                TodoGroupCard(
-                    mode: .category,
-                    groupId: uncategorizedGroupId,
-                    title: "Uncategorized",
-                    count: uncategorizedTasks.count,
-                    canCollapse: true,
-                    onToggleCollapsed: {
-                        collapse.setCollapsed(!isUncategorizedCollapsed, mode: .category, groupId: uncategorizedGroupId)
-                    }
-                ) {
-                    TodoGroupTaskList(
-                        tasks: sortedByOrderIndexDesc(uncategorizedTasks),
-                        categoryLookup: categoryLookup,
-                        sourceGroupId: "Uncategorized",
-                        onToggleComplete: toggleComplete,
-                        onTap: { editingTask = $0 },
-                        onShare: { sharePayload = SharePayload(items: [$0.title]) },
-                        onCopy: { UIPasteboard.general.string = $0.title },
-                        onAddToCalendar: onExportToCalendar,
-                        onSetReminder: onSetReminder,
-                        onRemoveReminder: onRemoveReminder,
-                        onDropMove: { payload, beforeTaskId in
-                            applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: beforeTaskId)
-                            return true
-                        }
+                ForEach(beforeCategories) { category in
+                    groupDropSlot(targetKey: category.id)
+                    categoryGroupCard(
+                        category: category,
+                        grouped: grouped,
+                        categoryLookup: categoryLookup
                     )
-                    if !showingDone {
-                        // Keep the new task input below active tasks in grouped views.
-                        TaskInputView(defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
-                            .padding(.top, 6)
-                    }
                 }
-                .dropDestination(for: TodoDragPayload.self) { items, _ in
-                    guard let payload = items.first else { return false }
-                    if isUncategorizedCollapsed {
-                        withAnimation { collapse.setCollapsed(false, mode: .category, groupId: uncategorizedGroupId) }
-                    }
-                    applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: nil)
-                    return true
-                }
-                .padding(.horizontal, 16)
                 
-                ForEach(categories) { category in
-                    let groupTasks = grouped.byCategory[category.id] ?? []
-                    let groupId = "category:\(category.id)"
-                    let isCollapsed = collapse.isCollapsed(mode: .category, groupId: groupId)
-                    TodoGroupCard(
-                        mode: .category,
-                        groupId: groupId,
-                        title: "\(category.icon) \(category.name)",
-                        count: groupTasks.count,
-                        canCollapse: true,
-                        onToggleCollapsed: {
-                            collapse.setCollapsed(!isCollapsed, mode: .category, groupId: groupId)
-                        }
-                    ) {
-                        TodoGroupTaskList(
-                            tasks: sortedByOrderIndexDesc(groupTasks),
-                            categoryLookup: categoryLookup,
-                            sourceGroupId: category.id,
-                            onToggleComplete: toggleComplete,
-                            onTap: { editingTask = $0 },
-                            onShare: { sharePayload = SharePayload(items: [$0.title]) },
-                            onCopy: { UIPasteboard.general.string = $0.title },
-                            onAddToCalendar: onExportToCalendar,
-                            onSetReminder: onSetReminder,
-                            onRemoveReminder: onRemoveReminder,
-                            onDropMove: { payload, beforeTaskId in
-                                applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: beforeTaskId)
-                                return true
-                            }
-                        )
-                        if !showingDone {
-                            // Keep the new task input below active tasks in grouped views.
-                            TaskInputView(defaultPriority: .medium, defaultCategories: [category.id], onTaskCreated: { _ in })
-                                .padding(.top, 6)
-                        }
-                    }
-                    .dropDestination(for: TodoDragPayload.self) { items, _ in
-                        guard let payload = items.first else { return false }
-                        if isCollapsed {
-                            withAnimation { collapse.setCollapsed(false, mode: .category, groupId: groupId) }
-                        }
-                        applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: nil)
-                        return true
-                    }
-                    .padding(.horizontal, 16)
+                groupDropSlot(targetKey: uncategorizedGroupKey)
+                uncategorizedGroupCard(
+                    grouped: grouped,
+                    categoryLookup: categoryLookup,
+                    groupId: uncategorizedGroupId,
+                    groupKey: uncategorizedGroupKey
+                )
+                
+                ForEach(afterCategories) { category in
+                    groupDropSlot(targetKey: category.id)
+                    categoryGroupCard(
+                        category: category,
+                        grouped: grouped,
+                        categoryLookup: categoryLookup
+                    )
                 }
+                Color.clear
+                    .frame(height: 1)
+                groupDropSlot(targetKey: "_end", isEndSlot: true)
             }
             .padding(.vertical, 12)
         }
@@ -812,6 +764,118 @@ private struct TodoCategoryModeView: View {
             scrollOffset = value
         }
     }
+
+    private func categoryGroupCard(
+        category: Category,
+        grouped: (uncategorized: [Task], byCategory: [String: [Task]]),
+        categoryLookup: [String: Category]
+    ) -> some View {
+        let groupTasks = grouped.byCategory[category.id] ?? []
+        let collapseGroupId = "category:\(category.id)"
+        let isCollapsed = collapse.isCollapsed(mode: .category, groupId: collapseGroupId)
+        return TodoGroupCard(
+            mode: .category,
+            groupId: collapseGroupId,
+            title: "\(category.icon) \(category.name)",
+            count: groupTasks.count,
+            canCollapse: true,
+            onToggleCollapsed: {
+                collapse.setCollapsed(!isCollapsed, mode: .category, groupId: collapseGroupId)
+            },
+            dragPayload: CategoryGroupDragPayload(groupId: category.id),
+            onDragStart: {
+                activeGroupDragKey = category.id
+                handleGroupDragStart(groupKey: category.id, collapseGroupId: collapseGroupId, isCollapsed: isCollapsed)
+            }
+        ) {
+            TodoGroupTaskList(
+                tasks: sortedByOrderIndexDesc(groupTasks),
+                categoryLookup: categoryLookup,
+                sourceGroupId: category.id,
+                onToggleComplete: toggleComplete,
+                onTap: { editingTask = $0 },
+                onShare: { sharePayload = SharePayload(items: [$0.title]) },
+                onCopy: { UIPasteboard.general.string = $0.title },
+                onAddToCalendar: onExportToCalendar,
+                onSetReminder: onSetReminder,
+                onRemoveReminder: onRemoveReminder,
+                onDropMove: { payload, beforeTaskId in
+                    applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: beforeTaskId)
+                    return true
+                }
+            )
+            if !showingDone {
+                // Keep the new task input below active tasks in grouped views.
+                TaskInputView(defaultPriority: .medium, defaultCategories: [category.id], onTaskCreated: { _ in })
+                    .padding(.top, 6)
+            }
+        }
+        .dropDestination(for: TodoDragPayload.self) { items, _ in
+            guard let payload = items.first else { return false }
+            if isCollapsed {
+                withAnimation { collapse.setCollapsed(false, mode: .category, groupId: collapseGroupId) }
+            }
+            applyCategoryDrop(payload: payload, destinationCategoryId: category.id, beforeTaskId: nil)
+            return true
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private func uncategorizedGroupCard(
+        grouped: (uncategorized: [Task], byCategory: [String: [Task]]),
+        categoryLookup: [String: Category],
+        groupId: String,
+        groupKey: String
+    ) -> some View {
+        let uncategorizedTasks = grouped.uncategorized
+        let isCollapsed = collapse.isCollapsed(mode: .category, groupId: groupId)
+        return TodoGroupCard(
+            mode: .category,
+            groupId: groupId,
+            title: "Uncategorized",
+            count: uncategorizedTasks.count,
+            canCollapse: true,
+            onToggleCollapsed: {
+                collapse.setCollapsed(!isCollapsed, mode: .category, groupId: groupId)
+            },
+            dragPayload: CategoryGroupDragPayload(groupId: groupKey),
+            onDragStart: {
+                activeGroupDragKey = groupKey
+                handleGroupDragStart(groupKey: groupKey, collapseGroupId: groupId, isCollapsed: isCollapsed)
+            }
+        ) {
+            TodoGroupTaskList(
+                tasks: sortedByOrderIndexDesc(uncategorizedTasks),
+                categoryLookup: categoryLookup,
+                sourceGroupId: "Uncategorized",
+                onToggleComplete: toggleComplete,
+                onTap: { editingTask = $0 },
+                onShare: { sharePayload = SharePayload(items: [$0.title]) },
+                onCopy: { UIPasteboard.general.string = $0.title },
+                onAddToCalendar: onExportToCalendar,
+                onSetReminder: onSetReminder,
+                onRemoveReminder: onRemoveReminder,
+                onDropMove: { payload, beforeTaskId in
+                    applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: beforeTaskId)
+                    return true
+                }
+            )
+            if !showingDone {
+                // Keep the new task input below active tasks in grouped views.
+                TaskInputView(defaultPriority: .medium, defaultCategories: [], onTaskCreated: { _ in })
+                    .padding(.top, 6)
+            }
+        }
+        .dropDestination(for: TodoDragPayload.self) { items, _ in
+            guard let payload = items.first else { return false }
+            if isCollapsed {
+                withAnimation { collapse.setCollapsed(false, mode: .category, groupId: groupId) }
+            }
+            applyCategoryDrop(payload: payload, destinationCategoryId: "Uncategorized", beforeTaskId: nil)
+            return true
+        }
+        .padding(.horizontal, 16)
+    }
     
     private func toggleComplete(_ task: Task) {
         if task.completedAt != nil {
@@ -819,6 +883,74 @@ private struct TodoCategoryModeView: View {
         } else {
             store.completeTask(id: task.id)
         }
+    }
+
+    private func handleGroupDragStart(groupKey: String, collapseGroupId: String, isCollapsed: Bool) {
+        if !isCollapsed {
+            collapse.setCollapsed(true, mode: .category, groupId: collapseGroupId)
+            dragCollapsedGroupIds.insert(collapseGroupId)
+        }
+        triggerGroupHaptic()
+    }
+
+    private func groupDropSlot(targetKey: String, isEndSlot: Bool = false) -> some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(height: 8)
+            .contentShape(Rectangle())
+            .onDrop(
+                of: [UTType.notelayerCategoryGroupDragPayload],
+                delegate: CategoryGroupDropDelegate(
+                    targetKey: targetKey,
+                    activeDragKey: $activeGroupDragKey,
+                    targetedKey: $targetedGroupKey,
+                    onReorder: { draggedKey in
+                        let beforeKey = isEndSlot ? nil : targetKey
+                        applyCategoryGroupReorder(payload: CategoryGroupDragPayload(groupId: draggedKey), beforeGroupKey: beforeKey)
+                    }
+                )
+            )
+            .overlay(alignment: .top) {
+                if targetedGroupKey == targetKey {
+                    Divider()
+                }
+            }
+    }
+
+
+    private func restoreCollapsedGroupIfNeeded(for groupKey: String) {
+        let collapseGroupId = groupKey == "uncategorized" ? "category:Uncategorized" : "category:\(groupKey)"
+        guard dragCollapsedGroupIds.contains(collapseGroupId) else { return }
+        collapse.setCollapsed(false, mode: .category, groupId: collapseGroupId)
+        dragCollapsedGroupIds.remove(collapseGroupId)
+    }
+
+    private func applyCategoryGroupReorder(payload: CategoryGroupDragPayload, beforeGroupKey: String?) {
+        let uncategorizedGroupKey = "uncategorized"
+        let orderedCategoryIds = categories.map { $0.id }
+        let uncategorizedIndex = min(max(store.uncategorizedPosition, 0), orderedCategoryIds.count)
+        var groupIds = orderedCategoryIds
+        groupIds.insert(uncategorizedGroupKey, at: uncategorizedIndex)
+        guard let fromIndex = groupIds.firstIndex(of: payload.groupId) else {
+            restoreCollapsedGroupIfNeeded(for: payload.groupId)
+            return
+        }
+        groupIds.remove(at: fromIndex)
+        if let beforeGroupKey, let toIndex = groupIds.firstIndex(of: beforeGroupKey) {
+            groupIds.insert(payload.groupId, at: toIndex)
+        } else {
+            groupIds.append(payload.groupId)
+        }
+        let updatedUncategorizedIndex = groupIds.firstIndex(of: uncategorizedGroupKey) ?? 0
+        store.setUncategorizedPosition(updatedUncategorizedIndex)
+        let updatedCategoryIds = groupIds.filter { $0 != uncategorizedGroupKey }
+        store.reorderCategories(orderedIds: updatedCategoryIds)
+        restoreCollapsedGroupIfNeeded(for: payload.groupId)
+        triggerGroupHaptic()
+    }
+
+    private func triggerGroupHaptic() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
     
     private func applyCategoryDrop(payload: TodoDragPayload, destinationCategoryId: String, beforeTaskId: String?) {
@@ -849,7 +981,9 @@ private struct TodoCategoryModeView: View {
         }()
         var ordered = sortedByOrderIndexDesc(groupTasks).map { $0.id }
         ordered.removeAll { $0 == draggedId }
-        if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
+        if beforeTaskId == endDropTaskId {
+            ordered.append(draggedId)
+        } else if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
             ordered.insert(draggedId, at: idx)
         } else {
             ordered.insert(draggedId, at: 0)
@@ -857,6 +991,49 @@ private struct TodoCategoryModeView: View {
         withAnimation {
             store.reorderTasks(orderedIds: ordered)
         }
+    }
+}
+
+private struct CategoryGroupDropDelegate: DropDelegate {
+    let targetKey: String
+    @Binding var activeDragKey: String?
+    @Binding var targetedKey: String?
+    let onReorder: (String) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        activeDragKey != nil || info.hasItemsConforming(to: [UTType.notelayerCategoryGroupDragPayload])
+    }
+
+    func dropEntered(info: DropInfo) {
+        targetedKey = targetKey
+    }
+
+    func dropExited(info: DropInfo) {
+        if targetedKey == targetKey {
+            targetedKey = nil
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        if let draggedKey = activeDragKey {
+            onReorder(draggedKey)
+            targetedKey = nil
+            activeDragKey = nil
+            return true
+        }
+        guard let provider = info.itemProviders(for: [UTType.notelayerCategoryGroupDragPayload]).first else { return false }
+        provider.loadDataRepresentation(forTypeIdentifier: UTType.notelayerCategoryGroupDragPayload.identifier) { data, _ in
+            guard let data, let payload = try? JSONDecoder().decode(CategoryGroupDragPayload.self, from: data) else { return }
+            _Concurrency.Task { @MainActor in
+                onReorder(payload.groupId)
+            }
+        }
+        targetedKey = nil
+        return true
     }
 }
 
@@ -969,7 +1146,9 @@ private struct TodoDateModeView: View {
         let groupTasks = visible.filter { bucketForDueDate($0.dueDate) == destinationBucket }
         var ordered = sortedByOrderIndexDesc(groupTasks).map { $0.id }
         ordered.removeAll { $0 == draggedId }
-        if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
+        if beforeTaskId == endDropTaskId {
+            ordered.append(draggedId)
+        } else if let beforeTaskId, let idx = ordered.firstIndex(of: beforeTaskId) {
             ordered.insert(draggedId, at: idx)
         } else {
             ordered.insert(draggedId, at: 0)
@@ -986,38 +1165,74 @@ private struct TodoGroupCardHeader: View {
     let isCollapsed: Bool
     let canCollapse: Bool
     let onToggleCollapsed: (() -> Void)?
+    let dragPayload: CategoryGroupDragPayload?
+    let onDragStart: (() -> Void)?
+    
+    init(
+        title: String,
+        count: Int,
+        isCollapsed: Bool,
+        canCollapse: Bool,
+        onToggleCollapsed: (() -> Void)?,
+        dragPayload: CategoryGroupDragPayload? = nil,
+        onDragStart: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.count = count
+        self.isCollapsed = isCollapsed
+        self.canCollapse = canCollapse
+        self.onToggleCollapsed = onToggleCollapsed
+        self.dragPayload = dragPayload
+        self.onDragStart = onDragStart
+    }
     
     var body: some View {
-        Button(action: {
+        Group {
+            if let dragPayload {
+                headerContent()
+                    .onLongPressGesture(minimumDuration: 0.1, pressing: { isPressing in
+                        if isPressing {
+                            onDragStart?()
+                        }
+                    }, perform: {})
+                    .draggable(dragPayload)
+            } else {
+                headerContent()
+            }
+        }
+    }
+
+    private func headerContent() -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            
+            Spacer(minLength: 0)
+            
+            Text("\(count)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule(style: .continuous).fill(Color(.tertiarySystemBackground)))
+            
+            if canCollapse {
+                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
             guard canCollapse else { return }
             withAnimation(.snappy) {
                 onToggleCollapsed?()
             }
-        }) {
-            HStack(spacing: 10) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                
-                Spacer(minLength: 0)
-                
-                Text("\(count)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Capsule(style: .continuous).fill(Color(.tertiarySystemBackground)))
-                
-                if canCollapse {
-                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Keyboard.dismiss()
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
     }
 }
 
@@ -1028,9 +1243,33 @@ private struct TodoGroupCard<Content: View>: View {
     let count: Int
     let canCollapse: Bool
     let onToggleCollapsed: (() -> Void)?
+    let dragPayload: CategoryGroupDragPayload?
+    let onDragStart: (() -> Void)?
     @ViewBuilder let content: () -> Content
     
     @StateObject private var collapse = GroupCollapseStore.shared
+
+    init(
+        mode: TodoViewMode,
+        groupId: String,
+        title: String,
+        count: Int,
+        canCollapse: Bool,
+        onToggleCollapsed: (() -> Void)?,
+        dragPayload: CategoryGroupDragPayload? = nil,
+        onDragStart: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.mode = mode
+        self.groupId = groupId
+        self.title = title
+        self.count = count
+        self.canCollapse = canCollapse
+        self.onToggleCollapsed = onToggleCollapsed
+        self.dragPayload = dragPayload
+        self.onDragStart = onDragStart
+        self.content = content
+    }
     
     var body: some View {
         let isCollapsed = canCollapse ? collapse.isCollapsed(mode: mode, groupId: groupId) : false
@@ -1041,7 +1280,9 @@ private struct TodoGroupCard<Content: View>: View {
                     count: count,
                     isCollapsed: isCollapsed,
                     canCollapse: canCollapse,
-                    onToggleCollapsed: onToggleCollapsed
+                    onToggleCollapsed: onToggleCollapsed,
+                    dragPayload: dragPayload,
+                    onDragStart: onDragStart
                 )
                 
                 if !isCollapsed {
@@ -1050,6 +1291,7 @@ private struct TodoGroupCard<Content: View>: View {
                 }
             }
         }
+        .contentShape(Rectangle())
     }
 }
 
@@ -1094,6 +1336,58 @@ final class GroupCollapseStore: ObservableObject {
     }
 }
 
+private struct TaskRowDropDelegate: DropDelegate {
+    let targetTaskId: String?
+    let isEndZone: Bool
+    @Binding var hoveredTaskId: String?
+    @Binding var isEndTargeted: Bool
+    let onDropMove: (TodoDragPayload, String?) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [UTType.notelayerTodoDragPayload])
+    }
+
+    func dropEntered(info: DropInfo) {
+        if isEndZone {
+            hoveredTaskId = nil
+            isEndTargeted = true
+        } else if let targetTaskId {
+            hoveredTaskId = targetTaskId
+            isEndTargeted = false
+        } else {
+            hoveredTaskId = nil
+            isEndTargeted = true
+        }
+    }
+
+    func dropExited(info: DropInfo) {
+        if let targetTaskId, hoveredTaskId == targetTaskId {
+            hoveredTaskId = nil
+        }
+        if targetTaskId == nil || isEndZone {
+            isEndTargeted = false
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let provider = info.itemProviders(for: [UTType.notelayerTodoDragPayload]).first else { return false }
+        provider.loadDataRepresentation(forTypeIdentifier: UTType.notelayerTodoDragPayload.identifier) { data, _ in
+            guard let data, let payload = try? JSONDecoder().decode(TodoDragPayload.self, from: data) else { return }
+            let beforeId = isEndZone ? endDropTaskId : targetTaskId
+            _Concurrency.Task { @MainActor in
+                _ = onDropMove(payload, beforeId)
+            }
+        }
+        hoveredTaskId = nil
+        isEndTargeted = false
+        return true
+    }
+}
+
 private struct TodoGroupTaskList: View {
     @StateObject private var store = LocalStore.shared
     let tasks: [Task]
@@ -1109,6 +1403,8 @@ private struct TodoGroupTaskList: View {
     let onRemoveReminder: (Task) -> Void
     /// Called when a payload is dropped; if beforeTaskId is nil, treat as drop-into-container.
     let onDropMove: (TodoDragPayload, String?) -> Bool
+    @State private var hoveredTaskId: String? = nil
+    @State private var isEndDropTargeted = false
     
     var body: some View {
         VStack(spacing: 8) {
@@ -1146,12 +1442,41 @@ private struct TodoGroupTaskList: View {
                             UndoCoordinator.shared.activateResponder()
                         }
                     )
-                    .dropDestination(for: TodoDragPayload.self) { items, _ in
-                        guard let payload = items.first else { return false }
-                        // Smooth reorder by allowing drop "before" this row.
-                        return onDropMove(payload, task.id)
+                    .onDrop(
+                        of: [UTType.notelayerTodoDragPayload],
+                        delegate: TaskRowDropDelegate(
+                            targetTaskId: task.id,
+                            isEndZone: false,
+                            hoveredTaskId: $hoveredTaskId,
+                            isEndTargeted: $isEndDropTargeted,
+                            onDropMove: onDropMove
+                        )
+                    )
+                    .overlay(alignment: .top) {
+                        if hoveredTaskId == task.id {
+                            Divider()
+                        }
                     }
                 }
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 14)
+                    .contentShape(Rectangle())
+                    .onDrop(
+                        of: [UTType.notelayerTodoDragPayload],
+                        delegate: TaskRowDropDelegate(
+                            targetTaskId: nil,
+                            isEndZone: true,
+                            hoveredTaskId: $hoveredTaskId,
+                            isEndTargeted: $isEndDropTargeted,
+                            onDropMove: onDropMove
+                        )
+                    )
+                    .overlay(alignment: .top) {
+                        if isEndDropTargeted {
+                            Divider()
+                        }
+                    }
             }
         }
         // Requested: increase padding between group headers and list cards (top & bottom)

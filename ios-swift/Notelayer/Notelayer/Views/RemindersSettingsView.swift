@@ -96,7 +96,7 @@ struct RemindersSettingsView: View {
     
     /// Category lookup for efficient rendering
     private var categoryLookup: [String: Category] {
-        Dictionary(uniqueKeysWithValues: store.categories.map { ($0.id, $0) })
+        Dictionary(uniqueKeysWithValues: store.sortedCategories.map { ($0.id, $0) })
     }
     
     /// Get tasks that have reminders set

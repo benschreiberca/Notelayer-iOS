@@ -10,7 +10,12 @@ struct SharedItemHelpers {
               let categories = try? JSONDecoder().decode([Category].self, from: data) else {
             return []
         }
-        return categories
+        return categories.sorted {
+            if $0.order != $1.order {
+                return $0.order < $1.order
+            }
+            return $0.id < $1.id
+        }
     }
 }
 

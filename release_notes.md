@@ -1,5 +1,15 @@
 # TestFlight Release Notes
 
+## [2026-01-31] - The Great Category Shuffle
+- **What's New**: Category groups can finally be dragged into the order you actually care about, in both the Categories tab and Manage Categories.
+- **Why it matters**: Your important lists stop hiding behind the boring ones.
+- **What's New**: “Uncategorized” now keeps its place across devices instead of wandering off.
+- **Why it matters**: Your default bucket behaves like a grown-up.
+- **What's New**: Task drag/drop feels more reliable, including dropping at the very end of a group.
+- **Why it matters**: You can stop playing “guess the drop zone.”
+- **What's New**: Phone sign‑in no longer shrugs you off from the Welcome screen, and auth errors speak human.
+- **Why it matters**: You get in without drama.
+
 ## [2026-01-29] - The Share Sheet Finally Joined the Main Cast
 - **What's New**: The Share Sheet now mirrors the Task Detail layout (standard iOS list, proper Notes + URL fields, same glassy feel), plus larger category chips.
 - **Why it matters**: Shared tasks stop feeling like they were filed in a different universe.

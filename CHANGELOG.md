@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-01-31] - Branch: `group-reorder`
+- **Category Ordering**: Added persistent category ordering with `Category.order`, sorted accessors, and migration/backfill logic in `ios-swift/Notelayer/Notelayer/Data/Models.swift`, `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`.
+- **Group Reorder UI**: Implemented drag/drop reorder slots for category groups in the Category tab and Manage Categories list with dedicated drop delegates and haptics in `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/CategoryManagerView.swift`.
+- **Uncategorized Placement Sync**: Introduced `uncategorizedPosition` tracking + Firestore user metadata sync for cross-device consistency in `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`, `ios-swift/Notelayer/Notelayer/Services/FirebaseBackendService.swift`.
+- **Drag Payload Plumbing**: Registered a new UTType for category group drag payloads and added shared payload model in `ios-swift/Notelayer/Info.plist`, `ios-swift/Notelayer/Notelayer/Views/Shared/CategoryGroupDragPayload.swift`.
+- **Task Drop Quality**: Stabilized task drop targets (including end-of-group placement) and visual drop indicators in `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.
+- **Auth/Notifications Polish**: Added APNS registration logging and friendlier auth error messaging + phone sign-in entry from Welcome in `ios-swift/Notelayer/Notelayer/App/NotelayerApp.swift`, `ios-swift/Notelayer/Notelayer/Views/WelcomeView.swift`, `ios-swift/Notelayer/Notelayer/Views/SignInSheet.swift`.
+- **Project/Config**: Bumped build version and enabled analytics in `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/GoogleService-Info.plist`.
+
 ## [2026-01-29] - Branch: `UI-bug-fixes`
 - **UI Unification**: Rebuilt Share Sheet into a List/Section editor aligned with Task Detail, added shared editor sections, editable notes/URL fields, and larger category chips across sheets in `ios-swift/Notelayer/Notelayer/Views/Shared/TaskEditorSections.swift`, `ios-swift/Notelayer/NotelayerShareExtension/ShareViewController.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/Shared/CategoryChipGridView.swift`.
 - **Calendar Export Stability**: Introduced `CalendarEventEditSession` to prevent the native calendar editor from reopening/closing loops in `ios-swift/Notelayer/Notelayer/Views/Shared/CalendarEventEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.

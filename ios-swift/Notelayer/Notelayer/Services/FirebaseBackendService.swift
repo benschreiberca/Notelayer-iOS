@@ -9,6 +9,8 @@ final class FirebaseBackendService: ObservableObject {
     private let store: LocalStore
     private var backend: FirestoreBackend?
     private var cancellable: AnyCancellable?
+    private var metadataCancellable: AnyCancellable?
+    private var suppressMetadataWrites = false
     nonisolated(unsafe) private var listeners: [ListenerRegistration] = []
 
     init(authService: AuthService, store: LocalStore) {
@@ -24,6 +26,7 @@ final class FirebaseBackendService: ObservableObject {
 
     deinit {
         cancellable?.cancel()
+        metadataCancellable?.cancel()
         stopListeners()
     }
 
@@ -31,6 +34,8 @@ final class FirebaseBackendService: ObservableObject {
         stopListeners()
         backend = nil
         store.attachBackend(nil)
+        metadataCancellable?.cancel()
+        metadataCancellable = nil
 
         guard let user else {
             return
@@ -47,6 +52,7 @@ final class FirebaseBackendService: ObservableObject {
 
         await syncInitialData(using: backend)
         startListeners(using: backend)
+        startMetadataSync(using: backend)
     }
 
     private func syncInitialData(using backend: FirestoreBackend) async {
@@ -72,6 +78,14 @@ final class FirebaseBackendService: ObservableObject {
             }
 
             store.applyRemoteSnapshot(notes: notes, tasks: tasks, categories: categories)
+
+            if let remotePosition = try await backend.fetchCategoryGroupMetadata() {
+                suppressMetadataWrites = true
+                store.applyRemoteUncategorizedPosition(remotePosition)
+                suppressMetadataWrites = false
+            } else if store.uncategorizedPosition != 0 {
+                try await backend.upsertCategoryGroupMetadata(uncategorizedPosition: store.uncategorizedPosition)
+            }
         } catch {
             #if DEBUG
             print("Firebase backend initial sync failed: \(error)")
@@ -107,7 +121,7 @@ final class FirebaseBackendService: ObservableObject {
         }
     }
 
-    private     func startListeners(using backend: FirestoreBackend) {
+    private func startListeners(using backend: FirestoreBackend) {
         listeners = [
             backend.listenNotes { [weak self] notes in
                 _Concurrency.Task { @MainActor in
@@ -123,8 +137,29 @@ final class FirebaseBackendService: ObservableObject {
                 _Concurrency.Task { @MainActor in
                     self?.store.applyRemoteCategories(categories)
                 }
+            },
+            backend.listenCategoryGroupMetadata { [weak self] position in
+                _Concurrency.Task { @MainActor in
+                    guard let self, let position else { return }
+                    self.suppressMetadataWrites = true
+                    self.store.applyRemoteUncategorizedPosition(position)
+                    self.suppressMetadataWrites = false
+                }
             }
         ]
+    }
+
+    private func startMetadataSync(using backend: FirestoreBackend) {
+        metadataCancellable?.cancel()
+        metadataCancellable = store.$uncategorizedPosition
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] position in
+                guard let self, !self.suppressMetadataWrites else { return }
+                _Concurrency.Task {
+                    try? await backend.upsertCategoryGroupMetadata(uncategorizedPosition: position)
+                }
+            }
     }
 
     func deleteAllUserData() async throws {
@@ -233,6 +268,33 @@ private final class FirestoreBackend: BackendSyncing {
 
     func deleteCategory(id: String) async throws {
         try await deleteDocument(categoriesCollection.document(id))
+    }
+
+    func upsertCategoryGroupMetadata(uncategorizedPosition: Int) async throws {
+        try await setData(on: userDocument, data: ["uncategorizedPosition": uncategorizedPosition])
+    }
+
+    func fetchCategoryGroupMetadata() async throws -> Int? {
+        let snapshot = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DocumentSnapshot, Error>) in
+            userDocument.getDocument { snapshot, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let snapshot {
+                    continuation.resume(returning: snapshot)
+                } else {
+                    continuation.resume(throwing: FirestoreBackendError.missingSnapshot)
+                }
+            }
+        }
+        return snapshot.data()?["uncategorizedPosition"] as? Int
+    }
+
+    func listenCategoryGroupMetadata(_ handler: @escaping (Int?) -> Void) -> ListenerRegistration {
+        userDocument.addSnapshotListener { snapshot, error in
+            guard let snapshot, error == nil else { return }
+            let position = snapshot.data()?["uncategorizedPosition"] as? Int
+            handler(position)
+        }
     }
 
     func listenNotes(_ handler: @escaping ([Note]) -> Void) -> ListenerRegistration {
@@ -398,7 +460,8 @@ private final class FirestoreBackend: BackendSyncing {
             "id": category.id,
             "name": category.name,
             "icon": category.icon,
-            "color": category.color
+            "color": category.color,
+            "order": category.order
         ]
     }
 
@@ -455,7 +518,8 @@ private final class FirestoreBackend: BackendSyncing {
             return nil
         }
         let id = data["id"] as? String ?? document.documentID
-        return Category(id: id, name: name, icon: icon, color: color)
+        let order = data["order"] as? Int ?? 0
+        return Category(id: id, name: name, icon: icon, color: color, order: order)
     }
 
     private func dateValue(from value: Any?) -> Date? {

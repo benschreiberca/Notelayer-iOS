@@ -213,7 +213,7 @@ struct SignInSheet: View {
             // Auto-dismiss after successful sign-in to keep the flow minimal.
             dismiss()
         } catch {
-            generalError = error.localizedDescription
+            generalError = authErrorMessage(from: error)
         }
     }
 
@@ -225,7 +225,7 @@ struct SignInSheet: View {
         do {
             try await action()
         } catch {
-            phoneError = error.localizedDescription
+            phoneError = authErrorMessage(from: error)
         }
     }
 
@@ -285,6 +285,15 @@ struct SignInSheet: View {
         }
         return windowScene.windows.first(where: { $0.isKeyWindow })
             ?? windowScene.windows.first
+    }
+    
+    // Provide a friendlier message when the user is already signed in.
+    private func authErrorMessage(from error: Error) -> String {
+        if case AuthServiceError.alreadySignedInWithDifferentMethod = error {
+            let method = authService.authMethodDisplay ?? "another method"
+            return "You're already signed in with \(method)."
+        }
+        return error.localizedDescription
     }
 }
 

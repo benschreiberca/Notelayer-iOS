@@ -521,7 +521,7 @@
 				CODE_SIGN_ENTITLEMENTS = Notelayer/Notelayer.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
@@ -564,7 +564,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -603,7 +603,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;
@@ -635,7 +635,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;

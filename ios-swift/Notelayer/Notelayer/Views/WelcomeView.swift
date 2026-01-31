@@ -9,6 +9,7 @@ struct WelcomeView: View {
     
     @State private var isBusy = false
     @State private var errorMessage = ""
+    @State private var showingSignInSheet = false
     
     let onDismiss: () -> Void
     
@@ -41,9 +42,8 @@ struct WelcomeView: View {
                     // Auth buttons
                     VStack(spacing: 12) {
                         AuthButtonView(provider: .phone, isEnabled: !isBusy) {
-                            // Phone auth requires inline input, so we'll handle this differently
-                            // For now, just show message that it's not implemented in welcome
-                            errorMessage = "Phone auth from Profile & Settings"
+                            // Use the standard SignInSheet flow for phone auth.
+                            showingSignInSheet = true
                         }
                         
                         AuthButtonView(provider: .google, isEnabled: !isBusy) {
@@ -87,6 +87,12 @@ struct WelcomeView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingSignInSheet) {
+            SignInSheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .environmentObject(authService)
+        }
     }
     
     @MainActor
@@ -103,7 +109,7 @@ struct WelcomeView: View {
             try await authService.signInWithGoogle(presenting: controller)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = authErrorMessage(from: error)
         }
     }
     
@@ -121,8 +127,16 @@ struct WelcomeView: View {
             try await authService.signInWithApple(presentationAnchor: window)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = authErrorMessage(from: error)
         }
+    }
+    
+    private func authErrorMessage(from error: Error) -> String {
+        if case AuthServiceError.alreadySignedInWithDifferentMethod = error {
+            let method = authService.authMethodDisplay ?? "another method"
+            return "You're already signed in with \(method)."
+        }
+        return error.localizedDescription
     }
     
     @MainActor

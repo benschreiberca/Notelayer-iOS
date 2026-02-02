@@ -22,14 +22,20 @@ struct TaskCategoryChip: View {
     let category: Category
     
     var body: some View {
+        let badgeTokens = theme.tokens.components.badge
+        let categoryColor = Color(hex: category.color) ?? theme.tokens.accent
         Text("\(category.icon) \(category.name)")
             .font(.caption)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background((Color(hex: category.color) ?? theme.tokens.accent).opacity(0.125))
-            .foregroundStyle(theme.tokens.textSecondary.opacity(0.95))
+            .background(categoryColor.opacity(0.18))
+            .foregroundStyle(badgeTokens.text.opacity(0.95))
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(categoryColor.opacity(0.35), lineWidth: 0.5)
+            )
             .clipShape(Capsule(style: .continuous))
     }
 }
@@ -42,7 +48,7 @@ struct TaskPriorityBadge: View {
     var body: some View {
         Text(priorityText)
             .font(.caption)
-            .foregroundStyle(theme.tokens.textSecondary)
+            .foregroundStyle(theme.tokens.components.taskItem.metaText)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
     }
@@ -65,13 +71,19 @@ struct PrimaryButtonStyle: ButtonStyle {
     var isDestructive: Bool = false
     
     func makeBody(configuration: Configuration) -> some View {
+        let buttonTokens = theme.tokens.components.button
+        let backgroundStyle = isDestructive
+            ? AnyShapeStyle(Color.red.opacity(0.1))
+            : buttonTokens.primaryBackground
         configuration.label
             .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(isDestructive ? Color.red.opacity(0.1) : theme.tokens.accent)
-            .foregroundColor(isDestructive ? .red : .white)
-            .cornerRadius(12)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(backgroundStyle)
+            )
+            .foregroundColor(isDestructive ? .red : buttonTokens.primaryText)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }

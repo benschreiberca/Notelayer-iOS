@@ -169,8 +169,12 @@ struct CategoryChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(categoryColor.opacity(isSelected ? 0.28 : 0.125))
-            .foregroundColor(.primary)
+            .background(isSelected ? categoryColor.opacity(0.22) : .clear)
+            .foregroundColor(categoryColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color.clear : categoryColor, lineWidth: 1.2)
+            )
             .cornerRadius(16)
         }
     }

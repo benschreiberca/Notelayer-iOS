@@ -17,6 +17,7 @@ struct WelcomeView: View {
         ZStack {
             // Themed background
             theme.tokens.screenBackground.ignoresSafeArea()
+            ThemeBackground(configuration: theme.configuration)
             
             ScrollView {
                 VStack(spacing: 32) {

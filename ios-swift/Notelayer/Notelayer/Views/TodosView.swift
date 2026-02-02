@@ -123,6 +123,7 @@ struct TodosView: View {
                     .tag(TodoViewMode.date)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .background(Color.clear) // Keep page-style container transparent so wallpaper shows.
                 .padding(.top, expandedHeaderHeight) // Fixed spacing to prevent jump
                 
                 // Dynamic Squeezing Header
@@ -219,7 +220,7 @@ struct TodosView: View {
                 .background(
                     ZStack {
                         theme.tokens.screenBackground
-                        ThemeBackground(preset: theme.preset)
+                        ThemeBackground(configuration: theme.configuration)
                     }
                     .opacity(isSqueezed ? 0.95 : 0)
                     .blur(radius: isSqueezed ? 10 : 0)
@@ -230,7 +231,6 @@ struct TodosView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSqueezed)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: headerOffset)
             }
-            .background(ThemeBackground(preset: theme.preset)) // Apply wallpaper here too
             .navigationBarHidden(true)
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.sortedCategories)
@@ -244,7 +244,7 @@ struct TodosView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.fraction(0.5)])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingProfileSettings) {
@@ -468,6 +468,7 @@ private enum TodoDateBucket: String, CaseIterable {
 }
 
 private let endDropTaskId = "__end__"
+private let groupListTopPadding: CGFloat = 8
 
 // MARK: - Mode views (ScrollView + inset cards)
 private struct TodoListModeView: View {
@@ -528,7 +529,8 @@ private struct TodoListModeView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .padding(.vertical, 12)
+            .padding(.top, groupListTopPadding)
+            .padding(.bottom, 12)
         }
         .scrollDismissesKeyboard(.immediately)
         .background(
@@ -640,7 +642,8 @@ private struct TodoPriorityModeView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.vertical, 12)
+            .padding(.top, groupListTopPadding)
+            .padding(.bottom, 12)
         }
         .scrollDismissesKeyboard(.immediately)
         .background(
@@ -751,7 +754,8 @@ private struct TodoCategoryModeView: View {
                     .frame(height: 1)
                 groupDropSlot(targetKey: "_end", isEndSlot: true)
             }
-            .padding(.vertical, 12)
+            .padding(.top, groupListTopPadding)
+            .padding(.bottom, 12)
         }
         .scrollDismissesKeyboard(.immediately)
         .background(
@@ -894,9 +898,11 @@ private struct TodoCategoryModeView: View {
     }
 
     private func groupDropSlot(targetKey: String, isEndSlot: Bool = false) -> some View {
-        Rectangle()
+        // Keep drop slots out of the layout unless a drag is active to match v1.2 spacing.
+        let slotHeight: CGFloat = activeGroupDragKey == nil ? 0 : 8
+        return Rectangle()
             .fill(Color.clear)
-            .frame(height: 8)
+            .frame(height: slotHeight)
             .contentShape(Rectangle())
             .onDrop(
                 of: [UTType.notelayerCategoryGroupDragPayload],
@@ -1112,7 +1118,8 @@ private struct TodoDateModeView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.vertical, 12)
+            .padding(.top, groupListTopPadding)
+            .padding(.bottom, 12)
         }
         .scrollDismissesKeyboard(.immediately)
         .background(
@@ -1160,6 +1167,7 @@ private struct TodoDateModeView: View {
 }
 
 private struct TodoGroupCardHeader: View {
+    @EnvironmentObject private var theme: ThemeManager
     let title: String
     let count: Int
     let isCollapsed: Bool
@@ -1203,25 +1211,29 @@ private struct TodoGroupCardHeader: View {
     }
 
     private func headerContent() -> some View {
-        HStack(spacing: 10) {
+        let headerTokens = theme.tokens.components.groupHeader
+        return HStack(spacing: 10) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(headerTokens.titleText)
                 .lineLimit(1)
             
             Spacer(minLength: 0)
             
             Text("\(count)")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(headerTokens.countText)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Capsule(style: .continuous).fill(Color(.tertiarySystemBackground)))
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(headerTokens.countBackground)
+                )
             
             if canCollapse {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(headerTokens.chevron)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1273,7 +1285,7 @@ private struct TodoGroupCard<Content: View>: View {
     
     var body: some View {
         let isCollapsed = canCollapse ? collapse.isCollapsed(mode: mode, groupId: groupId) : false
-        InsetCard {
+        InsetCard(role: .group) {
             VStack(alignment: .leading, spacing: 6) {
                 TodoGroupCardHeader(
                     title: title,

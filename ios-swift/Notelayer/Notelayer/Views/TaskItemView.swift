@@ -8,9 +8,10 @@ struct TaskItemView: View {
     let onTap: () -> Void
     
     var body: some View {
+        let taskTokens = theme.tokens.components.taskItem
         // Use a tap gesture for the row to avoid nested Button conflicts with the checkbox.
-        // Center alignment ensures checkbox and bell icon are vertically aligned
-        HStack(alignment: .center, spacing: 12) {
+        // Restore v1.2 alignment and spacing to avoid compressed cards.
+        HStack(alignment: .top, spacing: 12) {
             // Checkbox
             Button(action: onToggleComplete) {
                 Image(systemName: task.completedAt != nil ? "checkmark.circle.fill" : "circle")
@@ -25,7 +26,7 @@ struct TaskItemView: View {
                 // Title - removed .infinity frame to allow natural width
                 Text(task.title)
                     .strikethrough(task.completedAt != nil)
-                    .foregroundColor(task.completedAt != nil ? theme.tokens.textSecondary : theme.tokens.textPrimary)
+                    .foregroundColor(task.completedAt != nil ? taskTokens.titleCompletedText : taskTokens.titleText)
                     .lineLimit(2)
                     .truncationMode(.tail)
                 
@@ -35,7 +36,7 @@ struct TaskItemView: View {
                         if let dueDate = task.dueDate {
                             Text(DateFormatters.cardDate.string(from: dueDate))
                                 .font(.caption)
-                                .foregroundStyle(theme.tokens.textSecondary)
+                                .foregroundStyle(taskTokens.metaText)
                         }
 
                         priorityBadge
@@ -60,23 +61,15 @@ struct TaskItemView: View {
             }
         }
         .padding(.vertical, 1)
-        .padding(.leading, 10)
-        .padding(.trailing, 0) // No trailing padding to align bell with chevron
+        .padding(.horizontal, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(theme.tokens.groupFill)
+                .fill(taskTokens.background)
+                .opacity(taskTokens.opacity)
         )
-        .background {
-            if theme.preset == .cheetah {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.clear)
-                    .overlay(CheetahCardPattern().opacity(0.18))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-        }
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(theme.tokens.cardStroke, lineWidth: 0.5)
+                .stroke(taskTokens.border, lineWidth: taskTokens.borderWidth)
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
@@ -85,7 +78,7 @@ struct TaskItemView: View {
     private var priorityBadge: some View {
         Text(priorityText)
             .font(.caption)
-            .foregroundStyle(theme.tokens.textSecondary)
+            .foregroundStyle(theme.tokens.components.taskItem.metaText)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
     }
@@ -100,14 +93,19 @@ struct TaskItemView: View {
     }
 
     private func categoryBadge(_ category: Category) -> some View {
-        Text("\(category.icon) \(category.name)")
+        let categoryColor = Color(hex: category.color) ?? theme.tokens.accent
+        return Text("\(category.icon) \(category.name)")
             .font(.caption)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background((Color(hex: category.color) ?? theme.tokens.accent).opacity(0.125))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(categoryColor.opacity(0.18))
             .foregroundStyle(theme.tokens.textSecondary.opacity(0.95))
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(categoryColor.opacity(0.3), lineWidth: 0.5)
+            )
             .clipShape(Capsule(style: .continuous))
     }
     

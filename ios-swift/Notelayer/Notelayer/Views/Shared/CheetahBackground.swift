@@ -2,6 +2,12 @@ import SwiftUI
 
 /// Subtle procedural cheetah print (no image assets).
 struct CheetahBackground: View {
+    let color: Color
+
+    init(color: Color = .black) {
+        self.color = color
+    }
+
     var body: some View {
         Canvas { context, size in
             let step: CGFloat = 54
@@ -21,13 +27,13 @@ struct CheetahBackground: View {
 
                     context.fill(
                         outerPath,
-                        with: .color(Color.black.opacity(0.08)),
+                        with: .color(color.opacity(0.08)),
                         style: FillStyle(eoFill: true)
                     )
 
                     // Offset spot
                     let dot = CGRect(x: center.x + 8, y: center.y - 2, width: 6, height: 4)
-                    context.fill(Path(ellipseIn: dot), with: .color(Color.black.opacity(0.06)))
+                    context.fill(Path(ellipseIn: dot), with: .color(color.opacity(0.06)))
 
                     x += step
                 }
@@ -36,4 +42,3 @@ struct CheetahBackground: View {
         }
     }
 }
-

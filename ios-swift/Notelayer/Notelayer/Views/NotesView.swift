@@ -12,8 +12,6 @@ struct NotesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                ThemeBackground(preset: theme.preset) // Apply wallpaper background
-                
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(store.notes) { note in
@@ -103,7 +101,7 @@ struct NotesView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.fraction(0.5)])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingCategoryManager) {

@@ -59,7 +59,7 @@ private struct CategoryChipButton: View {
             .foregroundColor(foregroundColor)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(borderColor, lineWidth: isSelected ? 0 : 1)
+                    .stroke(borderColor, lineWidth: isSelected ? 0 : 1.2)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
@@ -67,19 +67,15 @@ private struct CategoryChipButton: View {
     }
     
     private var backgroundColor: Color {
-        categoryColor.opacity(isSelected ? 0.28 : 0.125)
+        isSelected ? categoryColor.opacity(0.22) : .clear
     }
     
     private var foregroundColor: Color {
-        isSelected ? categoryColor : .primary
+        isSelected ? categoryColor : categoryColor
     }
     
     private var borderColor: Color {
-        if isSelected {
-            return .clear
-        } else {
-            return Color(.separator)
-        }
+        isSelected ? .clear : categoryColor
     }
     
     private var categoryColor: Color {

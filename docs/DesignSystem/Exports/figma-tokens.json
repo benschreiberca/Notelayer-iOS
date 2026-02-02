@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "brand": {
+      "primary": "#6366F1",
+      "secondary": "#A855F7"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#4B5563"
+    }
+  },
+  "spacing": {
+    "md": "16px",
+    "lg": "24px"
+  }
+}

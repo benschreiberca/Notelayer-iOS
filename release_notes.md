@@ -1,5 +1,13 @@
 # TestFlight Release Notes
 
+## [2026-02-02] - The Theme Stopped Whispering
+- **What's New**: Light themes now tint cards, groups, and backgrounds in the right order instead of only dyeing the accents.
+- **Why it matters**: You can tell what's a card without squinting.
+- **What's New**: Theme previews now respect the Light/Dark toggle instead of freelancing.
+- **Why it matters**: The preview stopped dressing for midnight at noon.
+- **What's New**: One theme keeps task cards crisp white for the clean‑linen crowd.
+- **Why it matters**: Minimalism, now with fewer surprises.
+
 ## [2026-01-31] - The Great Category Shuffle
 - **What's New**: Category groups can finally be dragged into the order you actually care about, in both the Categories tab and Manage Categories.
 - **Why it matters**: Your important lists stop hiding behind the boring ones.

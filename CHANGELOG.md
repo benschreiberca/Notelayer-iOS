@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026-02-02] - Branch: `design-system-theme-refactor`
+- **Theme Surface Tinting**: Implemented derived surface tinting with base ladders + tint strengths, including a neutral “white cards” theme, in `ios-swift/Notelayer/Notelayer/Data/DesignSystem.swift`, `ios-swift/Notelayer/Notelayer/Data/ThemeManager.swift`.
+- **Design System Tokens**: Added unified design token structures and validation hooks to resolve semantic + component tokens consistently across modes in `ios-swift/Notelayer/Notelayer/Data/DesignSystem.swift`, `ios-swift/Notelayer/Notelayer/Data/DesignSystemValidation.swift`.
+- **UI Surface Wiring**: Wired group vs card surfaces and updated surface roles to enforce the lightest→darkest ladder in `ios-swift/Notelayer/Notelayer/Views/Shared/InsetCard.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskItemView.swift`.
+- **Theme Preview Accuracy**: Preset previews now render using the selected Light/Dark mode instead of the system scheme in `ios-swift/Notelayer/Notelayer/Views/AppearanceView.swift`.
+- **Documentation**: Added design system references and theme planning artifacts in `docs/DesignSystem/*`, `docs/Theme_Surface_Tinting_PLAN.md`, `docs/design-system-production-architecture-claude-sonnet_PLAN.md`, `notelayer-design-system.md`.
+
 ## [2026-01-31] - Branch: `group-reorder`
 - **Category Ordering**: Added persistent category ordering with `Category.order`, sorted accessors, and migration/backfill logic in `ios-swift/Notelayer/Notelayer/Data/Models.swift`, `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`.
 - **Group Reorder UI**: Implemented drag/drop reorder slots for category groups in the Category tab and Manage Categories list with dedicated drop delegates and haptics in `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/CategoryManagerView.swift`.

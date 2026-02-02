@@ -3,6 +3,7 @@ import SwiftUI
 struct RootTabsView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
+    @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var welcomeCoordinator = WelcomeCoordinator.shared
     
     @State private var selectedTab: AppTab = .todos
@@ -12,7 +13,7 @@ struct RootTabsView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             theme.tokens.screenBackground.ignoresSafeArea()
-            ThemeBackground(preset: theme.preset)
+            ThemeBackground(configuration: theme.configuration)
             
             // Content
             Group {
@@ -50,7 +51,16 @@ struct RootTabsView: View {
         .tint(theme.tokens.accent)
         .preferredColorScheme(theme.preferredColorScheme)
         .onAppear {
+            updateResolvedScheme()
             checkAndShowWelcome()
+        }
+        .onChange(of: systemColorScheme) { newValue in
+            if theme.mode == .system {
+                theme.updateResolvedColorScheme(newValue)
+            }
+        }
+        .onChange(of: theme.mode) { _ in
+            updateResolvedScheme()
         }
         .sheet(isPresented: $showWelcome) {
             WelcomeView(onDismiss: {
@@ -111,6 +121,17 @@ struct RootTabsView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showWelcome = true
             }
+        }
+    }
+
+    private func updateResolvedScheme() {
+        switch theme.mode {
+        case .system:
+            theme.updateResolvedColorScheme(systemColorScheme)
+        case .light:
+            theme.updateResolvedColorScheme(.light)
+        case .dark:
+            theme.updateResolvedColorScheme(.dark)
         }
     }
 }

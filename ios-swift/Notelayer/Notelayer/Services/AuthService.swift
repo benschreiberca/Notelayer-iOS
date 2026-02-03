@@ -9,49 +9,6 @@ import Security
 import UIKit
 import _Concurrency
 
-private func configureFirebaseIfNeeded() {
-    if FirebaseApp.app() == nil {
-        #if DEBUG
-        print("🔥 [Firebase] Configuring Firebase...")
-        #endif
-        
-        // Verify GoogleService-Info.plist exists in bundle
-        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") == nil {
-            #if DEBUG
-            print("⚠️ [Firebase] WARNING: GoogleService-Info.plist not found in bundle!")
-            print("   Bundle path: \(Bundle.main.bundlePath)")
-            print("   Resource path: \(Bundle.main.resourcePath ?? "nil")")
-            #endif
-        } else {
-            #if DEBUG
-            print("✅ [Firebase] GoogleService-Info.plist found in bundle")
-            #endif
-        }
-        
-        FirebaseApp.configure()
-        if let app = FirebaseApp.app() {
-            #if DEBUG
-            print("🔥 [Firebase] Configuration complete - App: \(app.name)")
-            print("🔥 [Firebase] Project ID: \(app.options.projectID ?? "nil")")
-            print("🔥 [Firebase] Client ID: \(app.options.clientID ?? "nil")")
-            #endif
-            if app.options.clientID == nil || app.options.clientID!.isEmpty {
-                #if DEBUG
-                print("❌ [Firebase] ERROR: Client ID is missing! Check GoogleService-Info.plist")
-                #endif
-            }
-        } else {
-            #if DEBUG
-            print("❌ [Firebase] Configuration failed - FirebaseApp is nil")
-            #endif
-        }
-    } else {
-        #if DEBUG
-        print("🔥 [Firebase] Already configured")
-        #endif
-    }
-}
-
 enum SyncStatus {
     case notSignedIn
     case signedInSynced(lastSync: Date)
@@ -512,7 +469,6 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
         #if DEBUG
         print("✅ [AppleSignIn] Token retrieved, creating Firebase credential...")
         #endif
-        configureFirebaseIfNeeded()
         let credential = OAuthProvider.credential(
             providerID: .apple,
             idToken: tokenString,

@@ -1,4 +1,5 @@
 import SwiftUI
+import Firebase
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
@@ -23,6 +24,7 @@ private func configureFirebaseIfNeeded() {
     }
 }
 
+@objc(AppDelegate)
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,

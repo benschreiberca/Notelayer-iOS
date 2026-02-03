@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-03] - Branch: `firebase-analytics-fix`
+- **Firebase/CocoaPods Integration**: Added CocoaPods setup for Firebase + Google Sign-In and generated workspace/Pods artifacts in `ios-swift/Notelayer/Podfile`, `ios-swift/Notelayer/Podfile.lock`, `ios-swift/Notelayer/Notelayer.xcworkspace/`, `ios-swift/Notelayer/Pods/`.
+- **Project Wiring Cleanup**: Removed SwiftPM resolution file and updated project build settings for new dependency graph in `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/Notelayer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`.
+- **Firebase Init & Debugging**: Ensured single Firebase startup path, re-added FirebaseCore import where needed, and tagged AppDelegate for swizzling in `ios-swift/Notelayer/Notelayer/App/NotelayerApp.swift`, `ios-swift/Notelayer/Notelayer/Services/AuthService.swift`.
+- **Analytics Debug Flags**: Added Analytics debug launch arguments in `ios-swift/Notelayer/Notelayer.xcodeproj/xcshareddata/xcschemes/Notelayer.xcscheme`.
+- **Versioning Alignment**: Bumped build number to 7 and synced Share Extension versioning in `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/NotelayerShareExtension/Info.plist`.
+- **UI Build Fix**: Removed an unused ViewBuilder expression in `ios-swift/Notelayer/Notelayer/Views/AppearanceView.swift`.
+
 ## [2026-02-02] - Branch: `design-system-theme-refactor`
 - **Theme Surface Tinting**: Implemented derived surface tinting with base ladders + tint strengths, including a neutral “white cards” theme, in `ios-swift/Notelayer/Notelayer/Data/DesignSystem.swift`, `ios-swift/Notelayer/Notelayer/Data/ThemeManager.swift`.
 - **Design System Tokens**: Added unified design token structures and validation hooks to resolve semantic + component tokens consistently across modes in `ios-swift/Notelayer/Notelayer/Data/DesignSystem.swift`, `ios-swift/Notelayer/Notelayer/Data/DesignSystemValidation.swift`.

@@ -95,7 +95,6 @@ private struct PresetTile: View {
     @Environment(\.colorScheme) private var systemScheme
 
     var body: some View {
-        let previewScheme = resolvedPreviewScheme
         Button(action: onSelect) {
             ZStack(alignment: .bottomLeading) {
                 ThemeBackground(

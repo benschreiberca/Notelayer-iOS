@@ -9,11 +9,9 @@
 /* Begin PBXBuildFile section */
 		BC3A1B1B2F1A000100406D9A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
 		BC5D91F62F29A5BD00C183A4 /* NotelayerShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		BC9A4A2B2F70000100D1E2F3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */; };
-		BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */; };
-		BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */; };
-		BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */; };
+		BC9FDFA92F305CFC0011A419 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
 		E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */; };
+		EB36A7DD243F4FC829226FC9 /* Pods_Notelayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,8 +46,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		028BD27DA9D4DD97E8AA6B32 /* Pods-Notelayer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Notelayer.debug.xcconfig"; path = "Target Support Files/Pods-Notelayer/Pods-Notelayer.debug.xcconfig"; sourceTree = "<group>"; };
+		0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Notelayer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		313235613231363861323230 /* NotelayerScreenshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerScreenshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenshotGenerationTests.swift; sourceTree = "<group>"; };
+		B1668D698DB0F51955D2B3ED /* Pods-Notelayer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Notelayer.release.xcconfig"; path = "Target Support Files/Pods-Notelayer/Pods-Notelayer.release.xcconfig"; sourceTree = "<group>"; };
 		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotelayerShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -109,10 +110,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BCB2F8D02F80000100D1E2F3 /* FirebaseFirestore in Frameworks */,
-				BC9A4A2B2F70000100D1E2F3 /* FirebaseAuth in Frameworks */,
-				BCF1F2E72F6B3F7A00E4A1C1 /* FirebaseCore in Frameworks */,
-				BC9A4A2C2F70000100D1E2F3 /* GoogleSignIn in Frameworks */,
+				EB36A7DD243F4FC829226FC9 /* Pods_Notelayer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,6 +124,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		08CB923FFFAA2FF6BF1A59CC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -133,6 +139,15 @@
 				FB965E1A6487C5856ABC702C /* Info.plist */,
 			);
 			path = NotelayerScreenshotTests;
+			sourceTree = "<group>";
+		};
+		506ABC58E352DFA27C6F600C /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				028BD27DA9D4DD97E8AA6B32 /* Pods-Notelayer.debug.xcconfig */,
+				B1668D698DB0F51955D2B3ED /* Pods-Notelayer.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BC2CCDCD2F174A5100406D9A = {
@@ -143,6 +158,8 @@
 				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
 				BC2CCDD72F174A5100406D9A /* Products */,
 				174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */,
+				506ABC58E352DFA27C6F600C /* Pods */,
+				08CB923FFFAA2FF6BF1A59CC /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -181,10 +198,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = BC2CCDE12F174A5200406D9A /* Build configuration list for PBXNativeTarget "Notelayer" */;
 			buildPhases = (
+				82B0E0AEC4AF1916B16D3C9F /* [CP] Check Pods Manifest.lock */,
 				BC2CCDD22F174A5100406D9A /* Sources */,
 				BC2CCDD32F174A5100406D9A /* Frameworks */,
 				BC2CCDD42F174A5100406D9A /* Resources */,
 				BC5D91FB2F29A5BD00C183A4 /* Embed Foundation Extensions */,
+				C186F52616A3EE226A3DDD02 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,12 +214,6 @@
 				BC2CCDD82F174A5100406D9A /* Notelayer */,
 			);
 			name = Notelayer;
-			packageProductDependencies = (
-				BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */,
-				BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */,
-				BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */,
-				BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */,
-			);
 			productName = Notelayer;
 			productReference = BC2CCDD62F174A5100406D9A /* Notelayer.app */;
 			productType = "com.apple.product-type.application";
@@ -221,8 +234,6 @@
 				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
 			);
 			name = NotelayerShareExtension;
-			packageProductDependencies = (
-			);
 			productName = NotelayerShareExtension;
 			productReference = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -266,10 +277,6 @@
 			);
 			mainGroup = BC2CCDCD2F174A5100406D9A;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-				BC9A4A2F2F70000100D1E2F3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BC2CCDD72F174A5100406D9A /* Products */;
 			projectDirPath = "";
@@ -302,10 +309,57 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC9FDFA92F305CFC0011A419 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		82B0E0AEC4AF1916B16D3C9F /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Notelayer-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C186F52616A3EE226A3DDD02 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Notelayer/Pods-Notelayer-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Notelayer/Pods-Notelayer-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Notelayer/Pods-Notelayer-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		373439373734396364633064 /* Sources */ = {
@@ -351,6 +405,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = NotelayerScreenshotTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -373,6 +428,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = NotelayerScreenshotTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -450,6 +506,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -508,6 +565,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -515,16 +573,18 @@
 		};
 		BC2CCDE22F174A5200406D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 028BD27DA9D4DD97E8AA6B32 /* Pods-Notelayer.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Notelayer/Notelayer.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoteLayer;
@@ -557,6 +617,7 @@
 		};
 		BC2CCDE32F174A5200406D9A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1668D698DB0F51955D2B3ED /* Pods-Notelayer.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -564,9 +625,10 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NoteLayer;
@@ -603,8 +665,9 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NotelayerShareExtension;
@@ -635,8 +698,9 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NotelayerShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NotelayerShareExtension;
@@ -701,48 +765,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.8.0;
-			};
-		};
-		BC9A4A2F2F70000100D1E2F3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.0.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		BC9A4A2D2F70000100D1E2F3 /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		BC9A4A2E2F70000100D1E2F3 /* GoogleSignIn */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BC9A4A2F2F70000100D1E2F3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
-			productName = GoogleSignIn;
-		};
-		BCB2F8D22F80000100D1E2F3 /* FirebaseFirestore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
-		};
-		BCF1F2E62F6B3F7A00E4A1C1 /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BC7D2A6B2F1EF0B300FD8888 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BC2CCDCE2F174A5100406D9A /* Project object */;
 }

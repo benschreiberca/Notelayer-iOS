@@ -1,5 +1,11 @@
 # TestFlight Release Notes
 
+## [2026-02-03] - The Analytics Now Confess
+- **What's New**: Analytics stopped pretending and now actually reports in DebugView.
+- **Why it matters**: You can verify events without guessing or yelling at the console.
+- **What's New**: Build numbers march forward and the share extension finally matches the main app’s version.
+- **Why it matters**: Shipping is less dramatic when everything agrees on the number.
+
 ## [2026-02-02] - The Theme Stopped Whispering
 - **What's New**: Light themes now tint cards, groups, and backgrounds in the right order instead of only dyeing the accents.
 - **Why it matters**: You can tell what's a card without squinting.

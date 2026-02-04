@@ -6,6 +6,10 @@ struct NotesView: View {
     @State private var showingProfileSettings = false
     @State private var showingAppearance = false
     @State private var showingCategoryManager = false
+    @State private var viewSession: AnalyticsViewSession? = nil
+    @State private var profileViewSession: AnalyticsViewSession? = nil
+    @State private var appearanceViewSession: AnalyticsViewSession? = nil
+    @State private var categoryViewSession: AnalyticsViewSession? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
@@ -90,6 +94,14 @@ struct NotesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 store.load()
+                viewSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: AnalyticsViewName.notes,
+                    tabName: AnalyticsTabName.notes
+                )
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(viewSession)
+                viewSession = nil
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)
@@ -98,16 +110,49 @@ struct NotesView: View {
                 ProfileSettingsView()
                     .environmentObject(authService)
                     .environmentObject(theme)
+                    .onAppear {
+                        profileViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.profileSettings,
+                            tabName: AnalyticsTabName.notes,
+                            source: AnalyticsViewName.notes
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(profileViewSession)
+                        profileViewSession = nil
+                    }
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
                     .presentationDetents([.fraction(0.5)])
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        appearanceViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.appearance,
+                            tabName: AnalyticsTabName.notes,
+                            source: AnalyticsViewName.notes
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(appearanceViewSession)
+                        appearanceViewSession = nil
+                    }
             }
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        categoryViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.categoryManager,
+                            tabName: AnalyticsTabName.notes,
+                            source: AnalyticsViewName.notes
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(categoryViewSession)
+                        categoryViewSession = nil
+                    }
             }
         }
     }

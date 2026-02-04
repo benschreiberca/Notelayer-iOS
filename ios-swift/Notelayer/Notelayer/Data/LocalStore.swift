@@ -286,6 +286,20 @@ class LocalStore: ObservableObject {
         }
         tasks.append(newTask)
         saveTasks()
+        // Analytics: log task creation without PII.
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskCreated, params: [
+            "priority": newTask.priority.rawValue,
+            "category_count": newTask.categories.count,
+            "has_due_date": newTask.dueDate != nil,
+            "has_reminder": newTask.reminderDate != nil
+        ])
+        if !newTask.categories.isEmpty {
+            // Analytics: separate signal for category assignment on create.
+            AnalyticsService.shared.logEvent(AnalyticsEventName.categoryAssignedToTask, params: [
+                "category_count": newTask.categories.count,
+                "source_view": "Task Create"
+            ])
+        }
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: newTask) }
         }
@@ -294,11 +308,52 @@ class LocalStore: ObservableObject {
     
     func updateTask(id: String, updates: (inout Task) -> Void) {
         guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
-        var task = tasks[index]
+        let oldTask = tasks[index]
+        var task = oldTask
         updates(&task)
         task.updatedAt = Date()
         tasks[index] = task
         saveTasks()
+        // Analytics: capture edit intent and specific field changes.
+        let titleChanged = oldTask.title != task.title
+        let categoriesChanged = oldTask.categories != task.categories
+        let priorityChanged = oldTask.priority != task.priority
+        let dueDateChanged = oldTask.dueDate != task.dueDate
+        let notesChanged = oldTask.taskNotes != task.taskNotes
+        if titleChanged || categoriesChanged || priorityChanged || dueDateChanged || notesChanged {
+            AnalyticsService.shared.logEvent(AnalyticsEventName.taskEdited, params: [
+                "title_changed": titleChanged,
+                "categories_changed": categoriesChanged,
+                "priority_changed": priorityChanged,
+                "due_date_changed": dueDateChanged,
+                "notes_changed": notesChanged
+            ])
+        }
+        if oldTask.dueDate == nil && task.dueDate != nil {
+            // Analytics: due date added.
+            AnalyticsService.shared.logEvent(AnalyticsEventName.taskDueDateSet, params: [
+                "category_count": task.categories.count,
+                "priority": task.priority.rawValue
+            ])
+        } else if oldTask.dueDate != nil && task.dueDate == nil {
+            // Analytics: due date cleared.
+            AnalyticsService.shared.logEvent(AnalyticsEventName.taskDueDateCleared, params: [
+                "category_count": task.categories.count,
+                "priority": task.priority.rawValue
+            ])
+        }
+        if categoriesChanged {
+            let addedCount = Set(task.categories).subtracting(oldTask.categories).count
+            let removedCount = Set(oldTask.categories).subtracting(task.categories).count
+            if addedCount > 0 || removedCount > 0 {
+                // Analytics: category assignment changes.
+                AnalyticsService.shared.logEvent(AnalyticsEventName.categoryAssignedToTask, params: [
+                    "added_count": addedCount,
+                    "removed_count": removedCount,
+                    "source_view": "Task Edit"
+                ])
+            }
+        }
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: task) }
         }
@@ -312,6 +367,13 @@ class LocalStore: ObservableObject {
         // Remove task
         tasks.removeAll { $0.id == id }
         saveTasks()
+        if let taskToDelete {
+            AnalyticsService.shared.logEvent(AnalyticsEventName.taskDeleted, params: [
+                "has_due_date": taskToDelete.dueDate != nil,
+                "has_reminder": taskToDelete.reminderDate != nil,
+                "category_count": taskToDelete.categories.count
+            ])
+        }
         
         // Cancel reminder if task had one
         if let notificationId {
@@ -351,7 +413,8 @@ class LocalStore: ObservableObject {
     
     func completeTask(id: String) {
         guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
-        var task = tasks[index]
+        let oldTask = tasks[index]
+        var task = oldTask
         
         // Capture reminder info before mutation
         let notificationId = task.reminderNotificationId
@@ -363,6 +426,15 @@ class LocalStore: ObservableObject {
         
         tasks[index] = task
         saveTasks()
+        // Analytics: completion includes time-to-complete from creation.
+        let completionLatency = Date().timeIntervalSince(oldTask.createdAt)
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskCompleted, params: [
+            "completion_latency_s": max(0, Int(completionLatency.rounded())),
+            "category_count": oldTask.categories.count,
+            "priority": oldTask.priority.rawValue,
+            "had_due_date": oldTask.dueDate != nil,
+            "had_reminder": oldTask.reminderDate != nil
+        ])
         
         // Cancel reminder asynchronously if it existed
         if let notificationId {
@@ -378,7 +450,8 @@ class LocalStore: ObservableObject {
     
     func restoreTask(id: String) {
         guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
-        var task = tasks[index]
+        let oldTask = tasks[index]
+        var task = oldTask
         
         // Capture reminder info before mutation
         let reminderDate = task.reminderDate
@@ -413,6 +486,10 @@ class LocalStore: ObservableObject {
         
         tasks[index] = task
         saveTasks()
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskRestored, params: [
+            "category_count": oldTask.categories.count,
+            "priority": oldTask.priority.rawValue
+        ])
         
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: task) }
@@ -451,6 +528,16 @@ class LocalStore: ObservableObject {
             
             tasks[index] = task
             saveTasks()
+            // Analytics: reminder set with lead time in minutes.
+            let leadMinutes = max(0, Int(date.timeIntervalSinceNow / 60))
+            AnalyticsService.shared.logEvent(AnalyticsEventName.taskReminderSet, params: [
+                "lead_time_minutes": leadMinutes,
+                "has_due_date": task.dueDate != nil,
+                "category_count": task.categories.count
+            ])
+            AnalyticsService.shared.logEvent(AnalyticsEventName.reminderScheduled, params: [
+                "lead_time_minutes": leadMinutes
+            ])
             
             // Sync to backend
             if let backend, !suppressBackendWrites {
@@ -479,6 +566,11 @@ class LocalStore: ObservableObject {
         
         tasks[index] = task
         saveTasks()
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskReminderCleared, params: [
+            "category_count": task.categories.count,
+            "has_due_date": task.dueDate != nil
+        ])
+        AnalyticsService.shared.logEvent(AnalyticsEventName.reminderCleared)
         
         // Sync to backend
         if let backend, !suppressBackendWrites {
@@ -501,6 +593,9 @@ class LocalStore: ObservableObject {
         
         tasks = reorderedWithOrder + remaining
         saveTasks()
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskReordered, params: [
+            "task_count": tasks.count
+        ])
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(tasks: tasks) }
         }
@@ -519,6 +614,9 @@ class LocalStore: ObservableObject {
         categories.sort(by: Self.categorySort)
         setUncategorizedPosition(uncategorizedPosition + 1)
         saveCategories()
+        AnalyticsService.shared.logEvent(AnalyticsEventName.categoryCreated, params: [
+            "category_count": categories.count
+        ])
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(categories: categories) }
         }
@@ -526,11 +624,22 @@ class LocalStore: ObservableObject {
     
     func updateCategory(id: String, updates: (inout Category) -> Void) {
         guard let index = categories.firstIndex(where: { $0.id == id }) else { return }
-        var category = categories[index]
+        let oldCategory = categories[index]
+        var category = oldCategory
         updates(&category)
         categories[index] = category
         categories.sort(by: Self.categorySort)
         saveCategories()
+        let nameChanged = oldCategory.name != category.name
+        let iconChanged = oldCategory.icon != category.icon
+        let colorChanged = oldCategory.color != category.color
+        if nameChanged || iconChanged || colorChanged {
+            AnalyticsService.shared.logEvent(AnalyticsEventName.categoryRenamed, params: [
+                "name_changed": nameChanged,
+                "icon_changed": iconChanged,
+                "color_changed": colorChanged
+            ])
+        }
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(category: category) }
         }
@@ -556,6 +665,9 @@ class LocalStore: ObservableObject {
             }
         categories = (reordered + remaining).sorted(by: Self.categorySort)
         saveCategories()
+        AnalyticsService.shared.logEvent(AnalyticsEventName.categoryReordered, params: [
+            "category_count": categories.count
+        ])
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(categories: categories) }
         }
@@ -590,6 +702,10 @@ class LocalStore: ObservableObject {
                 }
             }
         }
+        AnalyticsService.shared.logEvent(AnalyticsEventName.categoryDeleted, params: [
+            "reassigned_task_count": updatedTasks.count,
+            "category_count": categories.count
+        ])
     }
 
     private func updateTasksForCategoryRemoval(categoryId: String, replacementId: String?) -> [Task] {

@@ -38,6 +38,23 @@ struct AppearanceView: View {
                     .presentationDragIndicator(.visible)
             }
         }
+        .onChange(of: theme.mode) { newValue in
+            AnalyticsService.shared.logEvent(AnalyticsEventName.themeChanged, params: [
+                "change_type": "mode",
+                "mode": newValue.rawValue
+            ])
+        }
+        .onChange(of: theme.selectedPresetId) { newValue in
+            AnalyticsService.shared.logEvent(AnalyticsEventName.themeChanged, params: [
+                "change_type": "preset",
+                "preset_id": newValue ?? "default"
+            ])
+        }
+        .onChange(of: theme.configuration) { _ in
+            AnalyticsService.shared.logEvent(AnalyticsEventName.themeChanged, params: [
+                "change_type": "configuration"
+            ])
+        }
     }
 
     private var modePicker: some View {

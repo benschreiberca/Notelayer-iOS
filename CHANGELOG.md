@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-04] - Branch: `usage-analytics-hooks`
+- **Analytics Core**: Added centralized analytics wrapper with event constants, view names, and screenshot-mode suppression in `ios-swift/Notelayer/Notelayer/Services/AnalyticsService.swift`.
+- **View/Navigation Tracking**: Wired tab/view open + duration tracking across tabs, Todos modes, and sheets in `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/NotesView.swift`, `ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift`.
+- **Task/Category/Reminder Events**: Instrumented task and category lifecycle changes plus reminder scheduling/clearing in `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`, `ios-swift/Notelayer/Notelayer/Views/ReminderPickerSheet.swift`.
+- **Calendar + Theme Hooks**: Added calendar export analytics in `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`, and theme change analytics in `ios-swift/Notelayer/Notelayer/Views/AppearanceView.swift`.
+- **Documentation**: Added analytics reference and release notes artifacts in `ANALYTICS_EVENTS.md`, `APP_STORE_RELEASE_NOTES.md`, `USAGE_ANALYTICS_PLAN.md`, and updated `release_notes.md`.
+- **Versioning**: Bumped build number to 8 in `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`.
+
 ## [2026-02-03] - Branch: `firebase-analytics-fix`
 - **Firebase/CocoaPods Integration**: Added CocoaPods setup for Firebase + Google Sign-In and generated workspace/Pods artifacts in `ios-swift/Notelayer/Podfile`, `ios-swift/Notelayer/Podfile.lock`, `ios-swift/Notelayer/Notelayer.xcworkspace/`, `ios-swift/Notelayer/Pods/`.
 - **Project Wiring Cleanup**: Removed SwiftPM resolution file and updated project build settings for new dependency graph in `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/Notelayer.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`.

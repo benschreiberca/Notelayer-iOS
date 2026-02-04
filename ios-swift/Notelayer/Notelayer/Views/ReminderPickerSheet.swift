@@ -97,11 +97,13 @@ struct ReminderPickerSheet: View {
             let hasPermission = await manager.hasNotificationPermission
             
             if !hasPermission {
+                AnalyticsService.shared.logEvent(AnalyticsEventName.reminderPermissionPrompted)
                 let granted = await manager.requestNotificationPermission()
                 if !granted {
                     await MainActor.run {
                         showPermissionAlert = true
                     }
+                    AnalyticsService.shared.logEvent(AnalyticsEventName.reminderPermissionDenied)
                     return
                 }
             }

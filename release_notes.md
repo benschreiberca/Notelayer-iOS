@@ -1,5 +1,9 @@
 # TestFlight Release Notes
 
+## [2026-02-04 18:00 EST] - The App Started Keeping Receipts (v1.3 build 8)
+- **What's New**: Notelayer now keeps a better diary of what you tap, where you roam, and which buttons you actually use.
+- **Why it matters**: We can fix the right things faster instead of playing “guess what broke.”
+
 ## [2026-02-03] - The Analytics Now Confess
 - **What's New**: Analytics stopped pretending and now actually reports in DebugView.
 - **Why it matters**: You can verify events without guessing or yelling at the console.

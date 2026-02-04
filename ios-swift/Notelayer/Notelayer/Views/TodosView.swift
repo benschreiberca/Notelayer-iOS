@@ -24,6 +24,13 @@ struct TodosView: View {
     @State private var calendarExportError: CalendarExportError? = nil
     @State private var calendarEditSession: CalendarEventEditSession? = nil
     @State private var taskToSetReminder: Task? = nil
+    @State private var modeViewSession: AnalyticsViewSession? = nil
+    @State private var taskEditViewSession: AnalyticsViewSession? = nil
+    @State private var categoryViewSession: AnalyticsViewSession? = nil
+    @State private var appearanceViewSession: AnalyticsViewSession? = nil
+    @State private var profileViewSession: AnalyticsViewSession? = nil
+    @State private var reminderPickerSession: AnalyticsViewSession? = nil
+    @State private var calendarExportSession: AnalyticsViewSession? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
     
@@ -236,21 +243,65 @@ struct TodosView: View {
                 TaskEditView(task: task, categories: store.sortedCategories)
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        taskEditViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.taskEdit,
+                            tabName: AnalyticsTabName.todos,
+                            source: viewName(for: viewMode)
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(taskEditViewSession)
+                        taskEditViewSession = nil
+                    }
             }
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        categoryViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.categoryManager,
+                            tabName: AnalyticsTabName.todos,
+                            source: viewName(for: viewMode)
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(categoryViewSession)
+                        categoryViewSession = nil
+                    }
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
                     .presentationDetents([.fraction(0.5)])
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        appearanceViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.appearance,
+                            tabName: AnalyticsTabName.todos,
+                            source: viewName(for: viewMode)
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(appearanceViewSession)
+                        appearanceViewSession = nil
+                    }
             }
             .sheet(isPresented: $showingProfileSettings) {
                 ProfileSettingsView()
                     .environmentObject(authService)
                     .environmentObject(theme)
+                    .onAppear {
+                        profileViewSession = AnalyticsService.shared.trackViewOpen(
+                            viewName: AnalyticsViewName.profileSettings,
+                            tabName: AnalyticsTabName.todos,
+                            source: viewName(for: viewMode)
+                        )
+                    }
+                    .onDisappear {
+                        AnalyticsService.shared.trackViewDuration(profileViewSession)
+                        profileViewSession = nil
+                    }
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)
@@ -281,6 +332,17 @@ struct TodosView: View {
                         calendarEditSession = nil
                     }
                 )
+                .onAppear {
+                    calendarExportSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.calendarExport,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(calendarExportSession)
+                    calendarExportSession = nil
+                }
             }
             .sheet(item: $taskToSetReminder) { task in
                 ReminderPickerSheet(
@@ -292,6 +354,17 @@ struct TodosView: View {
                     }
                 )
                 .environmentObject(theme)
+                .onAppear {
+                    reminderPickerSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.reminderPicker,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(reminderPickerSession)
+                    reminderPickerSession = nil
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenTaskFromNotification"))) { notification in
                 if let taskId = notification.userInfo?["taskId"] as? String,
@@ -309,6 +382,29 @@ struct TodosView: View {
                     NSLog("🔄 [TodosView] Backend sync should be done, processing shared items NOW")
                     LocalStore.shared.processSharedItems()
                 }
+                // Analytics: start session timing for the active Todos mode.
+                modeViewSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: viewName(for: viewMode),
+                    tabName: AnalyticsTabName.todos
+                )
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(modeViewSession)
+                modeViewSession = nil
+            }
+            .onChange(of: viewMode) { newValue in
+                AnalyticsService.shared.trackViewDuration(modeViewSession)
+                modeViewSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: viewName(for: newValue),
+                    tabName: AnalyticsTabName.todos,
+                    source: "Todos Mode Toggle"
+                )
+            }
+            .onChange(of: showingDone) { newValue in
+                AnalyticsService.shared.logEvent(AnalyticsEventName.todosFilterChanged, params: [
+                    "showing_done": newValue,
+                    "view_name": viewName(for: viewMode)
+                ])
             }
         }
     }
@@ -327,11 +423,20 @@ struct TodosView: View {
     
     private func exportTaskToCalendar(_ task: Task) async {
         let manager = CalendarExportManager.shared
+
+        AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportInitiated, params: [
+            "view_name": viewName(for: viewMode),
+            "has_due_date": task.dueDate != nil,
+            "has_reminder": task.reminderDate != nil
+        ])
         
         // Request permission if needed
         guard await manager.requestCalendarAccess() else {
             await MainActor.run {
                 calendarExportError = .permissionDenied
+                AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportPermissionDenied, params: [
+                    "view_name": viewName(for: viewMode)
+                ])
             }
             return
         }
@@ -341,6 +446,9 @@ struct TodosView: View {
             let event = try await manager.prepareEvent(for: task, categories: store.sortedCategories)
             await MainActor.run {
                 calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
+                AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportPresented, params: [
+                    "view_name": viewName(for: viewMode)
+                ])
             }
         } catch let error as CalendarExportError {
             await MainActor.run {
@@ -350,6 +458,19 @@ struct TodosView: View {
             await MainActor.run {
                 calendarExportError = .unknown(error)
             }
+        }
+    }
+
+    private func viewName(for mode: TodoViewMode) -> String {
+        switch mode {
+        case .list:
+            return AnalyticsViewName.todosList
+        case .priority:
+            return AnalyticsViewName.todosPriority
+        case .category:
+            return AnalyticsViewName.todosCategory
+        case .date:
+            return AnalyticsViewName.todosDate
         }
     }
     

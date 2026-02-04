@@ -9,6 +9,8 @@ struct RemindersSettingsView: View {
     
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var taskToNag: Task? = nil
+    @State private var viewSession: AnalyticsViewSession? = nil
+    @State private var reminderPickerSession: AnalyticsViewSession? = nil
     
     var body: some View {
         NavigationStack {
@@ -79,6 +81,14 @@ struct RemindersSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 checkNotificationStatus()
+                viewSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: AnalyticsViewName.remindersSettings,
+                    source: AnalyticsViewName.profileSettings
+                )
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(viewSession)
+                viewSession = nil
             }
             .sheet(item: $taskToNag) { task in
                 ReminderPickerSheet(
@@ -90,6 +100,16 @@ struct RemindersSettingsView: View {
                     }
                 )
                 .presentationDetents([.medium])
+                .onAppear {
+                    reminderPickerSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.reminderPicker,
+                        source: AnalyticsViewName.remindersSettings
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(reminderPickerSession)
+                    reminderPickerSession = nil
+                }
             }
         }
     }

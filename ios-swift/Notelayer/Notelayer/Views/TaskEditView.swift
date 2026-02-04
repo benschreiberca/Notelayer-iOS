@@ -254,11 +254,20 @@ struct TaskEditView: View {
     
     private func exportTaskToCalendar() async {
         let manager = CalendarExportManager.shared
+
+        AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportInitiated, params: [
+            "view_name": AnalyticsViewName.taskEdit,
+            "has_due_date": dueDate != nil,
+            "has_reminder": task.reminderDate != nil
+        ])
         
         // Request permission if needed
         guard await manager.requestCalendarAccess() else {
             await MainActor.run {
                 calendarExportError = .permissionDenied
+                AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportPermissionDenied, params: [
+                    "view_name": AnalyticsViewName.taskEdit
+                ])
             }
             return
         }
@@ -268,6 +277,9 @@ struct TaskEditView: View {
             let event = try await manager.prepareEvent(for: task, categories: store.sortedCategories)
             await MainActor.run {
                 calendarEditSession = CalendarEventEditSession(event: event, store: manager.eventStoreForUI)
+                AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportPresented, params: [
+                    "view_name": AnalyticsViewName.taskEdit
+                ])
             }
         } catch let error as CalendarExportError {
             await MainActor.run {

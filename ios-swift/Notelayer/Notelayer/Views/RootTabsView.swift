@@ -9,6 +9,9 @@ struct RootTabsView: View {
     @State private var selectedTab: AppTab = .todos
     @State private var showWelcome = false
     @State private var hasCheckedWelcome = false
+    @State private var lastSelectedTab: AppTab = .todos
+    @State private var tabViewSession: AnalyticsViewSession? = nil
+    @State private var welcomeViewSession: AnalyticsViewSession? = nil
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -53,6 +56,11 @@ struct RootTabsView: View {
         .onAppear {
             updateResolvedScheme()
             checkAndShowWelcome()
+            tabViewSession = AnalyticsService.shared.trackViewOpen(
+                viewName: viewName(for: selectedTab),
+                tabName: tabName(for: selectedTab),
+                source: "App Launch"
+            )
         }
         .onChange(of: systemColorScheme) { newValue in
             if theme.mode == .system {
@@ -62,6 +70,19 @@ struct RootTabsView: View {
         .onChange(of: theme.mode) { _ in
             updateResolvedScheme()
         }
+        .onChange(of: selectedTab) { newValue in
+            AnalyticsService.shared.trackViewDuration(tabViewSession)
+            AnalyticsService.shared.trackTabSelected(
+                tabName: tabName(for: newValue),
+                previousTab: tabName(for: lastSelectedTab)
+            )
+            lastSelectedTab = newValue
+            tabViewSession = AnalyticsService.shared.trackViewOpen(
+                viewName: viewName(for: newValue),
+                tabName: tabName(for: newValue),
+                source: "Tab Switch"
+            )
+        }
         .sheet(isPresented: $showWelcome) {
             WelcomeView(onDismiss: {
                 welcomeCoordinator.markWelcomeAsSeen()
@@ -70,6 +91,13 @@ struct RootTabsView: View {
             .environmentObject(theme)
             .presentationDetents([.large])
             .interactiveDismissDisabled()
+            .onAppear {
+                welcomeViewSession = AnalyticsService.shared.trackViewOpen(viewName: AnalyticsViewName.welcome)
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(welcomeViewSession)
+                welcomeViewSession = nil
+            }
         }
         .onChange(of: authService.user) { newValue in
             // Dismiss welcome if user signs in
@@ -110,6 +138,24 @@ struct RootTabsView: View {
     }
     
     @Namespace private var tabNamespace
+
+    private func tabName(for tab: AppTab) -> String {
+        switch tab {
+        case .notes:
+            return AnalyticsTabName.notes
+        case .todos:
+            return AnalyticsTabName.todos
+        }
+    }
+
+    private func viewName(for tab: AppTab) -> String {
+        switch tab {
+        case .notes:
+            return AnalyticsViewName.notes
+        case .todos:
+            return AnalyticsViewName.todosList
+        }
+    }
     
     private func checkAndShowWelcome() {
         guard !hasCheckedWelcome else { return }

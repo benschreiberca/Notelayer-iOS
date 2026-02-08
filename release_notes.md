@@ -1,5 +1,11 @@
 # TestFlight Release Notes
 
+## [2026-02-08] - The Auth Stopped Fainting (v1.4 build 2)
+- **What's New**: Sign‑in and refresh now have their paperwork in order, so they stop collapsing on arrival.
+- **Why it matters**: Fewer surprise exits when you just wanted to log in or sync.
+- **What's New**: The manual refresh button took a graceful exit; syncing keeps itself in line.
+- **Why it matters**: Less button mashing, more actual syncing.
+
 ## [2026-02-04 18:00 EST] - The App Started Keeping Receipts (v1.3 build 8)
 - **What's New**: Notelayer now keeps a better diary of what you tap, where you roam, and which buttons you actually use.
 - **Why it matters**: We can fix the right things faster instead of playing “guess what broke.”

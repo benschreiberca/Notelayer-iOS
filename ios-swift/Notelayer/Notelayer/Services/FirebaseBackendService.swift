@@ -1,5 +1,6 @@
 import Combine
 import FirebaseAuth
+import FirebaseCore
 import FirebaseFirestore
 import Foundation
 import _Concurrency
@@ -8,6 +9,8 @@ import _Concurrency
 final class FirebaseBackendService: ObservableObject {
     private let store: LocalStore
     private var backend: FirestoreBackend?
+    private var backendUserId: String?
+    private var isForceSyncInProgress = false
     private var cancellable: AnyCancellable?
     private var metadataCancellable: AnyCancellable?
     private var suppressMetadataWrites = false
@@ -33,6 +36,7 @@ final class FirebaseBackendService: ObservableObject {
     private func handleUserChange(_ user: User?) async {
         stopListeners()
         backend = nil
+        backendUserId = nil
         store.attachBackend(nil)
         metadataCancellable?.cancel()
         metadataCancellable = nil
@@ -48,6 +52,7 @@ final class FirebaseBackendService: ObservableObject {
 
         let backend = FirestoreBackend(userId: user.uid)
         self.backend = backend
+        backendUserId = user.uid
         store.attachBackend(backend)
 
         await syncInitialData(using: backend)
@@ -94,8 +99,42 @@ final class FirebaseBackendService: ObservableObject {
     }
 
     func forceSync() async {
-        guard let backend = self.backend else { return }
+        if isForceSyncInProgress {
+            #if DEBUG
+            print("⚠️ [FirebaseBackendService] Force sync skipped: already in progress")
+            #endif
+            return
+        }
+        guard let backend = self.backend else {
+            #if DEBUG
+            print("⚠️ [FirebaseBackendService] Force sync skipped: backend not initialized")
+            #endif
+            return
+        }
+        guard FirebaseApp.app() != nil else {
+            #if DEBUG
+            print("⚠️ [FirebaseBackendService] Force sync skipped: Firebase not configured")
+            #endif
+            return
+        }
+        guard Auth.auth().currentUser != nil else {
+            #if DEBUG
+            print("⚠️ [FirebaseBackendService] Force sync skipped: no signed-in user")
+            #endif
+            return
+        }
+        if let currentUserId = Auth.auth().currentUser?.uid,
+           let backendUserId,
+           currentUserId != backendUserId {
+            #if DEBUG
+            print("⚠️ [FirebaseBackendService] Force sync skipped: user mismatch (backend: \(backendUserId), auth: \(currentUserId))")
+            #endif
+            return
+        }
         
+        isForceSyncInProgress = true
+        defer { isForceSyncInProgress = false }
+
         // 1. Push local data to Firestore (ensures everything local is backed up)
         do {
             if !store.notes.isEmpty {

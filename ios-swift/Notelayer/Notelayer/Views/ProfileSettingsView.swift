@@ -75,18 +75,7 @@ struct ProfileSettingsView: View {
                 
                 Spacer()
                 
-                Button {
-                    forceRefresh()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.subheadline.weight(.bold))
-                        .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                        .scaleEffect(isRefreshing ? 1.1 : 1.0)
-                        .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(theme.tokens.accent)
-                .disabled(isRefreshing)
+                // Manual refresh disabled to avoid crashes/freezes; sync is automatic.
             }
             
             // Manage Account Link
@@ -236,11 +225,18 @@ struct ProfileSettingsView: View {
     }
     
     private func forceRefresh() {
+        guard authService.user != nil else {
+            #if DEBUG
+            print("⚠️ [ProfileSettingsView] Force refresh skipped: no signed-in user")
+            #endif
+            return
+        }
+        guard !isRefreshing else { return }
         isRefreshing = true
-        _Concurrency.Task {
+        _Concurrency.Task { @MainActor in
+            defer { isRefreshing = false }
             await backendService.forceSync()
             try? await _Concurrency.Task.sleep(nanoseconds: 500_000_000) // Small delay for visual feedback
-            isRefreshing = false
         }
     }
 }

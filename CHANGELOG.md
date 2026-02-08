@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026-02-08] - Branch: `Firebase-Auth-fix`
+- **Auth Config + Versioning**: Expanded the Google sign-in URL scheme and reversed client ID for release builds, added a release entitlements file with production APNS + Apple Sign In + app group, aligned the share extension bundle version with the app, and bumped marketing/build versions in `ios-swift/Notelayer/Info.plist`, `ios-swift/Notelayer/NotelayerShareExtension/Info.plist`, `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/Notelayer/NotelayerRelease.entitlements`.
+- **Firebase Sync Safety**: Added FirebaseCore import, tracked backend user ID, and guarded force sync against missing config, missing auth, and concurrent runs in `ios-swift/Notelayer/Notelayer/Services/FirebaseBackendService.swift`.
+- **Profile Refresh Behavior**: Disabled the manual refresh control and added force-refresh guards for signed-out users in `ios-swift/Notelayer/Notelayer/Views/ProfileSettingsView.swift`.
+- **Pods Build Fix**: Removed stale GoogleSignIn image resource references to stop missing-input build errors in `ios-swift/Notelayer/Pods/Pods.xcodeproj/project.pbxproj`.
+- **Docs/Notes**: Updated the plan prompt and refreshed the auth+sync issue note in `.codex/prompts/create-plan.md`, `authentication-and-sync-issues.md` (replacing the previous file).
+
 ## [2026-02-04] - Branch: `usage-analytics-hooks`
 - **Analytics Core**: Added centralized analytics wrapper with event constants, view names, and screenshot-mode suppression in `ios-swift/Notelayer/Notelayer/Services/AnalyticsService.swift`.
 - **View/Navigation Tracking**: Wired tab/view open + duration tracking across tabs, Todos modes, and sheets in `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, `ios-swift/Notelayer/Notelayer/Views/NotesView.swift`, `ios-swift/Notelayer/Notelayer/Views/RemindersSettingsView.swift`.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-08] - Branch: `new-auth-flow`
+- **Auth UI Simplification**: Removed phone sign-in from the Welcome screen and SignInSheet, and surfaced email magic link as the primary path in `ios-swift/Notelayer/Notelayer/Views/WelcomeView.swift`, `ios-swift/Notelayer/Notelayer/Views/SignInSheet.swift`, `ios-swift/Notelayer/Notelayer/Views/Shared/AuthButtonView.swift`.
+- **Magic Link Defaults**: Reverted magic-link ActionCodeSettings to the default Firebase hosting domain and cleared custom link domain usage in `ios-swift/Notelayer/Notelayer/Services/AuthService.swift`.
+- **APNS/Auth Plumbing**: Added APNS token storage + reapplication hooks, explicit notification handlers, and additional auth logging; disabled Firebase/GoogleUtilities swizzling via Info.plist flags in `ios-swift/Notelayer/Notelayer/App/NotelayerApp.swift`, `ios-swift/Notelayer/Notelayer/Services/AuthService.swift`, `ios-swift/Notelayer/Info.plist`.
+- **Universal Links**: Added `auth.getnotelayer.com` associated domains entries to debug/release entitlements in `ios-swift/Notelayer/Notelayer/Notelayer.entitlements`, `ios-swift/Notelayer/Notelayer/NotelayerRelease.entitlements`.
+- **Firebase Hosting Artifacts**: Added Firebase Hosting config and project metadata in `firebase.json`, `.firebaserc`, `.firebase/`, and `firebase-hosting/`.
+- **Docs/Notes**: Updated planning prompt and auth issue notes in `.codex/prompts/create-plan.md`, `AUTH_EMAIL_MAGIC_LINK_AND_PHONE_AUTH_ERROR_ISSUE.md`, and `performance-build-assessment.md`.
+
 ## [2026-02-08] - Branch: `Firebase-Auth-fix`
 - **Auth Config + Versioning**: Expanded the Google sign-in URL scheme and reversed client ID for release builds, added a release entitlements file with production APNS + Apple Sign In + app group, aligned the share extension bundle version with the app, and bumped marketing/build versions in `ios-swift/Notelayer/Info.plist`, `ios-swift/Notelayer/NotelayerShareExtension/Info.plist`, `ios-swift/Notelayer/Notelayer.xcodeproj/project.pbxproj`, `ios-swift/Notelayer/Notelayer/NotelayerRelease.entitlements`.
 - **Firebase Sync Safety**: Added FirebaseCore import, tracked backend user ID, and guarded force sync against missing config, missing auth, and concurrent runs in `ios-swift/Notelayer/Notelayer/Services/FirebaseBackendService.swift`.

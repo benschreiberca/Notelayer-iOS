@@ -1,5 +1,4 @@
 import AuthenticationServices
-import FirebaseAuth
 import GoogleSignIn
 import SwiftUI
 import UIKit
@@ -9,16 +8,11 @@ struct SignInSheet: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
 
-    // Two-step phone flow keeps verification state explicit and reduces edge cases.
-    @State private var phoneStep: PhoneStep = .enterNumber
-    @State private var countryCode = "+1"
-    @State private var phoneNumber = ""
-    @State private var verificationCode = ""
-    @State private var phoneError = ""
     @State private var generalError = ""
     @State private var isBusy = false
-    @State private var resendCountdown = 0
-    @State private var resendTimer: Timer?
+    @State private var emailAddress = ""
+    @State private var emailError = ""
+    @State private var emailLinkSent = false
 
     var body: some View {
         ScrollView {
@@ -36,9 +30,8 @@ struct SignInSheet: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
 
-                // Phone auth section (always visible, inline)
-                phoneSection
-                
+                emailSection
+
                 Divider()
                     .padding(.vertical, 8)
                 
@@ -56,9 +49,10 @@ struct SignInSheet: View {
             .padding(20)
         }
         .scrollDismissesKeyboard(.interactively)
-        .task {
-            // Phone auth requires APNS registration before verification.
-            authService.prepareForPhoneAuth()
+        .onReceive(authService.$authErrorBanner) { message in
+            guard let message, !message.isEmpty else { return }
+            generalError = message
+            authService.clearAuthErrorBanner()
         }
     }
 
@@ -72,136 +66,56 @@ struct SignInSheet: View {
         }
     }
 
-    private var phoneSection: some View {
+    private var emailSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            switch phoneStep {
-            case .enterNumber:
-                // Country code + Phone number input
-                HStack(spacing: 8) {
-                    // Country code picker
-                    Menu {
-                        Button("+1 (US)") { countryCode = "+1" }
-                        Button("+44 (UK)") { countryCode = "+44" }
-                        Button("+91 (IN)") { countryCode = "+91" }
-                        Button("+61 (AU)") { countryCode = "+61" }
-                        Button("+86 (CN)") { countryCode = "+86" }
-                    } label: {
-                        Text(countryCode)
-                            .font(.body)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(.secondarySystemBackground))
-                            )
-                    }
-                    
-                    TextField("Phone number", text: $phoneNumber)
-                        .keyboardType(.phonePad)
-                        .textFieldStyle(.roundedBorder)
-                        .onChange(of: phoneNumber) { newValue in
-                            phoneNumber = formatPhoneNumber(newValue)
-                        }
-                }
+            Text("Email")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-                Button {
-                    _Concurrency.Task { await startPhoneVerification() }
-                } label: {
-                    Text("Send code")
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(isBusy || phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            TextField("Email address", text: $emailAddress)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
 
-            case .enterCode:
-                TextField("Verification code", text: $verificationCode)
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.oneTimeCode)
+            if emailLinkSent {
+                Text("Check your email for a sign‑in link.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 HStack(spacing: 12) {
-                    Button {
-                        _Concurrency.Task { await verifyPhoneCode() }
-                    } label: {
-                        Text("Verify")
+                    Button("Resend link") {
+                        _Concurrency.Task { await sendEmailLink() }
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(isBusy || verificationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    Button {
-                        phoneStep = .enterNumber
-                        phoneError = ""
-                        stopResendTimer()
-                    } label: {
-                        Text("Back")
-                    }
-                    .buttonStyle(PrimaryButtonStyle(isDestructive: true))
+                    .font(.caption)
                     .disabled(isBusy)
-                }
-                
-                // Resend code button
-                if resendCountdown > 0 {
-                    Text("Resend code in \(resendCountdown)s")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Button("Resend code") {
-                        _Concurrency.Task { await startPhoneVerification() }
+
+                    Button("Change email") {
+                        emailLinkSent = false
+                        emailError = ""
                     }
                     .font(.caption)
                     .disabled(isBusy)
                 }
-
-            case .inactive:
-                EmptyView()
+            } else {
+                Button {
+                    _Concurrency.Task { await sendEmailLink() }
+                } label: {
+                    Text("Send magic link")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(isBusy || emailAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
-            if !phoneError.isEmpty {
-                Text(phoneError)
+            if !emailError.isEmpty {
+                Text(emailError)
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
         }
     }
     
-    private func formatPhoneNumber(_ number: String) -> String {
-        // Remove non-numeric characters
-        let digits = number.filter { $0.isNumber }
-        
-        // Limit to 10 digits for US numbers
-        let limited = String(digits.prefix(10))
-        
-        // Format as (XXX) XXX-XXXX
-        if limited.count >= 6 {
-            let areaCode = limited.prefix(3)
-            let prefix = limited.dropFirst(3).prefix(3)
-            let suffix = limited.dropFirst(6)
-            return "(\(areaCode)) \(prefix)-\(suffix)"
-        } else if limited.count >= 3 {
-            let areaCode = limited.prefix(3)
-            let rest = limited.dropFirst(3)
-            return "(\(areaCode)) \(rest)"
-        } else {
-            return limited
-        }
-    }
-    
-    private func startResendTimer() {
-        resendCountdown = 60
-        resendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if resendCountdown > 0 {
-                resendCountdown -= 1
-            } else {
-                stopResendTimer()
-            }
-        }
-    }
-    
-    private func stopResendTimer() {
-        resendTimer?.invalidate()
-        resendTimer = nil
-        resendCountdown = 0
-    }
-
 
     @MainActor
     private func runAuthAction(_ action: @escaping () async throws -> Void) async {
@@ -213,19 +127,19 @@ struct SignInSheet: View {
             // Auto-dismiss after successful sign-in to keep the flow minimal.
             dismiss()
         } catch {
-            generalError = authErrorMessage(from: error)
+            generalError = authService.userFacingAuthErrorMessage(from: error)
         }
     }
 
     @MainActor
-    private func runPhoneAction(_ action: @escaping () async throws -> Void) async {
+    private func runEmailAction(_ action: @escaping () async throws -> Void) async {
         isBusy = true
-        phoneError = ""
+        emailError = ""
         defer { isBusy = false }
         do {
             try await action()
         } catch {
-            phoneError = authErrorMessage(from: error)
+            emailError = authService.userFacingAuthErrorMessage(from: error)
         }
     }
 
@@ -250,22 +164,11 @@ struct SignInSheet: View {
     }
 
     @MainActor
-    private func startPhoneVerification() async {
-        await runPhoneAction {
-            // Combine country code with phone number
-            let digitsOnly = phoneNumber.filter { $0.isNumber }
-            let fullNumber = "\(countryCode)\(digitsOnly)"
-            _ = try await authService.startPhoneNumberSignIn(phoneNumber: fullNumber)
-            phoneStep = .enterCode
-            startResendTimer()
-        }
-    }
-
-    @MainActor
-    private func verifyPhoneCode() async {
-        await runPhoneAction {
-            try await authService.verifyPhoneNumber(code: verificationCode)
-            dismiss()
+    private func sendEmailLink() async {
+        await runEmailAction {
+            let trimmedEmail = emailAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+            try await authService.sendEmailSignInLink(to: trimmedEmail)
+            emailLinkSent = true
         }
     }
 
@@ -287,20 +190,6 @@ struct SignInSheet: View {
             ?? windowScene.windows.first
     }
     
-    // Provide a friendlier message when the user is already signed in.
-    private func authErrorMessage(from error: Error) -> String {
-        if case AuthServiceError.alreadySignedInWithDifferentMethod = error {
-            let method = authService.authMethodDisplay ?? "another method"
-            return "You're already signed in with \(method)."
-        }
-        return error.localizedDescription
-    }
-}
-
-private enum PhoneStep {
-    case inactive
-    case enterNumber
-    case enterCode
 }
 
 private enum AuthViewError: LocalizedError {

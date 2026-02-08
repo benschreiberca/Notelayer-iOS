@@ -1,5 +1,11 @@
 # TestFlight Release Notes
 
+## [2026-02-08] - The Phone Took a Quiet Sabbatical
+- **What's New**: Phone sign‑in has been removed from the UI. It’s not gone forever, it’s just not invited to this build.
+- **Why it matters**: Fewer mysterious auth tantrums when you just want to get in.
+- **What's New**: Email magic link is now the obvious front door again.
+- **Why it matters**: You can sign in without a side quest.
+
 ## [2026-02-08] - The Auth Stopped Fainting (v1.4 build 2)
 - **What's New**: Sign‑in and refresh now have their paperwork in order, so they stop collapsing on arrival.
 - **Why it matters**: Fewer surprise exits when you just wanted to log in or sync.

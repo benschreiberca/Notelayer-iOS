@@ -42,8 +42,8 @@ struct WelcomeView: View {
                     
                     // Auth buttons
                     VStack(spacing: 12) {
-                        AuthButtonView(provider: .phone, isEnabled: !isBusy) {
-                            // Use the standard SignInSheet flow for phone auth.
+                        AuthButtonView(provider: .email, isEnabled: !isBusy) {
+                            // Email magic link is handled inside SignInSheet.
                             showingSignInSheet = true
                         }
                         
@@ -110,7 +110,7 @@ struct WelcomeView: View {
             try await authService.signInWithGoogle(presenting: controller)
             dismiss()
         } catch {
-            errorMessage = authErrorMessage(from: error)
+            errorMessage = authService.userFacingAuthErrorMessage(from: error)
         }
     }
     
@@ -128,16 +128,8 @@ struct WelcomeView: View {
             try await authService.signInWithApple(presentationAnchor: window)
             dismiss()
         } catch {
-            errorMessage = authErrorMessage(from: error)
+            errorMessage = authService.userFacingAuthErrorMessage(from: error)
         }
-    }
-    
-    private func authErrorMessage(from error: Error) -> String {
-        if case AuthServiceError.alreadySignedInWithDifferentMethod = error {
-            let method = authService.authMethodDisplay ?? "another method"
-            return "You're already signed in with \(method)."
-        }
-        return error.localizedDescription
     }
     
     @MainActor

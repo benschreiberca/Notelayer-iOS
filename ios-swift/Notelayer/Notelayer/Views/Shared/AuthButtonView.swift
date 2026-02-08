@@ -1,16 +1,16 @@
 import SwiftUI
 
 /// Reusable authentication button with consistent styling across the app.
-/// Supports Phone, Google, and Apple sign-in variants.
+/// Supports Email, Google, and Apple sign-in variants.
 struct AuthButtonView: View {
     enum AuthProvider {
-        case phone
+        case email
         case google
         case apple
         
         var icon: String {
             switch self {
-            case .phone: return "phone.fill"
+            case .email: return "envelope.fill"
             case .google: return "g.circle.fill"
             case .apple: return "apple.logo"
             }
@@ -18,7 +18,7 @@ struct AuthButtonView: View {
         
         var label: String {
             switch self {
-            case .phone: return "Continue with Phone"
+            case .email: return "Continue with Email"
             case .google: return "Continue with Google"
             case .apple: return "Continue with Apple"
             }
@@ -26,7 +26,7 @@ struct AuthButtonView: View {
         
         var iconColor: Color {
             switch self {
-            case .phone: return .blue
+            case .email: return .teal
             case .google: return .red
             case .apple: return .primary
             }
@@ -72,8 +72,8 @@ struct AuthButtonView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        AuthButtonView(provider: .phone, isEnabled: true) {
-            print("Phone tapped")
+        AuthButtonView(provider: .email, isEnabled: true) {
+            print("Email tapped")
         }
         
         AuthButtonView(provider: .google, isEnabled: true) {
@@ -84,9 +84,6 @@ struct AuthButtonView: View {
             print("Apple tapped")
         }
         
-        AuthButtonView(provider: .phone, isEnabled: false) {
-            print("Disabled")
-        }
     }
     .padding()
 }

@@ -41,13 +41,15 @@ final class AuthService: NSObject, ObservableObject {
     @Published private(set) var phoneVerificationID: String?
     @Published private(set) var syncStatus: SyncStatus = .notSignedIn
     @Published private(set) var lastSyncTime: Date?
+    @Published private(set) var authErrorBanner: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private let appleCoordinator = AppleSignInCoordinator()
+    private let pendingEmailKey = "Notelayer.PendingEmailLinkEmail"
 
     override init() {
         super.init()
-        // Removed configureFirebaseIfNeeded() call as it's now handled in NotelayerApp.init()
+        // Firebase is configured in AppDelegate before AuthService is created.
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] auth, user in
             #if DEBUG
             print("👤 [AuthService] Auth state changed - user: \(user?.uid ?? "nil")")
@@ -112,6 +114,10 @@ final class AuthService: NSObject, ObservableObject {
 
     func signOut() throws {
         try Auth.auth().signOut()
+    }
+
+    func clearAuthErrorBanner() {
+        authErrorBanner = nil
     }
 
     func deleteAccount() async throws {
@@ -272,7 +278,7 @@ final class AuthService: NSObject, ObservableObject {
         }
     }
 
-    func prepareForPhoneAuth() {
+    func prepareForPhoneAuth() async {
         #if DEBUG
         print("📱 [AuthService] Preparing for phone authentication")
         #endif
@@ -284,7 +290,25 @@ final class AuthService: NSObject, ObservableObject {
         #endif
         #endif
         
-        // Only register if not already registered
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        #if DEBUG
+        print("📱 [AuthService] Notification authorization status: \(settings.authorizationStatus.rawValue)")
+        #endif
+
+        if settings.authorizationStatus == .notDetermined {
+            do {
+                let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                #if DEBUG
+                print("📱 [AuthService] Notification permission granted: \(granted)")
+                #endif
+            } catch {
+                #if DEBUG
+                print("❌ [AuthService] Notification permission request failed: \(error.localizedDescription)")
+                #endif
+            }
+        }
+
         if UIApplication.shared.isRegisteredForRemoteNotifications {
             #if DEBUG
             print("📱 [AuthService] Already registered for remote notifications")
@@ -295,12 +319,105 @@ final class AuthService: NSObject, ObservableObject {
             #endif
             UIApplication.shared.registerForRemoteNotifications()
         }
+
+        if let token = APNSTokenStore.shared.token, let type = APNSTokenStore.shared.tokenType {
+            Auth.auth().setAPNSToken(token, type: type)
+            #if DEBUG
+            print("📱 [AuthService] Re-applied APNS token to Firebase Auth")
+            #endif
+        }
+    }
+
+    // MARK: - Email Magic Link
+
+    func sendEmailSignInLink(to email: String) async throws {
+        #if DEBUG
+        print("✉️ [AuthService] Sending email sign-in link to: \(email)")
+        #endif
+
+        guard let app = FirebaseApp.app() else {
+            throw AuthServiceError.firebaseNotConfigured
+        }
+        guard let projectID = app.options.projectID, !projectID.isEmpty else {
+            throw AuthServiceError.missingProjectID
+        }
+
+        let actionCodeSettings = ActionCodeSettings()
+        actionCodeSettings.handleCodeInApp = true
+        // Default Firebase Hosting link domain.
+        actionCodeSettings.url = URL(string: "https://\(projectID).firebaseapp.com/emailSignIn")
+        actionCodeSettings.linkDomain = nil
+        if let bundleId = Bundle.main.bundleIdentifier {
+            actionCodeSettings.setIOSBundleID(bundleId)
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Auth.auth().sendSignInLink(toEmail: email, actionCodeSettings: actionCodeSettings) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume()
+            }
+        }
+
+        UserDefaults.standard.set(email, forKey: pendingEmailKey)
+        #if DEBUG
+        print("✅ [AuthService] Email sign-in link sent")
+        #endif
+    }
+
+    func handleIncomingURL(_ url: URL) async {
+        let link = url.absoluteString
+        guard Auth.auth().isSignIn(withEmailLink: link) else { return }
+
+        #if DEBUG
+        print("🔗 [AuthService] Handling email sign-in link")
+        #endif
+
+        do {
+            try await signInWithEmailLink(link)
+            authErrorBanner = nil
+        } catch {
+            authErrorBanner = userFacingAuthErrorMessage(from: error)
+        }
+    }
+
+    private func signInWithEmailLink(_ link: String) async throws {
+        guard let email = UserDefaults.standard.string(forKey: pendingEmailKey), !email.isEmpty else {
+            throw AuthServiceError.missingEmailForLink
+        }
+
+        do {
+            _ = try await Auth.auth().signIn(withEmail: email, link: link)
+            UserDefaults.standard.removeObject(forKey: pendingEmailKey)
+            #if DEBUG
+            print("✅ [AuthService] Email link sign-in successful")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ [AuthService] Email link sign-in ERROR: \(error.localizedDescription)")
+            #endif
+            throw error
+        }
     }
 
     func startPhoneNumberSignIn(phoneNumber: String) async throws -> String {
         #if DEBUG
         print("📱 [AuthService] Starting phone number sign-in - phone: \(phoneNumber)")
         #endif
+        NSLog("📱 [AuthService] Starting phone number sign-in - phone: %@", phoneNumber)
+
+        if let token = APNSTokenStore.shared.token, let type = APNSTokenStore.shared.tokenType {
+            Auth.auth().setAPNSToken(token, type: type)
+            #if DEBUG
+            print("📱 [AuthService] APNS token applied before verification")
+            #endif
+        } else {
+            #if DEBUG
+            print("⚠️ [AuthService] No APNS token yet before verification")
+            #endif
+        }
         
         // Check if user is already signed in with a different method
         if user != nil {
@@ -315,6 +432,7 @@ final class AuthService: NSObject, ObservableObject {
                     #if DEBUG
                     print("❌ [AuthService] Phone verification ERROR: \(error.localizedDescription)")
                     #endif
+                    NSLog("❌ [AuthService] Phone verification ERROR: %@", error.localizedDescription)
                     continuation.resume(throwing: error)
                     return
                 }
@@ -328,6 +446,7 @@ final class AuthService: NSObject, ObservableObject {
                 #if DEBUG
                 print("✅ [AuthService] Phone verification ID received: \(id)")
                 #endif
+                NSLog("✅ [AuthService] Phone verification ID received: %@", id)
                 continuation.resume(returning: id)
             }
         }
@@ -340,11 +459,13 @@ final class AuthService: NSObject, ObservableObject {
         #if DEBUG
         print("📱 [AuthService] Verifying phone number with code")
         #endif
+        NSLog("📱 [AuthService] Verifying phone number with code")
         let id = verificationID ?? phoneVerificationID
         guard let id else {
             #if DEBUG
             print("❌ [AuthService] Missing phone verification ID")
             #endif
+            NSLog("❌ [AuthService] Missing phone verification ID")
             throw AuthServiceError.missingPhoneVerificationID
         }
 
@@ -354,6 +475,7 @@ final class AuthService: NSObject, ObservableObject {
             #if DEBUG
             print("✅ [AuthService] Phone verification successful - user: \(result.user.uid)")
             #endif
+            NSLog("✅ [AuthService] Phone verification successful - user: %@", result.user.uid)
         } catch {
             #if DEBUG
             print("❌ [AuthService] Phone verification ERROR: \(error.localizedDescription)")
@@ -362,8 +484,48 @@ final class AuthService: NSObject, ObservableObject {
                 print("   UserInfo: \(nsError.userInfo)")
             }
             #endif
+            NSLog("❌ [AuthService] Phone verification ERROR: %@", error.localizedDescription)
+            if let nsError = error as NSError? {
+                NSLog("   Domain: %@, Code: %ld", nsError.domain, nsError.code)
+                NSLog("   UserInfo: %@", nsError.userInfo.description)
+            }
             throw error
         }
+    }
+
+    // MARK: - User Facing Errors
+
+    func userFacingAuthErrorMessage(from error: Error) -> String {
+        if case AuthServiceError.alreadySignedInWithDifferentMethod = error {
+            let method = authMethodDisplay ?? "another method"
+            return "You're already signed in with \(method)."
+        }
+
+        let nsError = error as NSError
+        if let code = AuthErrorCode(_bridgedNSError: nsError) {
+            switch code.code {
+            case .invalidPhoneNumber:
+                return "That phone number looks invalid."
+            case .missingPhoneNumber:
+                return "Please enter a phone number."
+            case .invalidVerificationCode:
+                return "That verification code is invalid."
+            case .sessionExpired:
+                return "That code expired. Please request a new one."
+            case .tooManyRequests:
+                return "Too many attempts. Please try again later."
+            case .networkError:
+                return "Network error. Please check your connection and try again."
+            case .appNotAuthorized:
+                return "Phone sign‑in isn’t authorized for this app yet."
+            case .captchaCheckFailed:
+                return "Captcha verification failed. Please try again."
+            default:
+                break
+            }
+        }
+
+        return error.localizedDescription
     }
 }
 
@@ -374,6 +536,9 @@ enum AuthServiceError: LocalizedError {
     case missingPresentationAnchor
     case missingPhoneVerificationID
     case alreadySignedInWithDifferentMethod
+    case firebaseNotConfigured
+    case missingProjectID
+    case missingEmailForLink
 
     var errorDescription: String? {
         switch self {
@@ -389,6 +554,12 @@ enum AuthServiceError: LocalizedError {
             return "Missing phone verification ID."
         case .alreadySignedInWithDifferentMethod:
             return "You're already signed in. Sign out first to use a different method."
+        case .firebaseNotConfigured:
+            return "Firebase is not configured."
+        case .missingProjectID:
+            return "Missing Firebase project ID."
+        case .missingEmailForLink:
+            return "Please enter your email again to finish sign‑in."
         }
     }
 }

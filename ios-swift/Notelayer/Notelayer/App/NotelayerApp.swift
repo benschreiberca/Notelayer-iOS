@@ -6,6 +6,23 @@ import GoogleSignIn
 import UIKit
 import UserNotifications
 
+@MainActor
+final class APNSTokenStore {
+    static let shared = APNSTokenStore()
+    private(set) var token: Data?
+    private(set) var tokenType: AuthAPNSTokenType?
+
+    func update(token: Data, type: AuthAPNSTokenType) {
+        self.token = token
+        self.tokenType = type
+        NotificationCenter.default.post(name: .apnsTokenUpdated, object: nil)
+    }
+}
+
+extension Notification.Name {
+    static let apnsTokenUpdated = Notification.Name("Notelayer.APNS.TokenUpdated")
+}
+
 private func configureFirebaseIfNeeded() {
     if FirebaseApp.app() == nil {
         #if DEBUG
@@ -25,13 +42,21 @@ private func configureFirebaseIfNeeded() {
 }
 
 @objc(AppDelegate)
-final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    override init() {
+        super.init()
+        configureFirebaseIfNeeded()
+    }
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         #if DEBUG
         print("🚀 [AppDelegate] Application did finish launching")
+        let sharedDelegate = UIApplication.shared.delegate
+        print("🔧 [AppDelegate] UIApplication.shared.delegate: \(String(describing: sharedDelegate))")
+        print("🔧 [AppDelegate] Delegate is non-nil: \(sharedDelegate != nil)")
         #endif
         
         // Set notification center delegate
@@ -65,6 +90,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         } else {
             print("⚠️ [AppDelegate] WARNING: No URL types found in Info.plist!")
         }
+
+        let firebaseProxy = Bundle.main.object(forInfoDictionaryKey: "FirebaseAppDelegateProxyEnabled") as? Bool
+        let googleUtilitiesProxy = Bundle.main.object(forInfoDictionaryKey: "GoogleUtilitiesAppDelegateProxyEnabled") as? Bool
+        print("🔧 [AppDelegate] FirebaseAppDelegateProxyEnabled: \(firebaseProxy?.description ?? "nil")")
+        print("🔧 [AppDelegate] GoogleUtilitiesAppDelegateProxyEnabled: \(googleUtilitiesProxy?.description ?? "nil")")
         #endif
         
         configureFirebaseIfNeeded()
@@ -193,6 +223,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NSLog("📱 [AppDelegate] Received APNS device token: %lu bytes", deviceToken.count)
         #if DEBUG
         print("📱 [AppDelegate] Received APNS device token: \(deviceToken.count) bytes")
         #endif
@@ -235,6 +266,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         
         // Set the APNS token on real device
         auth.setAPNSToken(deviceToken, type: tokenType)
+        APNSTokenStore.shared.update(token: deviceToken, type: tokenType)
+        NSLog("✅ [AppDelegate] APNS token set successfully")
         #if DEBUG
         print("✅ [AppDelegate] APNS token set successfully")
         #endif
@@ -242,6 +275,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NSLog("❌ [AppDelegate] Failed to register for remote notifications: %@", error.localizedDescription)
         #if DEBUG
         print("❌ [AppDelegate] Failed to register for remote notifications: \(error.localizedDescription)")
         if let nsError = error as NSError? {
@@ -252,6 +286,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        NSLog("📬 [AppDelegate] Received remote notification")
         #if DEBUG
         print("📬 [AppDelegate] Received remote notification")
         #endif
@@ -266,6 +301,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
         
         if Auth.auth().canHandleNotification(userInfo) {
+            NSLog("✅ [AppDelegate] Firebase Auth handled the notification")
             #if DEBUG
             print("✅ [AppDelegate] Firebase Auth handled the notification")
             #endif
@@ -277,6 +313,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         print("ℹ️ [AppDelegate] Notification not handled by Firebase Auth")
         #endif
         completionHandler(.noData)
+    }
+
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
+        NSLog("📬 [AppDelegate] Received remote notification (no fetch handler)")
+        #if DEBUG
+        print("📬 [AppDelegate] Received remote notification (no fetch handler)")
+        #endif
+
+        configureFirebaseIfNeeded()
+        _ = Auth.auth().canHandleNotification(userInfo)
     }
 }
 
@@ -317,6 +363,11 @@ struct NotelayerApp: App {
                 }
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
+                .onOpenURL { url in
+                    _Concurrency.Task { @MainActor in
+                        await authService.handleIncomingURL(url)
+                    }
+                }
         }
         .onChange(of: scenePhase) { newPhase in
             print("========================================")

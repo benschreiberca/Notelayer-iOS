@@ -40,6 +40,7 @@ final class FirebaseBackendService: ObservableObject {
         store.attachBackend(nil)
         metadataCancellable?.cancel()
         metadataCancellable = nil
+        InsightsTelemetryStore.shared.setUserScope(user?.uid)
 
         guard let user else {
             return

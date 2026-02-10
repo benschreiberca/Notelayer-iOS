@@ -18,6 +18,21 @@ final class AnalyticsService {
     func logEvent(_ name: String, params: [String: Any] = [:]) {
         guard isEnabled else { return }
         Analytics.logEvent(name, parameters: params)
+
+        let viewName = params["view_name"] as? String
+        let tabName = params["tab_name"] as? String
+        let categoryIds = categoryIdsFromParams(params)
+        let taskId = (params["task_id"] as? String) ?? (params["taskId"] as? String)
+
+        InsightsTelemetryStore.shared.record(
+            eventName: name,
+            featureKey: featureKey(for: name, viewName: viewName),
+            tabName: tabName,
+            viewName: viewName,
+            categoryIds: categoryIds,
+            taskIdPolicyField: taskId,
+            metadata: metadataStringMap(params)
+        )
     }
 
     func trackTabSelected(tabName: String, previousTab: String?) {
@@ -47,6 +62,111 @@ final class AnalyticsService {
             "view_name": session.viewName,
             "duration_s": max(0, Int(duration.rounded()))
         ])
+    }
+
+    private func metadataStringMap(_ params: [String: Any]) -> [String: String] {
+        var result: [String: String] = [:]
+        for (key, value) in params {
+            if let stringValue = value as? String {
+                result[key] = stringValue
+            } else if let boolValue = value as? Bool {
+                result[key] = boolValue ? "true" : "false"
+            } else if let numberValue = value as? NSNumber {
+                result[key] = numberValue.stringValue
+            } else if let dateValue = value as? Date {
+                result[key] = ISO8601DateFormatter().string(from: dateValue)
+            }
+        }
+        return result
+    }
+
+    private func categoryIdsFromParams(_ params: [String: Any]) -> [String] {
+        if let values = params["category_ids"] as? [String] {
+            return values.filter { !$0.isEmpty }.sorted()
+        }
+
+        if let csv = params["category_ids_csv"] as? String {
+            return csv
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .sorted()
+        }
+
+        if let categoryId = params["category_id"] as? String, !categoryId.isEmpty {
+            return [categoryId]
+        }
+
+        return []
+    }
+
+    private func featureKey(for eventName: String, viewName: String?) -> String {
+        switch eventName {
+        case AnalyticsEventName.tabSelected:
+            return InsightsFeatureKey.tabSelect
+        case AnalyticsEventName.viewOpen:
+            if viewName == AnalyticsViewName.notes {
+                return InsightsFeatureKey.notesUsage
+            }
+            if viewName == AnalyticsViewName.profileSettings {
+                return InsightsFeatureKey.profileSettingsOpen
+            }
+            return InsightsFeatureKey.viewOpen
+        case AnalyticsEventName.viewDuration:
+            return InsightsFeatureKey.viewDuration
+        case AnalyticsEventName.todosFilterChanged:
+            return InsightsFeatureKey.todosFilterChange
+        case AnalyticsEventName.taskCreated:
+            return InsightsFeatureKey.taskCreate
+        case AnalyticsEventName.taskEdited:
+            return InsightsFeatureKey.taskEdit
+        case AnalyticsEventName.taskCompleted:
+            return InsightsFeatureKey.taskComplete
+        case AnalyticsEventName.taskRestored:
+            return InsightsFeatureKey.taskRestore
+        case AnalyticsEventName.taskDeleted:
+            return InsightsFeatureKey.taskDelete
+        case AnalyticsEventName.taskReordered:
+            return InsightsFeatureKey.taskReorder
+        case AnalyticsEventName.taskDueDateSet:
+            return InsightsFeatureKey.dueDateSet
+        case AnalyticsEventName.taskDueDateCleared:
+            return InsightsFeatureKey.dueDateCleared
+        case AnalyticsEventName.taskReminderSet:
+            return InsightsFeatureKey.reminderSet
+        case AnalyticsEventName.taskReminderCleared:
+            return InsightsFeatureKey.reminderCleared
+        case AnalyticsEventName.categoryCreated:
+            return InsightsFeatureKey.categoryCreate
+        case AnalyticsEventName.categoryRenamed:
+            return InsightsFeatureKey.categoryRename
+        case AnalyticsEventName.categoryReordered:
+            return InsightsFeatureKey.categoryReorder
+        case AnalyticsEventName.categoryDeleted:
+            return InsightsFeatureKey.categoryDelete
+        case AnalyticsEventName.categoryAssignedToTask:
+            return InsightsFeatureKey.categoryAssign
+        case AnalyticsEventName.reminderPermissionPrompted:
+            return InsightsFeatureKey.reminderPermissionPrompted
+        case AnalyticsEventName.reminderPermissionDenied:
+            return InsightsFeatureKey.reminderPermissionDenied
+        case AnalyticsEventName.reminderScheduled:
+            return InsightsFeatureKey.reminderSet
+        case AnalyticsEventName.reminderCleared:
+            return InsightsFeatureKey.reminderCleared
+        case AnalyticsEventName.calendarExportInitiated:
+            return InsightsFeatureKey.calendarExportInitiated
+        case AnalyticsEventName.calendarExportPermissionDenied:
+            return InsightsFeatureKey.calendarExportPermissionDenied
+        case AnalyticsEventName.calendarExportPresented:
+            return InsightsFeatureKey.calendarExportPresented
+        case AnalyticsEventName.themeChanged:
+            return InsightsFeatureKey.themeChange
+        case AnalyticsEventName.insightsDrilldownOpened:
+            return InsightsFeatureKey.insightsDrilldownOpen
+        default:
+            return eventName
+        }
     }
 }
 
@@ -89,6 +209,7 @@ enum AnalyticsEventName {
     static let calendarExportPresented = "calendar_export_presented"
 
     static let themeChanged = "theme_changed"
+    static let insightsDrilldownOpened = "insights_drilldown_opened"
 }
 
 enum AnalyticsViewName {
@@ -105,9 +226,15 @@ enum AnalyticsViewName {
     static let calendarExport = "Calendar Export"
     static let welcome = "Welcome"
     static let remindersSettings = "Reminders Settings"
+    static let insightsOverview = "Insights / Overview"
+    static let insightsTrendDetail = "Insights / Trend Detail"
+    static let insightsCategoryDetail = "Insights / Category Detail"
+    static let insightsUsageDetail = "Insights / Usage Detail"
+    static let insightsGapDetail = "Insights / Gap Detail"
 }
 
 enum AnalyticsTabName {
     static let notes = "Notes"
     static let todos = "Todos"
+    static let insights = "Insights"
 }

@@ -2,10 +2,16 @@
 
 This document lists all analytics event tags currently used in the app, what they measure, and key parameters.
 
+## Insights Telemetry Mirror
+
+- Production analytics events are mirrored into a local, per-device Insights telemetry store.
+- Local telemetry is scoped by signed-in user ID to avoid cross-account mixing on shared devices.
+- App usage history in Insights starts when this local telemetry is available on that device.
+
 ## Navigation + Views
 
 - `tab_selected`
-  - Measures: user switches app tabs (Notes ↔ Todos)
+  - Measures: user switches app tabs (Notes ↔ To-Dos ↔ Insights)
   - Params: `tab_name`, `previous_tab`
 
 - `view_open`
@@ -26,15 +32,15 @@ This document lists all analytics event tags currently used in the app, what the
 
 - `task_created`
   - Measures: task creation
-  - Params: `priority`, `category_count`, `has_due_date`, `has_reminder`
+  - Params: `priority`, `category_count`, `has_due_date`, `has_reminder`, `category_ids_csv`
 
 - `task_completed`
   - Measures: task marked complete (includes time-to-complete)
-  - Params: `completion_latency_s`, `category_count`, `priority`, `had_due_date`, `had_reminder`
+  - Params: `completion_latency_s`, `category_count`, `priority`, `had_due_date`, `had_reminder`, `category_ids_csv`
 
 - `task_restored`
   - Measures: completed task restored to active
-  - Params: `category_count`, `priority`
+  - Params: `category_count`, `priority`, `category_ids_csv`
 
 - `task_deleted`
   - Measures: task deletion
@@ -58,11 +64,11 @@ This document lists all analytics event tags currently used in the app, what the
 
 - `task_reminder_set`
   - Measures: reminder set on task
-  - Params: `lead_time_minutes`, `has_due_date`, `category_count`
+  - Params: `lead_time_minutes`, `has_due_date`, `category_count`, `category_ids_csv`
 
 - `task_reminder_cleared`
   - Measures: reminder cleared from task
-  - Params: `category_count`, `has_due_date`
+  - Params: `category_count`, `has_due_date`, `category_ids_csv`
 
 ## Categories
 
@@ -97,16 +103,17 @@ This document lists all analytics event tags currently used in the app, what the
 
 - `reminder_scheduled`
   - Measures: reminder scheduled
-  - Params: `lead_time_minutes`
+  - Params: `lead_time_minutes`, `category_ids_csv`
 
 - `reminder_cleared`
   - Measures: reminder cancelled/cleared
+  - Params: `category_ids_csv`
 
 ## Calendar Export
 
 - `calendar_export_initiated`
   - Measures: user starts calendar export
-  - Params: `view_name`, `has_due_date`, `has_reminder`
+  - Params: `view_name`, `has_due_date`, `has_reminder`, `task_id`, `category_ids_csv`
 
 - `calendar_export_permission_denied`
   - Measures: calendar access denied
@@ -114,7 +121,13 @@ This document lists all analytics event tags currently used in the app, what the
 
 - `calendar_export_presented`
   - Measures: calendar editor shown
-  - Params: `view_name`
+  - Params: `view_name`, `task_id`
+
+## Insights
+
+- `insights_drilldown_opened`
+  - Measures: user drills deeper from Insights overview cards
+  - Params: `view_name`, `tab_name`, `source_view` (when present)
 
 ## Themes
 
@@ -137,8 +150,14 @@ This document lists all analytics event tags currently used in the app, what the
 - `Calendar Export`
 - `Welcome`
 - `Reminders Settings`
+- `Insights / Overview`
+- `Insights / Trend Detail`
+- `Insights / Category Detail`
+- `Insights / Usage Detail`
+- `Insights / Gap Detail`
 
 ## Tab Names (`tab_name`)
 
 - `Notes`
 - `Todos`
+- `Insights`

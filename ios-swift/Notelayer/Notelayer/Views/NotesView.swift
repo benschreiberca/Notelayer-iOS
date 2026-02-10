@@ -15,83 +15,43 @@ struct NotesView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(store.notes) { note in
-                            InsetCard {
-                                Text(note.text)
-                                    .foregroundStyle(.primary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .contentShape(Rectangle())
-                            .rowContextMenu(
-                                shareTitle: "Share…",
-                                onShare: {
-                                    sharePayload = SharePayload(items: [note.text])
-                                },
-                                onCopy: {
-                                    UIPasteboard.general.string = note.text
-                                }
-                            )
-                            .padding(.horizontal, 16)
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(store.notes) { note in
+                        InsetCard {
+                            Text(note.text)
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .contentShape(Rectangle())
+                        .rowContextMenu(
+                            shareTitle: "Share…",
+                            onShare: {
+                                sharePayload = SharePayload(items: [note.text])
+                            },
+                            onCopy: {
+                                UIPasteboard.general.string = note.text
+                            }
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.vertical, 12)
                 }
-                
-                // Gear icon overlay
-                VStack {
-                    HStack {
-                        Spacer()
-                        
-                        Menu {
-                            Button {
-                                showingAppearance = true
-                            } label: {
-                                Label("Colour Theme", systemImage: "paintbrush")
-                            }
-                            Button {
-                                showingCategoryManager = true
-                            } label: {
-                                Label("Manage Categories", systemImage: "tag")
-                            }
-                            Button {
-                                showingProfileSettings = true
-                            } label: {
-                                Label("Profile & Settings", systemImage: "person.circle")
-                            }
-                        } label: {
-                            ZStack(alignment: .topTrailing) {
-                                Image(systemName: "gearshape.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(.secondary)
-                                    .padding(8)
-                                
-                                // Notification badge (iOS Home Screen style overlap)
-                                if authService.syncStatus.shouldShowBadge {
-                                    Circle()
-                                        .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
-                                        .frame(width: 10, height: 10)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color(.systemBackground), lineWidth: 1.5)
-                                        )
-                                        .offset(x: -6, y: 6) // Aggressive overlap from top-right corner
-                                        .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, 16)
-                        .padding(.top, 8)
-                    }
-                    
-                    Spacer()
-                }
+                .padding(.vertical, 12)
             }
             .navigationTitle("Notes")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    AppHeaderLogo()
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    AppHeaderGearMenu(
+                        onAppearance: { showingAppearance = true },
+                        onCategoryManager: { showingCategoryManager = true },
+                        onProfileSettings: { showingProfileSettings = true }
+                    )
+                }
+            }
             .onAppear {
                 store.load()
                 viewSession = AnalyticsService.shared.trackViewOpen(
@@ -124,7 +84,8 @@ struct NotesView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .presentationDetents([.fraction(0.5)])
+                    .preferredColorScheme(theme.preferredColorScheme)
+                    .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
                         appearanceViewSession = AnalyticsService.shared.trackViewOpen(

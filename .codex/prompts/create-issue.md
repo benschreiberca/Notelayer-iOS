@@ -37,3 +37,17 @@ Keep questions brief. One message with 2-3 targeted questions beats multiple bac
 - Default priority: normal, effort: medium (ask only if unclear)
 - Max 3 files in context - most relevant only
 - Bullet points over paragraphs
+
+## Docs Naming Contract (Required)
+
+- Store project docs under `docs/`.
+- Use `Title_Snake_Case` filenames.
+- Use feature-oriented naming with explicit doc-type suffixes.
+- Preferred format: `<Feature_Or_Domain>_<Doc_Type>[ _YYYY_MM_DD].md`.
+- Keep meta docs at top with numeric prefixes:
+  - `000_Docs_Start_Here.md`
+  - `010_Docs_Features_Hub.md`
+  - `020_Docs_Feature_Implementation_Plans_Index.md`
+  - `030_Docs_Explorations_Index.md`
+  - `040_Docs_Governance.md`
+- When creating or renaming docs, update links and these indexes.

@@ -34,6 +34,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F1A0B1C2D3E4F50000000041"
+               BuildableName = "NotelayerInsightsTests.xctest"
+               BlueprintName = "NotelayerInsightsTests"
+               ReferencedContainer = "container:Notelayer.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "303233363063333438613162"
                BuildableName = "NotelayerScreenshotTests.xctest"
                BlueprintName = "NotelayerScreenshotTests"

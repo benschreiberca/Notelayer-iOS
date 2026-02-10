@@ -1,5 +1,23 @@
 # TestFlight Release Notes
 
+## [2026-02-10] - Your Dashboard Learned Manners
+- **What’s New**: The floating bottom tabs now politely step aside when the keyboard appears, so typing fields stop playing hide-and-seek.
+- **Why it matters**: You can edit without the UI sitting on top of your input.
+- **What’s New**: Notes, To-Dos, and Insights now share a more consistent header rhythm with matching logo/settings behavior, while each tab keeps its own middle controls.
+- **Why it matters**: The app feels less like three cousins and more like one product.
+- **What’s New**: Insights now labels the section as `Features You're using in the App`, adds plain-language explainer text, and keeps the bottom card visible above the floating tab pill.
+- **Why it matters**: You can tell what the numbers mean without decoding them like a puzzle hunt.
+- **What’s New**: Behind the scenes, analytics tracking, docs structure, and Insights test coverage all got a substantial cleanup and expansion.
+- **Why it matters**: Fewer regressions, clearer docs, better confidence when we ship fast.
+
+## [2026-02-09] - Insights, but make it useful
+- **What's New**: Added a full `Insights` tab after `To-Dos` with historical task trends, category analytics, feature usage, time-of-day patterns, and gap analysis.
+- **Why it matters**: You can now see not just what tasks exist, but how you actually use Notelayer over time.
+- **What's New**: Added progressive chart drill-downs (trend, category, usage, and gap detail), with Apple Health-style exploration flow and Swift Charts.
+- **Why it matters**: You can move from overview to details without leaving context.
+- **What's New**: Added local Insights telemetry storage with account scoping, retention/compaction, and category-attributed calendar/reminder events.
+- **Why it matters**: Insights data stays consistent, avoids cross-account mixing, and scales as usage grows.
+
 ## [2026-02-08] - The Phone Took a Quiet Sabbatical
 - **What's New**: Phone sign‑in has been removed from the UI. It’s not gone forever, it’s just not invited to this build.
 - **Why it matters**: Fewer mysterious auth tantrums when you just want to get in.

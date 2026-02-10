@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RootTabsView: View {
     @EnvironmentObject private var theme: ThemeManager
@@ -12,6 +13,7 @@ struct RootTabsView: View {
     @State private var lastSelectedTab: AppTab = .todos
     @State private var tabViewSession: AnalyticsViewSession? = nil
     @State private var welcomeViewSession: AnalyticsViewSession? = nil
+    @State private var isKeyboardVisible = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -25,34 +27,40 @@ struct RootTabsView: View {
                     NotesView()
                 case .todos:
                     TodosView()
+                case .insights:
+                    InsightsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(UndoShakeHost())
             .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: 80) // Reserve space for floating bar
+                Color.clear.frame(height: isKeyboardVisible ? 0 : 80) // Reserve space for floating bar only when visible
             }
             
             // Floating Tab Bar (Pill style like iOS Settings Search)
-            HStack(spacing: 0) {
-                tabButton(tab: .notes, icon: "note.text", label: "Notes")
-                tabButton(tab: .todos, icon: "checklist", label: "To-Dos")
+            if !isKeyboardVisible {
+                HStack(spacing: 0) {
+                    tabButton(tab: .notes, icon: "note.text", label: "Notes")
+                    tabButton(tab: .todos, icon: "checklist", label: "To-Dos")
+                    tabButton(tab: .insights, icon: "chart.xyaxis.line", label: "Insights")
+                }
+                .padding(4)
+                .background(
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                )
+                .padding(.horizontal, 26) // Fits three tabs while preserving floating pill feel
+                .padding(.bottom, 24)
             }
-            .padding(4)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
-            )
-            .overlay(
-                Capsule()
-                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
-            )
-            .padding(.horizontal, 60) // Narrower pill
-            .padding(.bottom, 24)
         }
         .tint(theme.tokens.accent)
         .preferredColorScheme(theme.preferredColorScheme)
+        .animation(.easeInOut(duration: 0.2), value: isKeyboardVisible)
         .onAppear {
             updateResolvedScheme()
             checkAndShowWelcome()
@@ -69,6 +77,12 @@ struct RootTabsView: View {
         }
         .onChange(of: theme.mode) { _ in
             updateResolvedScheme()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
         }
         .onChange(of: selectedTab) { newValue in
             AnalyticsService.shared.trackViewDuration(tabViewSession)
@@ -145,6 +159,8 @@ struct RootTabsView: View {
             return AnalyticsTabName.notes
         case .todos:
             return AnalyticsTabName.todos
+        case .insights:
+            return AnalyticsTabName.insights
         }
     }
 
@@ -154,6 +170,8 @@ struct RootTabsView: View {
             return AnalyticsViewName.notes
         case .todos:
             return AnalyticsViewName.todosList
+        case .insights:
+            return AnalyticsViewName.insightsOverview
         }
     }
     
@@ -185,4 +203,5 @@ struct RootTabsView: View {
 private enum AppTab: Hashable {
     case notes
     case todos
+    case insights
 }

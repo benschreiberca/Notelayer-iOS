@@ -12,6 +12,13 @@
 		BC9FDFA92F305CFC0011A419 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
 		E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */; };
 		EB36A7DD243F4FC829226FC9 /* Pods_Notelayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */; };
+		F1A0B1C2D3E4F50000000011 /* InsightsAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */; };
+		F1A0B1C2D3E4F50000000012 /* Notelayer/Data/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */; };
+		F1A0B1C2D3E4F50000000013 /* Notelayer/Data/InsightsMetricDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */; };
+		F1A0B1C2D3E4F50000000014 /* Notelayer/Services/InsightsTelemetryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */; };
+		F1A0B1C2D3E4F50000000015 /* Notelayer/Services/InsightsAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */; };
+		F1A0B1C2D3E4F50000000016 /* Notelayer/Data/CategoryColorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */; };
+		F1A0B1C2D3E4F50000000017 /* InsightsStressFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +62,15 @@
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotelayerShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDB534F696F0460E82304867 /* Notelayer/NotelayerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Notelayer/NotelayerRelease.entitlements; sourceTree = "<group>"; };
+		F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsAggregatorTests.swift; sourceTree = "<group>"; };
+		F1A0B1C2D3E4F50000000002 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F1A0B1C2D3E4F50000000003 /* NotelayerInsightsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerInsightsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/Models.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/InsightsMetricDefinitions.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsTelemetryStore.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsAggregator.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/CategoryColorDefaults.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsStressFixture.swift; sourceTree = "<group>"; };
 		FB965E1A6487C5856ABC702C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -122,6 +138,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F1A0B1C2D3E4F50000000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -159,6 +182,7 @@
 				DDB534F696F0460E82304867 /* Notelayer/NotelayerRelease.entitlements */,
 				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
 				BC2CCDD72F174A5100406D9A /* Products */,
+				F1A0B1C2D3E4F50000000021 /* NotelayerInsightsTests */,
 				174C9A5E65526372669F0AA1 /* NotelayerScreenshotTests */,
 				506ABC58E352DFA27C6F600C /* Pods */,
 				08CB923FFFAA2FF6BF1A59CC /* Frameworks */,
@@ -169,10 +193,26 @@
 			isa = PBXGroup;
 			children = (
 				BC2CCDD62F174A5100406D9A /* Notelayer.app */,
+				F1A0B1C2D3E4F50000000003 /* NotelayerInsightsTests.xctest */,
 				313235613231363861323230 /* NotelayerScreenshotTests.xctest */,
 				BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F1A0B1C2D3E4F50000000021 /* NotelayerInsightsTests */ = {
+			isa = PBXGroup;
+			children = (
+				F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */,
+				F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */,
+				F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */,
+				F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */,
+				F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */,
+				F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */,
+				F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */,
+				F1A0B1C2D3E4F50000000002 /* Info.plist */,
+			);
+			path = NotelayerInsightsTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -240,6 +280,23 @@
 			productReference = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		F1A0B1C2D3E4F50000000041 /* NotelayerInsightsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F1A0B1C2D3E4F50000000061 /* Build configuration list for PBXNativeTarget "NotelayerInsightsTests" */;
+			buildPhases = (
+				F1A0B1C2D3E4F50000000031 /* Sources */,
+				F1A0B1C2D3E4F50000000032 /* Frameworks */,
+				F1A0B1C2D3E4F50000000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotelayerInsightsTests;
+			productName = NotelayerInsightsTests;
+			productReference = F1A0B1C2D3E4F50000000003 /* NotelayerInsightsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -285,6 +342,7 @@
 			projectRoot = "";
 			targets = (
 				BC2CCDD52F174A5100406D9A /* Notelayer */,
+				F1A0B1C2D3E4F50000000041 /* NotelayerInsightsTests */,
 				303233363063333438613162 /* NotelayerScreenshotTests */,
 				BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */,
 			);
@@ -312,6 +370,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC9FDFA92F305CFC0011A419 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1A0B1C2D3E4F50000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -383,6 +448,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1A0B1C2D3E4F50000000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1A0B1C2D3E4F50000000011 /* InsightsAggregatorTests.swift in Sources */,
+				F1A0B1C2D3E4F50000000012 /* Notelayer/Data/Models.swift in Sources */,
+				F1A0B1C2D3E4F50000000016 /* Notelayer/Data/CategoryColorDefaults.swift in Sources */,
+				F1A0B1C2D3E4F50000000013 /* Notelayer/Data/InsightsMetricDefinitions.swift in Sources */,
+				F1A0B1C2D3E4F50000000014 /* Notelayer/Services/InsightsTelemetryStore.swift in Sources */,
+				F1A0B1C2D3E4F50000000015 /* Notelayer/Services/InsightsAggregator.swift in Sources */,
+				F1A0B1C2D3E4F50000000017 /* InsightsStressFixture.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -582,7 +661,7 @@
 				CODE_SIGN_ENTITLEMENTS = Notelayer/Notelayer.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
@@ -602,7 +681,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -627,7 +706,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -646,7 +725,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -667,7 +746,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -680,7 +759,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -700,7 +779,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotelayerShareExtension/NotelayerShareExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DPVQ2X986Z;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -713,7 +792,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -722,6 +801,50 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F1A0B1C2D3E4F50000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = NotelayerInsightsTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NotelayerInsightsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F1A0B1C2D3E4F50000000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DPVQ2X986Z;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = NotelayerInsightsTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notelayer.app.NotelayerInsightsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -762,6 +885,15 @@
 			buildConfigurations = (
 				BC5D91F92F29A5BD00C183A4 /* Debug */,
 				BC5D91FA2F29A5BD00C183A4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F1A0B1C2D3E4F50000000061 /* Build configuration list for PBXNativeTarget "NotelayerInsightsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1A0B1C2D3E4F50000000051 /* Debug */,
+				F1A0B1C2D3E4F50000000052 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

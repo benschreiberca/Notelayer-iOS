@@ -291,7 +291,8 @@ class LocalStore: ObservableObject {
             "priority": newTask.priority.rawValue,
             "category_count": newTask.categories.count,
             "has_due_date": newTask.dueDate != nil,
-            "has_reminder": newTask.reminderDate != nil
+            "has_reminder": newTask.reminderDate != nil,
+            "category_ids_csv": newTask.categories.joined(separator: ",")
         ])
         if !newTask.categories.isEmpty {
             // Analytics: separate signal for category assignment on create.
@@ -433,7 +434,8 @@ class LocalStore: ObservableObject {
             "category_count": oldTask.categories.count,
             "priority": oldTask.priority.rawValue,
             "had_due_date": oldTask.dueDate != nil,
-            "had_reminder": oldTask.reminderDate != nil
+            "had_reminder": oldTask.reminderDate != nil,
+            "category_ids_csv": oldTask.categories.joined(separator: ",")
         ])
         
         // Cancel reminder asynchronously if it existed
@@ -488,7 +490,8 @@ class LocalStore: ObservableObject {
         saveTasks()
         AnalyticsService.shared.logEvent(AnalyticsEventName.taskRestored, params: [
             "category_count": oldTask.categories.count,
-            "priority": oldTask.priority.rawValue
+            "priority": oldTask.priority.rawValue,
+            "category_ids_csv": oldTask.categories.joined(separator: ",")
         ])
         
         if let backend, !suppressBackendWrites {
@@ -533,10 +536,12 @@ class LocalStore: ObservableObject {
             AnalyticsService.shared.logEvent(AnalyticsEventName.taskReminderSet, params: [
                 "lead_time_minutes": leadMinutes,
                 "has_due_date": task.dueDate != nil,
-                "category_count": task.categories.count
+                "category_count": task.categories.count,
+                "category_ids_csv": task.categories.joined(separator: ",")
             ])
             AnalyticsService.shared.logEvent(AnalyticsEventName.reminderScheduled, params: [
-                "lead_time_minutes": leadMinutes
+                "lead_time_minutes": leadMinutes,
+                "category_ids_csv": task.categories.joined(separator: ",")
             ])
             
             // Sync to backend
@@ -568,9 +573,12 @@ class LocalStore: ObservableObject {
         saveTasks()
         AnalyticsService.shared.logEvent(AnalyticsEventName.taskReminderCleared, params: [
             "category_count": task.categories.count,
-            "has_due_date": task.dueDate != nil
+            "has_due_date": task.dueDate != nil,
+            "category_ids_csv": task.categories.joined(separator: ",")
         ])
-        AnalyticsService.shared.logEvent(AnalyticsEventName.reminderCleared)
+        AnalyticsService.shared.logEvent(AnalyticsEventName.reminderCleared, params: [
+            "category_ids_csv": task.categories.joined(separator: ",")
+        ])
         
         // Sync to backend
         if let backend, !suppressBackendWrites {

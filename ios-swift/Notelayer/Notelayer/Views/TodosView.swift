@@ -33,30 +33,6 @@ struct TodosView: View {
     @State private var calendarExportSession: AnalyticsViewSession? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
-    
-    // Header constants
-    private let expandedHeaderHeight: CGFloat = 130
-    private let collapsedHeaderHeight: CGFloat = 100
-    
-    private var isSqueezed: Bool {
-        scrollOffset < -20
-    }
-    
-    private var headerHeight: CGFloat {
-        isSqueezed ? collapsedHeaderHeight : expandedHeaderHeight
-    }
-    
-    private var logoSize: CGFloat {
-        isSqueezed ? 28 : 36
-    }
-    
-    private var headerOffset: CGFloat {
-        // Allow header to scroll off screen if "squeezed hard"
-        if scrollOffset < -100 {
-            return scrollOffset + 100
-        }
-        return 0
-    }
 
     var body: some View {
         let tasks = store.tasks
@@ -66,8 +42,20 @@ struct TodosView: View {
         let filteredTasks = showingDone ? doneTasks : doingTasks
 
         NavigationStack {
-            ZStack(alignment: .top) {
-                // Main Content
+            VStack(spacing: 0) {
+                // Keep mode controls pinned under the navigation bar.
+                Picker("View", selection: $viewMode) {
+                    ForEach(TodoViewMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
+                Divider()
+
                 TabView(selection: $viewMode) {
                     TodoListModeView(
                         tasks: filteredTasks,
@@ -130,115 +118,56 @@ struct TodosView: View {
                     .tag(TodoViewMode.date)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .background(Color.clear) // Keep page-style container transparent so wallpaper shows.
-                .padding(.top, expandedHeaderHeight) // Fixed spacing to prevent jump
-                
-                // Dynamic Squeezing Header
-                VStack(spacing: 0) {
-                    // Top Row: Logo, Toggle, Gear
-                    HStack(spacing: 12) {
-                        Image("NotelayerLogo")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: logoSize, height: logoSize)
-                            .clipShape(RoundedRectangle(cornerRadius: logoSize * 0.22, style: .continuous))
-                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                        
-                        Spacer()
-                        
-                        // Doing/Done Toggle
-                        HStack(spacing: 8) {
-                            Button(action: { withAnimation { showingDone = false } }) {
-                                VStack(spacing: 2) {
-                                    Text("Doing")
-                                        .font(isSqueezed ? .caption : .subheadline)
-                                        .fontWeight(showingDone ? .regular : .bold)
-                                        .foregroundColor(showingDone ? .secondary : .primary)
-                                    Text("\(doingTasks.count)")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            Toggle("", isOn: $showingDone)
-                                .labelsHidden()
-                                .tint(theme.tokens.accent)
-                                .scaleEffect(isSqueezed ? 0.8 : 1.0)
-                            
-                            Button(action: { withAnimation { showingDone = true } }) {
-                                VStack(spacing: 2) {
-                                    Text("Done")
-                                        .font(isSqueezed ? .caption : .subheadline)
-                                        .fontWeight(showingDone ? .bold : .regular)
-                                        .foregroundColor(showingDone ? .primary : .secondary)
-                                    Text("\(doneTasks.count)")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        // Gear Menu
-                        Menu {
-                            Button { showingAppearance = true } label: { Label("Colour Theme", systemImage: "paintbrush") }
-                            Button { showingCategoryManager = true } label: { Label("Manage Categories", systemImage: "tag") }
-                            Button { showingProfileSettings = true } label: { Label("Profile & Settings", systemImage: "person.circle") }
-                        } label: {
-                            ZStack(alignment: .topTrailing) {
-                                Image(systemName: "gearshape.fill")
-                                    .font(.system(size: isSqueezed ? 18 : 22))
-                                    .foregroundStyle(.secondary)
-                                    .padding(8)
-                                
-                                if authService.syncStatus.shouldShowBadge {
-                                    Circle()
-                                        .fill(authService.syncStatus.badgeColor == "red" ? Color.red : Color.yellow)
-                                        .frame(width: 10, height: 10)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color(.systemBackground), lineWidth: 1.5)
-                                        )
-                                        .offset(x: -6, y: 6) // Aggressive overlap from top-right corner
-                                        .accessibilityLabel(authService.syncStatus.badgeColor == "red" ? "Not signed in" : "Sync error")
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, isSqueezed ? 4 : 12)
-                    .padding(.bottom, isSqueezed ? 4 : 12)
-                    
-                    // Bottom Row: View Picker
-                    Picker("View", selection: $viewMode) {
-                        ForEach(TodoViewMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, isSqueezed ? 8 : 12)
-                    .scaleEffect(isSqueezed ? 0.95 : 1.0)
-                    
-                    Divider()
-                        .opacity(isSqueezed ? 1 : 0)
-                }
-                .background(
-                    ZStack {
-                        theme.tokens.screenBackground
-                        ThemeBackground(configuration: theme.configuration)
-                    }
-                    .opacity(isSqueezed ? 0.95 : 0)
-                    .blur(radius: isSqueezed ? 10 : 0)
-                    .ignoresSafeArea()
-                )
-                .background(.ultraThinMaterial.opacity(isSqueezed ? 1 : 0))
-                .offset(y: headerOffset)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSqueezed)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: headerOffset)
             }
-            .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    AppHeaderLogo()
+                }
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Button(action: { withAnimation { showingDone = false } }) {
+                            VStack(spacing: 2) {
+                                Text("Doing")
+                                    .font(.subheadline)
+                                    .fontWeight(showingDone ? .regular : .bold)
+                                    .foregroundColor(showingDone ? .secondary : .primary)
+                                Text("\(doingTasks.count)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        Toggle("", isOn: $showingDone)
+                            .labelsHidden()
+                            .toggleStyle(SwitchToggleStyle(tint: theme.tokens.accent))
+                            .frame(minWidth: 51)
+                            .fixedSize()
+                            .layoutPriority(1)
+                            .accessibilityLabel("Show completed tasks")
+
+                        Button(action: { withAnimation { showingDone = true } }) {
+                            VStack(spacing: 2) {
+                                Text("Done")
+                                    .font(.subheadline)
+                                    .fontWeight(showingDone ? .bold : .regular)
+                                    .foregroundColor(showingDone ? .primary : .secondary)
+                                Text("\(doneTasks.count)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    AppHeaderGearMenu(
+                        onAppearance: { showingAppearance = true },
+                        onCategoryManager: { showingCategoryManager = true },
+                        onProfileSettings: { showingProfileSettings = true }
+                    )
+                }
+            }
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.sortedCategories)
                     .presentationDetents([.medium, .large])
@@ -273,7 +202,8 @@ struct TodosView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .presentationDetents([.fraction(0.5)])
+                    .preferredColorScheme(theme.preferredColorScheme)
+                    .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
                         appearanceViewSession = AnalyticsService.shared.trackViewOpen(
@@ -427,7 +357,9 @@ struct TodosView: View {
         AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportInitiated, params: [
             "view_name": viewName(for: viewMode),
             "has_due_date": task.dueDate != nil,
-            "has_reminder": task.reminderDate != nil
+            "has_reminder": task.reminderDate != nil,
+            "category_ids_csv": task.categories.joined(separator: ","),
+            "task_id": task.id
         ])
         
         // Request permission if needed

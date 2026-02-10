@@ -17,11 +17,11 @@ For each changed file:
 
 ## 3. Update Relevant Documentation
 
-- **CHANGELOG.md**: Add entry under a new header with the current date and branch name.
+- **Project_Changelog.md**: Add entry under a new header with the current date and branch name.
   - Use categories: Added, Changed, Fixed, Security, Removed.
   - Be specific and technical (e.g., "Fixed race condition in TaskEditView").
   - Include files touched and specific logic changes.
-- **release_notes.md**: Update release notes with user-facing, value-oriented descriptions.
+- **Project_Release_Notes.md**: Update release notes with user-facing, value-oriented descriptions.
   - Translate technical fixes into benefits (e.g., "Smoother calendar sync" instead of "Fixed state re-render").
   - Aim for 1-2 lines per change, ensuring a new user can understand the value.
   - Maintain a professional, marketing-friendly tone.
@@ -40,3 +40,17 @@ For each changed file:
 ## 5. Ask if Uncertain
 
 If you're unsure about intent behind a change or user-facing impact, **ask the user** - don't guess.
+
+## Docs Naming Contract (Required)
+
+- Store project docs under `docs/`.
+- Use `Title_Snake_Case` filenames.
+- Use feature-oriented naming with explicit doc-type suffixes.
+- Preferred format: `<Feature_Or_Domain>_<Doc_Type>[ _YYYY_MM_DD].md`.
+- Keep meta docs at top with numeric prefixes:
+  - `000_Docs_Start_Here.md`
+  - `010_Docs_Features_Hub.md`
+  - `020_Docs_Feature_Implementation_Plans_Index.md`
+  - `030_Docs_Explorations_Index.md`
+  - `040_Docs_Governance.md`
+- When creating or renaming docs, update links and these indexes.

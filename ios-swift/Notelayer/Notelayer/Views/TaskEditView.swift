@@ -258,7 +258,9 @@ struct TaskEditView: View {
         AnalyticsService.shared.logEvent(AnalyticsEventName.calendarExportInitiated, params: [
             "view_name": AnalyticsViewName.taskEdit,
             "has_due_date": dueDate != nil,
-            "has_reminder": task.reminderDate != nil
+            "has_reminder": task.reminderDate != nil,
+            "category_ids_csv": Array(selectedCategories).sorted().joined(separator: ","),
+            "task_id": task.id
         ])
         
         // Request permission if needed

@@ -15,6 +15,7 @@ Voice capture is faster than typing, but only valuable when parsing creates clea
 ## Decisions Locked (2026-02-10)
 
 - v1 language scope is English.
+- Voice entry point is a floating action button hovering above the bottom tab area.
 - One utterance can be split into multiple staged tasks.
 - Split bias is toward granular tasks.
 - Unknown category guesses must map to existing categories only.
@@ -42,6 +43,7 @@ Voice capture is faster than typing, but only valuable when parsing creates clea
 
 ## In Scope
 
+- Floating action button entry for voice capture (above bottom tab).
 - English voice-to-structured parsing.
 - Multi-task splitting behavior.
 - Guess behavior for category/date/priority.
@@ -58,7 +60,8 @@ Voice capture is faster than typing, but only valuable when parsing creates clea
 3. Unknown category mentions map only to existing categories.
 4. Low-confidence guesses are visibly flagged in preview.
 5. Fallback title uses first 6 words and max 55 characters.
-6. Output feeds mandatory preview flow in `PRD_05`.
+6. Voice capture is initiated from a floating action button above the bottom tab.
+7. Output feeds mandatory preview flow in `PRD_05`.
 
 ## Risks
 

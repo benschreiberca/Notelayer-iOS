@@ -11,10 +11,12 @@ Implement first-install onboarding with video-first orientation, contextual cues
 - Decision 3: Preset selection is not one-click reversible, but users can edit later in `Manage Categories`.
 - Decision 4: Recommended preset must be visibly indicated.
 - Decision 5: Onboarding should remain lightweight (target 60-90s, hard cap <=2 minutes).
+- Decision 6: Onboarding UI visibility is gated by `Enable Experimental Features`.
 
 ## Dependency Gates
 - Gate A: Final decision whether video skip is immediate or delayed by short intro segment.
 - Gate B: Final decision whether recommended preset is pre-selected or highlighted only.
+- Gate C: `PRD_01` feature-gate implementation available for onboarding visibility checks.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/WelcomeView.swift`
@@ -37,6 +39,11 @@ Implement first-install onboarding with video-first orientation, contextual cues
   - [ ] 🟥 Detect first install and launch onboarding flow.
   - [ ] 🟥 Ensure returning users are not re-forced through onboarding.
   - [ ] 🟥 Persist completion/skip state robustly.
+
+- [ ] 🟥 **Step 1.5: Integrate Experimental Visibility Gate**
+  - [ ] 🟥 Show onboarding experimental UI only when `Enable Experimental Features` is on.
+  - [ ] 🟥 Define fallback behavior when gate is off on first install.
+  - [ ] 🟥 Ensure gated visibility does not break app first-run path.
 
 - [ ] 🟥 **Step 2: Add Settings Re-entry Path**
   - [ ] 🟥 Add clear entry point to re-open onboarding guidance from Settings.

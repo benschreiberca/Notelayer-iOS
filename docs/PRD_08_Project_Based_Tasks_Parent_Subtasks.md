@@ -43,11 +43,13 @@ All tasks are currently individual items with no internal step structure, making
 2. Subtasks represent steps within a project-oriented task.
 3. Hierarchy is structural, not a replacement for categories.
 4. Feature solves inability to model multi-step work in a flat list.
+5. Project-based tasks UI visibility is controlled by `Enable Experimental Features`.
 
 ## Dependencies
 
 - May require migration strategy from flat tasks to optional hierarchical tasks.
 - Could intersect with share ingestion (`PRD_07`) and voice capture output (`PRD_04`/`PRD_05`) in future phases.
+- UI visibility for this feature is gated by `PRD_01`.
 
 ## Risks And Unknowns
 

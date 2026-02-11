@@ -3,17 +3,19 @@
 **Overall Progress:** `0%`
 
 ## TLDR
-Implement English voice parsing that produces granular staged tasks with existing-category-only guesses, confidence flags for uncertain fields, and deterministic fallback title behavior.
+Implement voice entry from a floating action button above the bottom tab area, with English parsing that produces granular staged tasks, existing-category-only guesses, confidence flags, and deterministic fallback title behavior.
 
 ## Critical Decisions
 - Decision 1: v1 parsing language is English only.
 - Decision 2: Split behavior favors granular tasks.
 - Decision 3: Unknown category guesses map only to existing categories.
 - Decision 4: Title fallback uses first 6 words with 55-character cap.
+- Decision 5: Entry point is a floating action button hovering above the bottom tab area.
 
 ## Dependency Gates
 - Gate A: Final parse confidence threshold for `Needs Review` state.
 - Gate B: Final decision on one-level vs multi-tier confidence display.
+- Gate C: Voice entry button visibility is gated by `PRD_01` experimental toggle.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/TaskInputView.swift`
@@ -40,26 +42,31 @@ Implement English voice parsing that produces granular staged tasks with existin
   - [ ] 🟥 Implement task segmentation with granular split bias.
   - [ ] 🟥 Ensure segmentation remains stable for repeated identical utterances.
 
-- [ ] 🟥 **Step 3: Implement Field Extraction Rules**
+- [ ] 🟥 **Step 3: Implement Voice Entry Trigger UI**
+  - [ ] 🟥 Define voice-trigger handoff contract for floating action button above bottom tab area.
+  - [ ] 🟥 Ensure parser entry API is stable for trigger integration.
+  - [ ] 🟥 Coordinate with visibility-gating implementation so button respects `Enable Experimental Features` state.
+
+- [ ] 🟥 **Step 4: Implement Field Extraction Rules**
   - [ ] 🟥 Extract/guess title, notes, date, priority.
   - [ ] 🟥 Apply category inference against existing categories only.
   - [ ] 🟥 Reject new-category auto-creation from parser output.
 
-- [ ] 🟥 **Step 4: Implement Confidence And Fallback Behavior**
+- [ ] 🟥 **Step 5: Implement Confidence And Fallback Behavior**
   - [ ] 🟥 Score per-field confidence for guessed values.
   - [ ] 🟥 Mark low-confidence values as `Needs Review` (or approved tier model).
   - [ ] 🟥 Apply title fallback: first 6 words, 55-character max with ellipsis.
 
-- [ ] 🟥 **Step 5: Prepare Output For PRD 05 Staging**
+- [ ] 🟥 **Step 6: Prepare Output For PRD 05 Staging**
   - [ ] 🟥 Emit complete staged-task payload consumable by preview screen.
   - [ ] 🟥 Ensure all guessed fields are editable and marked for user review.
 
-- [ ] 🟥 **Step 6: Quality And Drift Protections**
+- [ ] 🟥 **Step 7: Quality And Drift Protections**
   - [ ] 🟥 Add deterministic unit tests for split behavior.
   - [ ] 🟥 Add tests for category mapping to existing set only.
   - [ ] 🟥 Add tests for fallback title length/word-count constraints.
 
-- [ ] 🟥 **Step 7: Verification And Acceptance**
+- [ ] 🟥 **Step 8: Verification And Acceptance**
   - [ ] 🟥 Validate granular split outcomes across representative voice fixtures.
   - [ ] 🟥 Validate confidence flags appear for uncertain guesses.
   - [ ] 🟥 Validate output integrates cleanly with staging flow and user edits.

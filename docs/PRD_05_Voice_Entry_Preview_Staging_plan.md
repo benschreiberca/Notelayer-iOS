@@ -12,10 +12,12 @@ Build a mandatory pre-save staging step for all voice captures with full user ed
 - Decision 4: Save is blocked when required fields are missing.
 - Decision 5: Staging persists during background/foreground in same session.
 - Decision 6: Time-to-preview target is <=2 seconds p95.
+- Decision 7: Voice staging UI visibility is gated by `Enable Experimental Features`.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/TaskInputView.swift`
 - `ios-swift/Notelayer/Notelayer/Views/TaskEditView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift`
 - `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`
 - `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`
 - `ios-swift/Notelayer/Notelayer/Data/Models.swift`
@@ -35,6 +37,7 @@ Build a mandatory pre-save staging step for all voice captures with full user ed
   - [ ] 🟥 Route all parser output to staging before any persistence.
   - [ ] 🟥 Block direct insertion into main task list.
   - [ ] 🟥 Ensure staging can represent one or multiple tasks uniformly.
+  - [ ] 🟥 Ensure staging visibility follows `Enable Experimental Features` state.
 
 - [ ] 🟥 **Step 2: Implement Editing Operations**
   - [ ] 🟥 Allow add new staged task.

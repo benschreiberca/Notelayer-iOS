@@ -21,18 +21,18 @@ Provide one index for the PRD set so each feature area can be clarified and exec
 
 ## Clarification Snapshot (2026-02-10)
 
-- `PRD_01`: Mostly clarified. Master experimental checkbox in gear, default off, Insights-only v1 scope, UI-only gating.
+- `PRD_01`: Mostly clarified. Master experimental checkbox in gear, default off, UI-only gating for Insights + Voice Input + First-Time Onboarding + Project-Based Tasks.
 - `PRD_02`: Clarified. Final label selections locked, mandatory chart+data+takeaway on all chart sections, observation-then-suggestion summaries.
 - `PRD_03`: Mostly clarified. Insights tied directly to experimental control, explicit hidden-route copy, recommended hint frequency policy.
-- `PRD_04`: Mostly clarified. English-only, granular multi-item split, existing-category-only guesses, fallback title rule defined.
+- `PRD_04`: Mostly clarified. English-only, granular multi-item split, existing-category-only guesses, fallback title rule defined, floating voice FAB entry above tab bar.
 - `PRD_05`: Mostly clarified. Recommended save/exit/validation/background/performance settings adopted.
-- `PRD_06`: Mostly clarified. First-install trigger, video-then-cues flow, non-time-based finance-inclusive presets approved.
+- `PRD_06`: Mostly clarified. First-install trigger, video-then-cues flow, non-time-based finance-inclusive presets approved, onboarding UI gated by experimental toggle.
 - `PRD_07`: Not yet clarified in this round.
 - `PRD_08`: Not yet clarified in this round.
 
 ## Dependency Notes
 
-- `PRD_01` is the master visibility gate for experimental UI.
+- `PRD_01` is the master visibility gate for experimental UI (Insights, Voice Input, First-Time Onboarding, Project-Based Tasks).
 - `PRD_03` uses `PRD_01` directly for Insights exposure.
 - `PRD_05` depends on parse output from `PRD_04`.
 

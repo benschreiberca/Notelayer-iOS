@@ -1,6 +1,12 @@
 import SwiftUI
 import UIKit
 
+enum AppBottomClearance {
+    static let tabRowHeight: CGFloat = 56
+    static let contentBottomSpacerHeight: CGFloat = tabRowHeight * 2
+    static let tabBottomPadding: CGFloat = 12
+}
+
 struct RootTabsView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
@@ -33,9 +39,6 @@ struct RootTabsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(UndoShakeHost())
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: isKeyboardVisible ? 0 : 80) // Reserve space for floating bar only when visible
-            }
             
             // Floating Tab Bar (Pill style like iOS Settings Search)
             if !isKeyboardVisible {
@@ -45,6 +48,7 @@ struct RootTabsView: View {
                     tabButton(tab: .insights, icon: "chart.xyaxis.line", label: "Insights")
                 }
                 .padding(4)
+                .frame(minHeight: AppBottomClearance.tabRowHeight)
                 .background(
                     Capsule()
                         .fill(.ultraThinMaterial)
@@ -55,7 +59,7 @@ struct RootTabsView: View {
                         .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
                 )
                 .padding(.horizontal, 26) // Fits three tabs while preserving floating pill feel
-                .padding(.bottom, 24)
+                .padding(.bottom, AppBottomClearance.tabBottomPadding)
             }
         }
         .tint(theme.tokens.accent)

@@ -1,5 +1,15 @@
 # TestFlight Release Notes
 
+## [2026-02-11] - The Tabs Learned Personal Space
+- **What’s New**: The floating tab pill now keeps a consistent buffer at the bottom of Notes, To-Dos, Insights, and Insights drilldowns.
+- **Why it matters**: The last card no longer gets sat on by navigation furniture.
+- **What’s New**: “Features You’re Using in the App” now stays fully visible at the bottom of Insights when you scroll.
+- **Why it matters**: The section stopped playing peekaboo.
+- **What’s New**: Insights drilldown rows now follow one consistent pattern: name on the left, key number on the right, helpful detail underneath when needed.
+- **Why it matters**: It’s easier to scan and compare without relearning each page.
+- **What’s New**: The data-coverage card is now compact by default and expands when you tap it, and oldest open tasks have clearer dedicated views.
+- **Why it matters**: Less visual noise up front, more detail only when you ask for it.
+
 ## [2026-02-10] - Your Dashboard Learned Manners
 - **What’s New**: The floating bottom tabs now politely step aside when the keyboard appears, so typing fields stop playing hide-and-seek.
 - **Why it matters**: You can edit without the UI sitting on top of your input.

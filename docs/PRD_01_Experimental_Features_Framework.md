@@ -19,7 +19,11 @@ You want experimental capabilities available to any user, but only when the user
 - Label is `Enable Experimental Features`.
 - Control UI should be simple and stylistically matched to existing gear menu controls.
 - Interaction should be checkbox/toggle-like and default state is off/deselected.
-- v1 experimental scope is Insights analytics UI only.
+- v1 experimental scope includes UI visibility for:
+- Insights analytics,
+- Voice input entry/UI,
+- First-time onboarding UI,
+- Project-based tasks UI (parent/subtask surfaces).
 - v1 uses one master toggle (no per-feature sub-toggles).
 - Toggle controls UI visibility only; it does not hard-disable backend capability.
 - If user turns toggle off while on an experimental screen:
@@ -59,7 +63,7 @@ You want experimental capabilities available to any user, but only when the user
 1. Gear dropdown includes `Enable Experimental Features` master control.
 2. Any user can enable/disable the control.
 3. Control default is off.
-4. In v1, control affects only Insights analytics UI visibility.
+4. In v1, control affects UI visibility for Insights, Voice Input, First-Time Onboarding, and Project-Based Tasks.
 5. Disabling while viewing an experimental screen returns user to list view.
 6. State supports local persistence and account sync.
 

@@ -87,7 +87,7 @@ final class InsightsAggregatorTests: XCTestCase {
         )
     }
 
-    func testSnapshotTotalsAndOldestOpenTaskUseCreationDate() {
+    func testSnapshotTotalsAndOldestOpenTasksUseCreationDate() {
         let now = utcDate(2026, 2, 9, 12, 0)
         let oldestCreatedAt = utcDate(2026, 1, 1, 9, 0)
         let tasks = [
@@ -118,14 +118,22 @@ final class InsightsAggregatorTests: XCTestCase {
         XCTAssertEqual(snapshot.totals.all, 3)
         XCTAssertEqual(snapshot.totals.open, 2)
         XCTAssertEqual(snapshot.totals.done, 1)
-        XCTAssertEqual(snapshot.oldestOpenTask?.taskId, "open-old")
+        XCTAssertEqual(snapshot.oldestOpenTasksPreview.count, 2)
+        XCTAssertEqual(snapshot.oldestOpenTasksDrilldown.count, 2)
+        XCTAssertEqual(snapshot.oldestOpenTasksPreview.first?.taskId, "open-old")
+        XCTAssertEqual(snapshot.oldestOpenTasksDrilldown.first?.taskId, "open-old")
 
         let expectedAge = utcCalendar.dateComponents(
             [.day],
             from: utcCalendar.startOfDay(for: oldestCreatedAt),
             to: utcCalendar.startOfDay(for: now)
         ).day
-        XCTAssertEqual(snapshot.oldestOpenTask?.ageDays, expectedAge)
+        XCTAssertEqual(snapshot.oldestOpenTasksPreview.first?.ageDays, expectedAge)
+
+        let bucketCounts = Dictionary(uniqueKeysWithValues: snapshot.openTaskAgeBuckets.map { ($0.label, $0.count) })
+        XCTAssertEqual(bucketCounts["31-60"], 1)
+        XCTAssertEqual(bucketCounts["0-7"], 1)
+        XCTAssertEqual(snapshot.openTaskAgeBuckets.reduce(0) { $0 + $1.count }, 2)
     }
 
     func testWindowBoundariesIncludeStartAndEndDays() {

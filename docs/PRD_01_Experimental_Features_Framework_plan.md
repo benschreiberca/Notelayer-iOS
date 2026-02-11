@@ -3,7 +3,7 @@
 **Overall Progress:** `0%`
 
 ## TLDR
-Implement a single user-controlled experimental features switch in the gear dropdown (`Enable Experimental Features`) that gates experimental UI visibility (Insights only in v1), with deterministic local + account-synced state behavior.
+Implement a single user-controlled experimental features switch in the gear dropdown (`Enable Experimental Features`) that gates experimental UI visibility for Insights, Voice Input, First-Time Onboarding, and Project-Based Tasks, with deterministic local + account-synced state behavior.
 
 ## Critical Decisions
 - Decision 1: Master control only (no per-feature controls in v1).
@@ -11,6 +11,7 @@ Implement a single user-controlled experimental features switch in the gear drop
 - Decision 3: Default state is off and available to any user.
 - Decision 4: If disabled while on experimental UI, transition out and return to list view.
 - Decision 5: State persists both locally and via account sync.
+- Decision 6: v1 visibility scope includes Insights, Voice Input entry, First-Time Onboarding UI, and Project-Based Tasks UI.
 
 ## Dependency Gates
 - Gate A: Final signoff on local-vs-synced conflict resolution policy at launch.
@@ -21,6 +22,8 @@ Implement a single user-controlled experimental features switch in the gear drop
 - `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`
 - `ios-swift/Notelayer/Notelayer/Views/NotesView.swift`
 - `ios-swift/Notelayer/Notelayer/Views/InsightsView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/WelcomeView.swift`
+- `ios-swift/Notelayer/Notelayer/Views/TaskItemView.swift`
 - `ios-swift/Notelayer/Notelayer/Data/LocalStore.swift`
 - `ios-swift/Notelayer/Notelayer/Services/FirebaseBackendService.swift`
 
@@ -45,9 +48,12 @@ Implement a single user-controlled experimental features switch in the gear drop
   - [ ] 🟥 Ensure default state renders as off/deselected for first-time users.
   - [ ] 🟥 Ensure control style matches existing gear action-sheet/menu conventions.
 
-- [ ] 🟥 **Step 3: Apply UI Visibility Gating (v1 = Insights Only)**
-  - [ ] 🟥 Hide all Insights UI entry points when state is off.
-  - [ ] 🟥 Show Insights UI entry points when state is on.
+- [ ] 🟥 **Step 3: Apply UI Visibility Gating (v1 Experimental Surface Set)**
+  - [ ] 🟥 Hide Insights UI entry points when state is off.
+  - [ ] 🟥 Hide Voice Input floating action button/UI when state is off.
+  - [ ] 🟥 Hide First-Time Onboarding experimental UI when state is off.
+  - [ ] 🟥 Hide Project-Based Tasks UI surfaces when state is off.
+  - [ ] 🟥 Show all gated surfaces when state is on.
   - [ ] 🟥 Ensure gating is centralized so future experimental surfaces can plug into same rule.
 
 - [ ] 🟥 **Step 4: Implement Disable-While-Viewing Transition**

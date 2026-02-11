@@ -231,6 +231,7 @@ enum AnalyticsViewName {
     static let insightsCategoryDetail = "Insights / Category Detail"
     static let insightsUsageDetail = "Insights / Usage Detail"
     static let insightsGapDetail = "Insights / Gap Detail"
+    static let insightsOldestOpenDetail = "Insights / Oldest Open Detail"
 }
 
 enum AnalyticsTabName {

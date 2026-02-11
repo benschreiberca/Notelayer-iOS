@@ -24,3 +24,7 @@ This is the design-system mapping for core components.
 - Title text: GroupHeaderTokens.titleText
 - Count pill: GroupHeaderTokens.countBackground + countText
 
+## Data Row Patterns (Drilldowns)
+- Standard contract: primary (left), optional secondary (below), trailing value (right).
+- Use one shared row pattern for all drilldown tables to avoid section-specific styling drift.
+- Reference: `docs/DesignSystem/Documentation/Data_Row_Patterns_Reference_Guide.md`

@@ -53,6 +53,7 @@ Based on Apple TipKit guidance to show tips sparingly and avoid repetitive tips:
 - On/off transition behavior while inside Insights.
 - First-time visibility cue pattern (non-snackbar).
 - Hidden-route handling copy.
+- This PRD defines Insights-specific behavior; other experimental surfaces are governed by `PRD_01`.
 
 ## Out Of Scope
 

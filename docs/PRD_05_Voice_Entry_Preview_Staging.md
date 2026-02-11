@@ -25,6 +25,7 @@ You do not trust voice-to-text reliability enough to allow direct save into the 
 - Validation before save: block save if required fields are missing.
 - Background behavior: staging persists through app background/foreground in same session.
 - Performance target: preview appears in <= 2 seconds p95 from end of recording.
+- Voice preview/staging UI visibility is controlled by `Enable Experimental Features`.
 
 ## Goals
 
@@ -57,6 +58,7 @@ You do not trust voice-to-text reliability enough to allow direct save into the 
 5. Missing required fields block save until corrected.
 6. Staging state survives app backgrounding in-session.
 7. p95 preview load meets <= 2 seconds target.
+8. Voice staging UI is shown only when experimental features are enabled.
 
 ## Risks
 

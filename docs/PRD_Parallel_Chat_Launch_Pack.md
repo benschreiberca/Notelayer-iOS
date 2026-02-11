@@ -74,6 +74,7 @@ Execute only this plan:
 
 Constraints:
 - Honor approved preset names/categories and non-time-based grouping requirement.
+- Depend on Lane A gate behavior for onboarding visibility.
 - Run /Users/benmacmini/Documents/Notelayer-iOS/.codex/prompts/ui-consistency.md pre and post implementation.
 - Keep onboarding lightweight and within duration target.
 - Update plan progress and unresolved decisions at end.
@@ -100,6 +101,7 @@ Execute only this plan:
 
 Constraints:
 - If hierarchy semantics are unresolved, stop and request decision before coding.
+- Depend on Lane A gate behavior for project-task UI visibility.
 - Keep scope to parent/subtasks (no timeline/deadline expansion).
 - Run ui-consistency prompt pre and post hierarchy UI changes.
 - Update plan progress and migration-test outcomes.
@@ -111,14 +113,11 @@ When you are ready, run the kickoff prompts in separate chats and then issue:
 
 `START ALL PRD LANES`
 
-Recommended launch order:
+Recommended start waves (from `PRD_Unified_Execution_Master_plan.md`):
 
-1. Lane A
-2. Lane B
-3. Lane C
-4. Lane D
-5. Lane E
-6. Lane F
-7. Lane G
+1. Wave 0 (no execution): lock unresolved decisions first.
+2. Wave 1: start lanes A + C.
+3. Wave 2: start lanes B + D + E.
+4. Wave 3: start lane F, then lane G.
 
-This keeps dependencies stable and reduces merge conflicts.
+Keep merge order from the control plan unchanged.

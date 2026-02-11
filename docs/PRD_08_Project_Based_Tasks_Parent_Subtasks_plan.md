@@ -9,12 +9,14 @@ Add parent-to-subtask hierarchy to represent multi-step work while preserving ex
 - Decision 1: Parent/subtask is structural hierarchy, not category replacement.
 - Decision 2: This feature solves flat-model limitations only (no timeline/deadline framework).
 - Decision 3: Existing task behaviors must remain clear and predictable after hierarchy rollout.
+- Decision 4: Project-based tasks UI visibility is gated by `Enable Experimental Features`.
 
 ## Dependency Gates
 - Gate A: Finalize hierarchy depth (single-level vs deeper nesting).
 - Gate B: Finalize parent completion/deletion behavior.
 - Gate C: Finalize counting semantics to avoid parent/subtask double counting.
 - Gate D: Finalize category behavior across parent and subtasks.
+- Gate E: `PRD_01` feature-gate implementation available for project-task visibility checks.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Data/Models.swift`
@@ -39,6 +41,11 @@ Add parent-to-subtask hierarchy to represent multi-step work while preserving ex
   - [ ] 🟥 Lock parent completion rules (manual/auto/hybrid).
   - [ ] 🟥 Lock deletion cascade/orphan/prompt behavior.
   - [ ] 🟥 Lock detach/re-parent rules for subtasks.
+
+- [ ] 🟥 **Step 1.5: Integrate Experimental Visibility Gate**
+  - [ ] 🟥 Show project-based task UI only when `Enable Experimental Features` is on.
+  - [ ] 🟥 Ensure hidden state cleanly removes parent/subtask UI affordances.
+  - [ ] 🟥 Ensure disabling gate while viewing project hierarchy returns to non-project list behavior.
 
 - [ ] 🟥 **Step 2: Define Data Model Changes**
   - [ ] 🟥 Add parent-child linkage fields to task model.

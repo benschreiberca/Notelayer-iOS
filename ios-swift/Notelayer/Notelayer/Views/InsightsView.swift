@@ -6,6 +6,85 @@ private enum InsightsRoute: Hashable {
     case category
     case usage
     case gap
+    case oldestOpen
+}
+
+private struct DataRowModel: Identifiable, Hashable {
+    let id: String
+    let iconText: String?
+    let primaryText: String
+    let secondaryText: String?
+    let trailingValueText: String?
+
+    init(
+        id: String,
+        iconText: String? = nil,
+        primaryText: String,
+        secondaryText: String?,
+        trailingValueText: String?
+    ) {
+        self.id = id
+        self.iconText = iconText
+        self.primaryText = primaryText
+        self.secondaryText = secondaryText
+        self.trailingValueText = trailingValueText
+    }
+}
+
+private struct DataRowView: View {
+    let row: DataRowModel
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if let iconText = row.iconText {
+                        Text(iconText)
+                    }
+                    Text(row.primaryText)
+                        .lineLimit(1)
+                }
+                if let secondaryText = row.secondaryText {
+                    Text(secondaryText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 8)
+            if let trailingValueText = row.trailingValueText {
+                Text(trailingValueText)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct DataRowsSection: View {
+    let title: String
+    let rows: [DataRowModel]
+    let emptyMessage: String?
+
+    init(title: String, rows: [DataRowModel], emptyMessage: String? = nil) {
+        self.title = title
+        self.rows = rows
+        self.emptyMessage = emptyMessage
+    }
+
+    var body: some View {
+        Section(title) {
+            if rows.isEmpty {
+                if let emptyMessage {
+                    Text(emptyMessage)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(rows) { row in
+                    DataRowView(row: row)
+                }
+            }
+        }
+    }
 }
 
 struct InsightsView: View {
@@ -19,6 +98,7 @@ struct InsightsView: View {
     @State private var selectedWindow: InsightsWindow = .days30
     @State private var isLoading = true
     @State private var snapshotModel: InsightsSnapshotModel? = nil
+    @State private var isDataCoverageExpanded = false
 
     @State private var showingProfileSettings = false
     @State private var showingAppearance = false
@@ -45,6 +125,7 @@ struct InsightsView: View {
                     let snapshot = snapshotModel!
                     LazyVStack(spacing: 12) {
                         dataCoverageCard
+                        oldestOpenTasksSnapshotCard(snapshot: snapshot)
 
                         if hasAnyUsageData {
                             totalsCard(snapshot: snapshot)
@@ -62,8 +143,7 @@ struct InsightsView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                // Extra local clearance so the last Insights card stays above the floating tab pill.
-                Color.clear.frame(height: 28)
+                Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
             }
             .navigationTitle("Insights")
             .navigationBarTitleDisplayMode(.inline)
@@ -92,6 +172,10 @@ struct InsightsView: View {
                 case .gap:
                     if let snapshotModel {
                         InsightsGapDetailView(snapshot: snapshotModel)
+                    }
+                case .oldestOpen:
+                    if let snapshotModel {
+                        InsightsOldestOpenTasksDetailView(snapshot: snapshotModel)
                     }
                 }
             }
@@ -171,18 +255,16 @@ struct InsightsView: View {
 
     private var dataCoverageCard: some View {
         let snapshot = snapshotModel
-        return InsetCard(role: .group) {
+        return InsetCard {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Data Coverage", systemImage: "info.circle")
-                    .font(.headline)
-
-                Text(InsightsCoverageDisclosure.taskCoverage)
-                    .font(.footnote)
-                    .foregroundStyle(theme.tokens.textSecondary)
-
-                Text(InsightsCoverageDisclosure.appUsageCoverage)
-                    .font(.footnote)
-                    .foregroundStyle(theme.tokens.textSecondary)
+                HStack {
+                    Text("Notelayer Data Insights (Experimental Feature)")
+                        .font(.headline)
+                    Spacer()
+                    Image(systemName: isDataCoverageExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.tokens.textSecondary)
+                }
 
                 if let firstUsage = snapshot?.firstAppUsageDate {
                     Text("App usage tracking started \(firstUsage.formatted(date: .abbreviated, time: .omitted)).")
@@ -193,6 +275,22 @@ struct InsightsView: View {
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(theme.tokens.accent)
                 }
+
+                if isDataCoverageExpanded {
+                    Text("Task totals and trends are calculated from tasks stored on this device.")
+                        .font(.footnote)
+                        .foregroundStyle(theme.tokens.textSecondary)
+                    Text("Feature and app usage metrics are captured while you use Notelayer on this device.")
+                        .font(.footnote)
+                        .foregroundStyle(theme.tokens.textSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isDataCoverageExpanded.toggle()
             }
         }
     }
@@ -220,21 +318,48 @@ struct InsightsView: View {
                     metricPill(title: "Open", value: snapshot.totals.open)
                     metricPill(title: "Done", value: snapshot.totals.done)
                 }
+            }
+        }
+    }
 
-                if let oldest = snapshot.oldestOpenTask {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Oldest Open Task")
-                            .font(.subheadline.weight(.semibold))
-                        Text(oldest.title)
-                            .font(.subheadline)
-                        Text("Open for \(oldest.ageDays) days")
+    private func oldestOpenTasksSnapshotCard(snapshot: InsightsSnapshotModel) -> some View {
+        NavigationLink(value: InsightsRoute.oldestOpen) {
+            InsetCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Oldest Open Tasks")
+                        .font(.headline)
+
+                    if snapshot.oldestOpenTasksPreview.isEmpty {
+                        Text("All caught up. No open tasks waiting right now.")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(theme.tokens.accent)
+                    } else {
+                        ForEach(snapshot.oldestOpenTasksPreview) { openTask in
+                            HStack(spacing: 10) {
+                                Text("\(openTask.ageDays)d")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(theme.tokens.textSecondary)
+                                    .frame(width: 38, alignment: .leading)
+                                Text(openTask.title)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                        }
+                        Text("Showing up to 3 oldest open tasks.")
                             .font(.footnote)
                             .foregroundStyle(theme.tokens.textSecondary)
                     }
-                    .padding(.top, 4)
                 }
             }
         }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded {
+            AnalyticsService.shared.logEvent(AnalyticsEventName.insightsDrilldownOpened, params: [
+                "view_name": AnalyticsViewName.insightsOldestOpenDetail,
+                "tab_name": AnalyticsTabName.insights
+            ])
+        })
     }
 
     private func trendCard(snapshot: InsightsSnapshotModel) -> some View {
@@ -449,7 +574,7 @@ struct InsightsView: View {
         return NavigationLink(value: InsightsRoute.gap) {
             InsetCard {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Features You're using in the App")
+                    Text("Features You're Using in the App")
                         .font(.headline)
                     Text("See which features are active in the current insights window and which still need attention.")
                         .font(.footnote)
@@ -560,6 +685,9 @@ private struct InsightsTrendDetailView: View {
             }
             .padding(16)
         }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
         .navigationTitle("Historical Tasks")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -576,7 +704,7 @@ private struct InsightsCategoryDetailView: View {
 
     var body: some View {
         List {
-            Section("Added vs Completed") {
+            Section("Added vs. Completed") {
                 Chart(snapshot.categoryStats) { stat in
                     BarMark(x: .value("Category", stat.categoryName), y: .value("Added", stat.addedCount))
                         .foregroundStyle(.blue.opacity(0.8))
@@ -586,33 +714,36 @@ private struct InsightsCategoryDetailView: View {
                 .frame(height: 260)
             }
 
-            Section("Tasks Left per Category") {
-                ForEach(snapshot.categoryStats) { stat in
-                    HStack {
-                        Text("\(stat.categoryIcon) \(stat.categoryName)")
-                        Spacer()
-                        Text("\(stat.openCount)")
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                    }
+            DataRowsSection(
+                title: "Tasks Left per Category",
+                rows: snapshot.categoryStats.map { stat in
+                    DataRowModel(
+                        id: "open-\(stat.id)",
+                        iconText: stat.categoryIcon,
+                        primaryText: stat.categoryName,
+                        secondaryText: nil,
+                        trailingValueText: "\(stat.openCount)"
+                    )
                 }
-            }
+            )
 
-            Section("Calendar Export by Category") {
-                ForEach(snapshot.categoryStats) { stat in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(stat.categoryIcon) \(stat.categoryName)")
-                            Text("\(stat.calendarExportCount) exports • \(String(format: "%.1f", stat.calendarExportRatePer100)) per 100 active")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
+            DataRowsSection(
+                title: "Calendar Export by Category",
+                rows: snapshot.categoryStats.map { stat in
+                    DataRowModel(
+                        id: "export-\(stat.id)",
+                        iconText: stat.categoryIcon,
+                        primaryText: stat.categoryName,
+                        secondaryText: "\(String(format: "%.1f", stat.calendarExportRatePer100)) per 100 active",
+                        trailingValueText: "\(stat.calendarExportCount)"
+                    )
                 }
-            }
+            )
         }
         .listStyle(.insetGrouped)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
         .navigationTitle("Category Insights")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -655,56 +786,118 @@ private struct InsightsUsageDetailView: View {
                 .frame(height: 220)
             }
 
-            Section("Most Used Features") {
-                ForEach(snapshot.mostUsedFeatures) { item in
-                    HStack {
-                        Text(item.title)
-                        Spacer()
-                        Text("\(item.value)")
-                            .monospacedDigit()
-                    }
+            DataRowsSection(
+                title: "Most Used Features",
+                rows: snapshot.mostUsedFeatures.map { item in
+                    DataRowModel(
+                        id: "most-feature-\(item.id)",
+                        primaryText: item.title,
+                        secondaryText: nil,
+                        trailingValueText: "\(item.value)"
+                    )
                 }
-            }
+            )
 
-            Section("Least Used Features") {
-                ForEach(snapshot.leastUsedFeatures) { item in
-                    HStack {
-                        Text(item.title)
-                        Spacer()
-                        Text("\(item.value)")
-                            .monospacedDigit()
-                    }
+            DataRowsSection(
+                title: "Least Used Features",
+                rows: snapshot.leastUsedFeatures.map { item in
+                    DataRowModel(
+                        id: "least-feature-\(item.id)",
+                        primaryText: item.title,
+                        secondaryText: nil,
+                        trailingValueText: "\(item.value)"
+                    )
                 }
-            }
+            )
 
-            Section("Most Active Hours") {
-                ForEach(snapshot.mostUsedHours) { item in
-                    HStack {
-                        Text(item.title)
-                        Spacer()
-                        Text("\(item.value)")
-                            .monospacedDigit()
-                    }
+            DataRowsSection(
+                title: "Most Active Hours",
+                rows: snapshot.mostUsedHours.map { item in
+                    DataRowModel(
+                        id: "most-hour-\(item.id)",
+                        primaryText: item.title,
+                        secondaryText: nil,
+                        trailingValueText: "\(item.value)"
+                    )
                 }
-            }
+            )
 
-            Section("Least Active Hours") {
-                ForEach(snapshot.leastUsedHours) { item in
-                    HStack {
-                        Text(item.title)
-                        Spacer()
-                        Text("\(item.value)")
-                            .monospacedDigit()
-                    }
+            DataRowsSection(
+                title: "Least Active Hours",
+                rows: snapshot.leastUsedHours.map { item in
+                    DataRowModel(
+                        id: "least-hour-\(item.id)",
+                        primaryText: item.title,
+                        secondaryText: nil,
+                        trailingValueText: "\(item.value)"
+                    )
                 }
-            }
+            )
         }
         .listStyle(.insetGrouped)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
         .navigationTitle("Usage Patterns")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             AnalyticsService.shared.logEvent(AnalyticsEventName.insightsDrilldownOpened, params: [
                 "view_name": AnalyticsViewName.insightsUsageDetail,
+                "tab_name": AnalyticsTabName.insights
+            ])
+        }
+    }
+}
+
+private struct InsightsOldestOpenTasksDetailView: View {
+    let snapshot: InsightsSnapshotModel
+
+    var body: some View {
+        List {
+            Section("Open Tasks by Age (Days)") {
+                Chart(snapshot.openTaskAgeBuckets) { bucket in
+                    BarMark(
+                        x: .value("Age Bucket", bucket.label),
+                        y: .value("Open Tasks", bucket.count)
+                    )
+                    .foregroundStyle(.blue.opacity(0.8))
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .frame(height: 220)
+            }
+
+            DataRowsSection(
+                title: "Oldest Open Tasks",
+                rows: snapshot.oldestOpenTasksDrilldown.map { openTask in
+                    DataRowModel(
+                        id: openTask.id,
+                        primaryText: openTask.title,
+                        secondaryText: nil,
+                        trailingValueText: "\(openTask.ageDays)d"
+                    )
+                },
+                emptyMessage: "All caught up. No open tasks waiting right now."
+            )
+
+            if snapshot.totals.open > snapshot.oldestOpenTasksDrilldown.count {
+                Section {
+                    Text("Showing the 50 oldest open tasks out of \(snapshot.totals.open) open tasks.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
+        .navigationTitle("Oldest Open Tasks")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            AnalyticsService.shared.logEvent(AnalyticsEventName.insightsDrilldownOpened, params: [
+                "view_name": AnalyticsViewName.insightsOldestOpenDetail,
                 "tab_name": AnalyticsTabName.insights
             ])
         }
@@ -724,18 +917,15 @@ private struct InsightsGapDetailView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             }
-            Section("Unused") {
-                featureRows(for: .unused)
-            }
-            Section("Underused") {
-                featureRows(for: .underused)
-            }
-            Section("Used") {
-                featureRows(for: .used)
-            }
+            DataRowsSection(title: "Unused", rows: dataRows(for: .unused), emptyMessage: "None")
+            DataRowsSection(title: "Underused", rows: dataRows(for: .underused), emptyMessage: "None")
+            DataRowsSection(title: "Used", rows: dataRows(for: .used), emptyMessage: "None")
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Features You're using in the App")
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
+        .navigationTitle("Features You're Using in the App")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             AnalyticsService.shared.logEvent(AnalyticsEventName.insightsDrilldownOpened, params: [
@@ -745,24 +935,15 @@ private struct InsightsGapDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private func featureRows(for status: InsightsGapStatus) -> some View {
+    private func dataRows(for status: InsightsGapStatus) -> [DataRowModel] {
         let features = snapshot.featureStats.filter { $0.gapStatus == status }
-        if features.isEmpty {
-            Text("None")
-                .foregroundStyle(.secondary)
-        } else {
-            ForEach(features) { feature in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(feature.title)
-                        Text("Window \(feature.windowCount) • All-time \(feature.allTimeCount)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                }
-            }
+        return features.map { feature in
+            DataRowModel(
+                id: "gap-\(status.rawValue)-\(feature.id)",
+                primaryText: feature.title,
+                secondaryText: "All-Time \(feature.allTimeCount)",
+                trailingValueText: "\(feature.windowCount)"
+            )
         }
     }
 }

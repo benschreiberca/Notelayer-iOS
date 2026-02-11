@@ -63,12 +63,65 @@ struct InsightsRankingItem: Identifiable, Hashable {
     let subtitle: String
 }
 
-struct InsightsOldestOpenTaskSummary: Hashable {
+struct InsightsOldestOpenTaskSummary: Hashable, Identifiable {
     let taskId: String
     let title: String
     let createdAt: Date
     let ageDays: Int
     let categories: [String]
+
+    var id: String { taskId }
+}
+
+enum InsightsOpenTaskAgeBucket: CaseIterable, Hashable {
+    case days0to7
+    case days8to14
+    case days15to30
+    case days31to60
+    case days61to90
+    case days90plus
+
+    var label: String {
+        switch self {
+        case .days0to7:
+            return "0-7"
+        case .days8to14:
+            return "8-14"
+        case .days15to30:
+            return "15-30"
+        case .days31to60:
+            return "31-60"
+        case .days61to90:
+            return "61-90"
+        case .days90plus:
+            return "90+"
+        }
+    }
+
+    static func bucket(for ageDays: Int) -> InsightsOpenTaskAgeBucket {
+        switch ageDays {
+        case 0...7:
+            return .days0to7
+        case 8...14:
+            return .days8to14
+        case 15...30:
+            return .days15to30
+        case 31...60:
+            return .days31to60
+        case 61...90:
+            return .days61to90
+        default:
+            return .days90plus
+        }
+    }
+}
+
+struct InsightsOpenTaskAgeBucketStat: Identifiable, Hashable {
+    let bucket: InsightsOpenTaskAgeBucket
+    let count: Int
+
+    var id: String { bucket.label }
+    var label: String { bucket.label }
 }
 
 struct InsightsSnapshotModel {
@@ -81,7 +134,9 @@ struct InsightsSnapshotModel {
     let hourBuckets: [InsightsHourBucketStat]
     let categoryStats: [InsightsCategoryUsageStat]
     let featureStats: [InsightsFeatureUsageStat]
-    let oldestOpenTask: InsightsOldestOpenTaskSummary?
+    let oldestOpenTasksPreview: [InsightsOldestOpenTaskSummary]
+    let oldestOpenTasksDrilldown: [InsightsOldestOpenTaskSummary]
+    let openTaskAgeBuckets: [InsightsOpenTaskAgeBucketStat]
     let tasksLeftUncategorized: Int
     let mostUsedFeatures: [InsightsRankingItem]
     let leastUsedFeatures: [InsightsRankingItem]
@@ -142,7 +197,7 @@ struct InsightsAggregator {
         let tasksLeftUncategorized = categoryStats.first(where: { $0.isUncategorized })?.openCount ?? 0
 
         let hourBuckets = buildHourBuckets(tasks: tasks, telemetryRecords: telemetryRecords, calendar: calendar)
-        let oldestOpenTask = oldestOpenTaskSummary(tasks: tasks, now: now, calendar: calendar)
+        let oldestOpenTaskData = buildOldestOpenTaskData(tasks: tasks, now: now, calendar: calendar)
 
         let featureStats = buildFeatureStats(telemetryRecords: telemetryRecords, windowStart: windowStart, now: now)
 
@@ -163,7 +218,9 @@ struct InsightsAggregator {
             hourBuckets: hourBuckets,
             categoryStats: categoryStats,
             featureStats: featureStats,
-            oldestOpenTask: oldestOpenTask,
+            oldestOpenTasksPreview: oldestOpenTaskData.preview,
+            oldestOpenTasksDrilldown: oldestOpenTaskData.drilldown,
+            openTaskAgeBuckets: oldestOpenTaskData.ageBuckets,
             tasksLeftUncategorized: tasksLeftUncategorized,
             mostUsedFeatures: mostUsedFeatures,
             leastUsedFeatures: leastUsedFeatures,
@@ -350,23 +407,58 @@ struct InsightsAggregator {
         }
     }
 
-    private static func oldestOpenTaskSummary(tasks: [Task], now: Date, calendar: Calendar) -> InsightsOldestOpenTaskSummary? {
-        guard let oldest = tasks
-            .filter({ $0.completedAt == nil })
-            .min(by: { $0.createdAt < $1.createdAt }) else {
-            return nil
+    private static func buildOldestOpenTaskData(
+        tasks: [Task],
+        now: Date,
+        calendar: Calendar
+    ) -> (
+        preview: [InsightsOldestOpenTaskSummary],
+        drilldown: [InsightsOldestOpenTaskSummary],
+        ageBuckets: [InsightsOpenTaskAgeBucketStat]
+    ) {
+        let summaries = tasks
+            .filter { $0.completedAt == nil }
+            .map { task in
+                let createdDay = calendar.startOfDay(for: task.createdAt)
+                let currentDay = calendar.startOfDay(for: now)
+                let ageDays = max(0, calendar.dateComponents([.day], from: createdDay, to: currentDay).day ?? 0)
+                return InsightsOldestOpenTaskSummary(
+                    taskId: task.id,
+                    title: task.title,
+                    createdAt: task.createdAt,
+                    ageDays: ageDays,
+                    categories: task.categories
+                )
+            }
+            .sorted {
+                if $0.ageDays != $1.ageDays {
+                    return $0.ageDays > $1.ageDays
+                }
+                if $0.createdAt != $1.createdAt {
+                    return $0.createdAt < $1.createdAt
+                }
+                return $0.taskId < $1.taskId
+            }
+
+        var bucketCounts = Dictionary(
+            uniqueKeysWithValues: InsightsOpenTaskAgeBucket.allCases.map { ($0, 0) }
+        )
+        for summary in summaries {
+            let bucket = InsightsOpenTaskAgeBucket.bucket(for: summary.ageDays)
+            bucketCounts[bucket, default: 0] += 1
         }
 
-        let created = calendar.startOfDay(for: oldest.createdAt)
-        let current = calendar.startOfDay(for: now)
-        let ageDays = calendar.dateComponents([.day], from: created, to: current).day ?? 0
+        let ageBuckets = InsightsOpenTaskAgeBucket.allCases.map { bucket in
+            InsightsOpenTaskAgeBucketStat(
+                bucket: bucket,
+                count: bucketCounts[bucket, default: 0]
+            )
+        }
 
-        return InsightsOldestOpenTaskSummary(
-            taskId: oldest.id,
-            title: oldest.title,
-            createdAt: oldest.createdAt,
-            ageDays: max(0, ageDays),
-            categories: oldest.categories
+        return (
+            preview: Array(summaries.prefix(3)),
+            drilldown: Array(summaries.prefix(50)),
+            ageBuckets: ageBuckets
         )
     }
 

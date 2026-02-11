@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-11] - Branch: codex/small-nav-tweak
+- **Global Bottom-Clearance Standardization**: Introduced a shared tab clearance contract in `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift` via `AppBottomClearance` (`tabRowHeight`, `contentBottomSpacerHeight`, `tabBottomPadding`) and switched page-level bottom insets to consume the shared value instead of per-view constants.
+- **No-Overlap Enforcement Across Tabs**: Applied the shared bottom spacer to `ios-swift/Notelayer/Notelayer/Views/NotesView.swift`, `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`, and `ios-swift/Notelayer/Notelayer/Views/InsightsView.swift` (including all Insights drilldowns) to keep the final card/rows above the floating tab pill.
+- **Insights Row Pattern Consolidation**: Implemented reusable row primitives (`DataRowModel`, `DataRowView`, `DataRowsSection`) in `ios-swift/Notelayer/Notelayer/Views/InsightsView.swift` and migrated drilldown row sections to remove repeated per-section `HStack` styling.
+- **Insights Interaction + Copy Alignment**: Updated Insights copy and behavior for consistency, including Title Case normalization, right-side value placement for category/export rows, and retained secondary metadata beneath primary labels in detail sections.
+- **Insights Coverage/Oldest-Task Expansion**: Landed compact/expandable coverage card behavior plus oldest-open-task overview/drilldown support through `ios-swift/Notelayer/Notelayer/Views/InsightsView.swift`, `ios-swift/Notelayer/Notelayer/Services/InsightsAggregator.swift`, and `ios-swift/Notelayer/NotelayerInsightsTests/InsightsAggregatorTests.swift`.
+- **Planning + Design Docs Sync**: Updated implementation and PRD tracking docs (including `docs/Insights_Data_Row_Patterns_Implementation_Plan.md` and related PRD plan files) and added design-system guidance in `docs/DesignSystem/Documentation/Data_Row_Patterns_Reference_Guide.md`.
+
 ## [2026-02-10] - Branch: Overhaul-Personal-dashboard
 - **Documentation Canonicalization**: Migrated and normalized project docs from root-level markdown files into structured `docs/` artifacts with index hubs and governance references (notably `docs/000_Docs_Start_Here.md`, `docs/010_Docs_Features_Hub.md`, `docs/040_Docs_Governance.md`, `scripts/docs_snapshot.sh`).
 - **Insights Platform Build-Out**: Added the Insights tab experience and analytics pipeline, including telemetry definitions, storage, and aggregation in `ios-swift/Notelayer/Notelayer/Views/InsightsView.swift`, `ios-swift/Notelayer/Notelayer/Data/InsightsMetricDefinitions.swift`, `ios-swift/Notelayer/Notelayer/Services/InsightsTelemetryStore.swift`, and `ios-swift/Notelayer/Notelayer/Services/InsightsAggregator.swift`.

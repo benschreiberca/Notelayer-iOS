@@ -168,6 +168,9 @@ struct TodosView: View {
                     )
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+            }
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.sortedCategories)
                     .presentationDetents([.medium, .large])

@@ -26,6 +26,7 @@ New users need a fast path to understanding and initial structure without setup 
 - Starting categories should avoid time-based grouping labels.
 - All three presets should include a finance/banking/investing grouping.
 - Proposed preset names and categories are approved.
+- Onboarding UI visibility is controlled by `Enable Experimental Features`.
 
 ## Goals
 
@@ -85,6 +86,7 @@ New users need a fast path to understanding and initial structure without setup 
 6. Users can re-open onboarding guidance from Settings.
 7. Category changes remain available later via `Manage Categories`.
 8. Presets avoid time-based labels and include financial grouping in each option.
+9. Onboarding UI surface for this PRD is shown only when experimental features are enabled.
 
 ## Risks
 

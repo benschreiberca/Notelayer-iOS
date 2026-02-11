@@ -38,6 +38,9 @@ struct NotesView: View {
                 }
                 .padding(.vertical, 12)
             }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+            }
             .navigationTitle("Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

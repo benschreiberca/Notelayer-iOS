@@ -1,18 +1,20 @@
 import XCTest
+import UIKit
 
 class ScreenshotGenerationTests: XCTestCase {
     
     var app: XCUIApplication!
-    let screenshotDir = "/Users/bens/Notelayer/App-Icons-&-screenshots"
-    let tempScreenshotDir = "/Users/bens/Notelayer/Notelayer-iOS-1/ios-swift/Notelayer/Screenshots"
+    private let env = ProcessInfo.processInfo.environment
+    private lazy var screenshotNamePrefix: String = {
+        if let configured = env["SCREENSHOT_NAME_PREFIX"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !configured.isEmpty {
+            return configured
+        }
+        return UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+    }()
     
     override func setUpWithError() throws {
         continueAfterFailure = false
-        
-        // Create screenshot directories if they don't exist
-        let fileManager = FileManager.default
-        try? fileManager.createDirectory(atPath: screenshotDir, withIntermediateDirectories: true, attributes: nil)
-        try? fileManager.createDirectory(atPath: tempScreenshotDir, withIntermediateDirectories: true, attributes: nil)
         
         app = XCUIApplication()
         app.launchArguments.append("--screenshot-generation")
@@ -30,21 +32,14 @@ class ScreenshotGenerationTests: XCTestCase {
     // MARK: - Helper Methods
     
     func captureScreenshot(name: String) throws {
-        let screenshot = app.screenshot()
+        // Capture the full simulator screen for App Store-ready dimensions.
+        let screenshot = XCUIScreen.main.screenshot()
+        let filename = screenshotNamePrefix.isEmpty ? "\(name).png" : "\(screenshotNamePrefix)-\(name).png"
         let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = name
+        attachment.name = filename
         attachment.lifetime = .keepAlways
         add(attachment)
-        
-        // Save to temporary directory
-        let tempPath = "\(tempScreenshotDir)/\(name).png"
-        try? screenshot.image.pngData()?.write(to: URL(fileURLWithPath: tempPath))
-        
-        // Copy to backup location
-        let backupPath = "\(screenshotDir)/\(name).png"
-        try? FileManager.default.copyItem(atPath: tempPath, toPath: backupPath)
-        
-        print("📸 Screenshot saved: \(backupPath)")
+        print("📸 Screenshot attachment captured: \(filename)")
     }
     
     func waitForElement(_ element: XCUIElement, timeout: TimeInterval = 5.0) {
@@ -109,8 +104,37 @@ class ScreenshotGenerationTests: XCTestCase {
     }
 
     func todosTabButton() -> XCUIElement {
+        let identified = app.buttons["app-tab-todos"]
+        if identified.exists {
+            return identified
+        }
         let todos = firstMatchButton(containing: "To-Dos")
         return todos.exists ? todos : firstMatchButton(containing: "Todos")
+    }
+
+    func insightsTabButton() -> XCUIElement {
+        let identified = app.buttons["app-tab-insights"]
+        if identified.exists {
+            return identified
+        }
+        return firstMatchButton(containing: "Insights")
+    }
+
+    func waitForInsightsContent(timeout: TimeInterval = 12.0) {
+        let insightsTitle = app.navigationBars["Insights"]
+        _ = insightsTitle.waitForExistence(timeout: timeout)
+
+        let coverage = firstMatchElement(containing: "Notelayer Data Insights")
+        if coverage.waitForExistence(timeout: timeout) {
+            return
+        }
+
+        let emptyState = firstMatchElement(containing: "No Insights Yet")
+        if emptyState.waitForExistence(timeout: 2.0) {
+            return
+        }
+
+        XCTFail("Insights content did not load in time.")
     }
 
     func gearMenuButton() -> XCUIElement {
@@ -300,6 +324,40 @@ class ScreenshotGenerationTests: XCTestCase {
         sleep(1)
         
         try captureScreenshot(name: "screenshot-6-priority-view")
+    }
+
+    func testScreenshot7_InsightsOverview() throws {
+        let insightsTab = insightsTabButton()
+        waitForElement(insightsTab, timeout: 8.0)
+        insightsTab.tap()
+
+        waitForInsightsContent()
+        sleep(1)
+
+        try captureScreenshot(name: "screenshot-7-insights-overview")
+    }
+
+    func testScreenshot8_InsightsDetail() throws {
+        let insightsTab = insightsTabButton()
+        waitForElement(insightsTab, timeout: 8.0)
+        insightsTab.tap()
+
+        waitForInsightsContent()
+        sleep(1)
+
+        // Open drilldown from the always-present snapshot card.
+        let oldestOpenButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Oldest Open Tasks")).firstMatch
+        if oldestOpenButton.waitForExistence(timeout: 8.0) {
+            oldestOpenButton.tap()
+        } else {
+            let oldestOpenCard = firstMatchElement(containing: "Oldest Open Tasks")
+            waitForElement(oldestOpenCard, timeout: 8.0)
+            oldestOpenCard.tap()
+        }
+
+        sleep(2)
+
+        try captureScreenshot(name: "screenshot-8-insights-detail")
     }
 
     func testDoneTaskCanBeUndone() throws {

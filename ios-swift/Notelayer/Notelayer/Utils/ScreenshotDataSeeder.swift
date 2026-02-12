@@ -6,6 +6,8 @@ struct ScreenshotDataSeeder {
     
     static func seedData() {
         let store = LocalStore.shared
+        // Ensure Insights tab is available in screenshot mode.
+        store.setExperimentalFeaturesEnabled(true, source: "screenshot-seeding")
         
         // Clear existing data in screenshot store
         store.applyRemoteSnapshot(notes: [], tasks: [], categories: [])
@@ -131,9 +133,62 @@ struct ScreenshotDataSeeder {
             updatedAt: date(daysFromNow: -7) ?? now,
             orderIndex: Int((date(daysFromNow: -8) ?? now).timeIntervalSince1970 * 1000)
         )
+
+        // Completed historical tasks to enrich Insights trend/drilldown visuals.
+        let task9 = Task(
+            id: "screenshot-task-9",
+            title: "Return that thing I bought 3 months ago but never opened",
+            categories: ["shopping"],
+            priority: .medium,
+            dueDate: date(daysFromNow: -10),
+            completedAt: date(daysFromNow: -9, hour: 18, minute: 20),
+            taskNotes: nil,
+            createdAt: date(daysFromNow: -12, hour: 9, minute: 30) ?? now,
+            updatedAt: date(daysFromNow: -9, hour: 18, minute: 20) ?? now,
+            orderIndex: Int((date(daysFromNow: -12, hour: 9, minute: 30) ?? now).timeIntervalSince1970 * 1000)
+        )
+
+        let task10 = Task(
+            id: "screenshot-task-10",
+            title: "Backup photos before phone storage becomes a problem",
+            categories: ["tech"],
+            priority: .high,
+            dueDate: date(daysFromNow: -6, hour: 20, minute: 0),
+            completedAt: date(daysFromNow: -5, hour: 21, minute: 15),
+            taskNotes: nil,
+            createdAt: date(daysFromNow: -8, hour: 17, minute: 10) ?? now,
+            updatedAt: date(daysFromNow: -5, hour: 21, minute: 15) ?? now,
+            orderIndex: Int((date(daysFromNow: -8, hour: 17, minute: 10) ?? now).timeIntervalSince1970 * 1000)
+        )
+
+        let task11 = Task(
+            id: "screenshot-task-11",
+            title: "Schedule dentist appointment (it's been... a while)",
+            categories: ["travel"],
+            priority: .medium,
+            dueDate: date(daysFromNow: -4, hour: 11, minute: 30),
+            completedAt: date(daysFromNow: -3, hour: 12, minute: 5),
+            taskNotes: "Booked for next Tuesday",
+            createdAt: date(daysFromNow: -6, hour: 10, minute: 45) ?? now,
+            updatedAt: date(daysFromNow: -3, hour: 12, minute: 5) ?? now,
+            orderIndex: Int((date(daysFromNow: -6, hour: 10, minute: 45) ?? now).timeIntervalSince1970 * 1000)
+        )
+
+        let task12 = Task(
+            id: "screenshot-task-12",
+            title: "Find my tax documents (they're somewhere, I swear)",
+            categories: ["finance"],
+            priority: .high,
+            dueDate: date(daysFromNow: -2, hour: 19, minute: 0),
+            completedAt: date(daysFromNow: -1, hour: 20, minute: 40),
+            taskNotes: nil,
+            createdAt: date(daysFromNow: -4, hour: 8, minute: 0) ?? now,
+            updatedAt: date(daysFromNow: -1, hour: 20, minute: 40) ?? now,
+            orderIndex: Int((date(daysFromNow: -4, hour: 8, minute: 0) ?? now).timeIntervalSince1970 * 1000)
+        )
         
         // Apply all tasks
-        let tasks = [task1, task2, task3, task4, task5, task6, task7, task8]
+        let tasks = [task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11, task12]
         store.applyRemoteTasks(tasks)
         
         #if DEBUG

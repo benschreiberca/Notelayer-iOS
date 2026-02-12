@@ -5,6 +5,16 @@
 - Section 1: `App Store Update Description` (single app-store-ready summary for the update field)
 - Section 2: `Detailed Notes` (keep current `What’s New` + `Why it matters` format)
 
+## [2026-02-12] - v1.4.5 (Build 1) - Combined App Store Note (v1.4.3-v1.4.5)
+
+### App Store Update Description
+- Added Insights as a full analytics workspace, including trends, category breakdowns, feature usage, and time-of-day patterns.
+- Expanded drilldowns with clearer data rows, stronger oldest-open-task reporting, and easier-to-scan detail views.
+- Fixed bottom-tab overlap issues so cards and rows stay visible across Notes, To-Dos, Insights, and Insights drilldowns.
+- Improved launch and interaction responsiveness to reduce freeze-like behavior and keep the app more reliably tappable.
+- Added experimental voice capture with a staging/review flow before tasks are saved.
+- Polished To-Dos interactions, drag/drop handling, keyboard behavior, and header/menu consistency.
+
 ## [2026-02-12] - v1.4.5 (Build 1) - The App Stopped Holding Its Breath
 
 ### App Store Update Description

@@ -41,6 +41,11 @@ struct RootTabsView: View {
         selectedTab == .todos && insightsEnabled && !isKeyboardVisible
     }
 
+    private var isScreenshotGenerationMode: Bool {
+        ProcessInfo.processInfo.environment["SCREENSHOT_MODE"] == "true" ||
+        ProcessInfo.processInfo.arguments.contains("--screenshot-generation")
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             theme.tokens.screenBackground.ignoresSafeArea()
@@ -270,6 +275,7 @@ struct RootTabsView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(tab.accessibilityIdentifier)
     }
 
     private func bannerRow(text: String, dismissAction: @escaping () -> Void) -> some View {
@@ -328,6 +334,12 @@ struct RootTabsView: View {
         guard store.experimentalFeaturesEnabled else { return }
 
         hasCheckedWelcome = true
+        if isScreenshotGenerationMode {
+            showWelcome = false
+            welcomeCoordinator.markWelcomeAsSeen()
+            return
+        }
+
         if welcomeCoordinator.shouldShowWelcome() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showWelcome = true
@@ -353,6 +365,10 @@ struct RootTabsView: View {
     }
 
     private func refreshInsightsHintBanner() {
+        guard !isScreenshotGenerationMode else {
+            showInsightsHintBanner = false
+            return
+        }
         guard insightsEnabled else {
             showInsightsHintBanner = false
             return
@@ -435,6 +451,17 @@ private enum AppTab: Hashable, CaseIterable {
             return "checklist"
         case .insights:
             return "chart.xyaxis.line"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .notes:
+            return "app-tab-notes"
+        case .todos:
+            return "app-tab-todos"
+        case .insights:
+            return "app-tab-insights"
         }
     }
 }

@@ -15,6 +15,7 @@ struct AppHeaderLogo: View {
 
 struct AppHeaderGearMenu: View {
     @EnvironmentObject private var authService: AuthService
+    @StateObject private var store = LocalStore.shared
 
     let onAppearance: () -> Void
     let onCategoryManager: () -> Void
@@ -26,14 +27,38 @@ struct AppHeaderGearMenu: View {
 
     var body: some View {
         Menu {
-            Button(action: onAppearance) {
-                Label("Colour Theme", systemImage: "paintbrush")
-            }
-            Button(action: onCategoryManager) {
-                Label("Manage Categories", systemImage: "tag")
-            }
             Button(action: onProfileSettings) {
-                Label("Profile & Settings", systemImage: "person.circle")
+                menuLabel("Profile & Settings", systemImage: "person.circle")
+            }
+
+            Button(action: onAppearance) {
+                menuLabel("Colour Theme", systemImage: "paintbrush")
+            }
+
+            Button(action: onCategoryManager) {
+                menuLabel("Manage Categories", systemImage: "tag")
+            }
+
+            if store.experimentalFeaturesEnabled {
+                Button {
+                    NotificationCenter.default.post(name: .openOnboardingRequested, object: nil)
+                } label: {
+                    menuLabel("Onboarding Guide", systemImage: "play.rectangle")
+                }
+            }
+
+            Toggle(
+                isOn: Binding(
+                    get: { store.experimentalFeaturesEnabled },
+                    set: { newValue in
+                        store.setExperimentalFeaturesEnabled(newValue, source: "gear_menu")
+                    }
+                )
+            ) {
+                menuLabel(
+                    store.experimentalFeaturesEnabled ? "Experimental Features (On)" : "Experimental Features",
+                    systemImage: "flask"
+                )
             }
         } label: {
             ZStack(alignment: .topTrailing) {
@@ -55,6 +80,19 @@ struct AppHeaderGearMenu: View {
                 }
             }
         }
+        .accessibilityIdentifier("app-header-gear-menu")
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func menuLabel(_ text: String, systemImage: String) -> some View {
+        Label {
+            Text(text)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 }

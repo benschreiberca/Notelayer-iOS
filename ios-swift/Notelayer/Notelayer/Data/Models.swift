@@ -1,5 +1,19 @@
 import Foundation
 
+enum AppDateBounds {
+    // Firestore Timestamp supports years 0001...9999.
+    static let firestoreMinTimestampSeconds: TimeInterval = -62_135_596_800
+    static let firestoreMaxTimestampSeconds: TimeInterval = 253_402_300_799
+    static let metadataBaseline: Date = Date(timeIntervalSince1970: 0)
+
+    static func clampedForFirestore(_ date: Date) -> Date {
+        let seconds = date.timeIntervalSince1970
+        guard seconds.isFinite else { return metadataBaseline }
+        let clamped = min(max(seconds, firestoreMinTimestampSeconds), firestoreMaxTimestampSeconds)
+        return Date(timeIntervalSince1970: clamped)
+    }
+}
+
 enum Priority: String, Codable, CaseIterable, Identifiable {
     case high, medium, low, deferred
     
@@ -61,6 +75,11 @@ struct Task: Identifiable, Codable {
     var reminderDate: Date?
     /// The notification identifier for cancellation (UNNotificationRequest.identifier)
     var reminderNotificationId: String?
+
+    /// Hierarchy fields (v1: one level only, parent -> subtasks).
+    var parentTaskId: String?
+    /// Set when parent is manually reopened after all subtasks were complete.
+    var parentManualReopenAt: Date?
     
     init(
         id: String = UUID().uuidString,
@@ -74,7 +93,9 @@ struct Task: Identifiable, Codable {
         updatedAt: Date = Date(),
         orderIndex: Int? = nil,
         reminderDate: Date? = nil,
-        reminderNotificationId: String? = nil
+        reminderNotificationId: String? = nil,
+        parentTaskId: String? = nil,
+        parentManualReopenAt: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -88,5 +109,90 @@ struct Task: Identifiable, Codable {
         self.orderIndex = orderIndex ?? Int(createdAt.timeIntervalSince1970 * 1000)
         self.reminderDate = reminderDate
         self.reminderNotificationId = reminderNotificationId
+        self.parentTaskId = parentTaskId
+        self.parentManualReopenAt = parentManualReopenAt
+    }
+}
+
+enum ExperimentalFeatureState: String, Codable {
+    case off
+    case on
+    case pendingSyncReconcile
+}
+
+struct ExperimentalFeaturePreference: Codable, Equatable {
+    var isEnabled: Bool
+    var updatedAt: Date
+    var state: ExperimentalFeatureState
+
+    static let `default` = ExperimentalFeaturePreference(
+        isEnabled: false,
+        updatedAt: AppDateBounds.metadataBaseline,
+        state: .off
+    )
+}
+
+struct InsightsHintState: Codable, Equatable {
+    var showCount: Int
+    var dismissCount: Int
+    var lastShownAt: Date?
+    var lastDismissedAt: Date?
+    var interactedAt: Date?
+    var updatedAt: Date
+
+    static let `default` = InsightsHintState(
+        showCount: 0,
+        dismissCount: 0,
+        lastShownAt: nil,
+        lastDismissedAt: nil,
+        interactedAt: nil,
+        updatedAt: AppDateBounds.metadataBaseline
+    )
+
+    func shouldShowHint(now: Date) -> Bool {
+        if interactedAt != nil {
+            return false
+        }
+        if showCount == 0 {
+            return true
+        }
+        if showCount == 1,
+           dismissCount >= 1,
+           let lastDismissedAt,
+           now.timeIntervalSince(lastDismissedAt) >= 24 * 60 * 60 {
+            return true
+        }
+        return false
+    }
+}
+
+struct VoiceParsedTaskDraft: Identifiable, Codable, Hashable {
+    let id: String
+    var title: String
+    var notes: String
+    var categories: [String]
+    var priority: Priority
+    var dueDate: Date?
+    var confidenceScore: Double
+    var needsReview: Bool
+
+    init(
+        id: String = UUID().uuidString,
+        title: String,
+        notes: String,
+        categories: [String],
+        priority: Priority,
+        dueDate: Date?,
+        confidenceScore: Double,
+        needsReview: Bool
+    ) {
+        self.id = id
+        self.title = title
+        self.notes = notes
+        self.categories = categories
+        self.priority = priority
+        self.dueDate = dueDate
+        self.confidenceScore = confidenceScore
+        self.needsReview = needsReview
     }
 }

@@ -37,6 +37,52 @@ Present the concept at **three increasing complexity levels**. Let the user abso
 - Concrete examples from the current codebase
 - Acknowledge complexity honestly - "this is genuinely tricky because..."
 
+## SwiftUI Layout Addendum (ScrollView + safeAreaInset)
+
+When the topic is layout, scrolling, or bottom overlap in SwiftUI, always include these concepts explicitly:
+
+1. **Modifier scope matters**
+- Explain that a modifier affects the specific view it is attached to.
+- Compare attaching `safeAreaInset` to a container (`VStack`/root) vs attaching it directly to a `ScrollView`.
+
+2. **What `safeAreaInset` actually does**
+- It inserts content into a safe-area edge and adjusts layout behavior for that view.
+- If the inserted content is `Color.clear`, the space is invisible but still reserved.
+
+3. **Why this changes perceived viewport height**
+- Container-level inset often reduces the visible content region for everything inside.
+- ScrollView-level inset usually preserves normal scrolling behavior while adding bottom breathing room at the end.
+
+4. **How to diagnose**
+- Identify where the modifier is attached.
+- Check whether bottom space is being reserved globally vs inside scroll content.
+- Call out resulting UX: “reduced visible area all the time” vs “extra room only at bottom scroll end.”
+
+5. **Use concrete file/line references**
+- Point to exact lines in the current codebase where the modifier is attached.
+- Contrast at least two screens when behavior differs (for example, To-Dos vs Insights).
+
+## SwiftUI Snippet Explanation Contract
+
+When the user pastes a SwiftUI snippet and asks what it means, structure the answer in this fixed order:
+
+1. **Literal behavior of each line**
+- Explain each modifier in sequence from top to bottom.
+- State which view in the hierarchy each modifier applies to.
+
+2. **Resulting runtime behavior**
+- Describe the visible effect on layout, scrolling, and safe-area handling.
+- Call out whether behavior is always-on or only appears at scroll boundaries.
+
+3. **Equivalent mental model**
+- Translate the code into plain English intent (for example: “reserve invisible bottom space so the last card can scroll above the tab bar”).
+
+4. **Failure modes**
+- List the top ways this can appear broken (wrong modifier scope, duplicated inset, inconsistent container structure).
+
+5. **How to validate quickly**
+- Provide 2-3 manual checks in simulator/device to confirm the behavior.
+
 ## Docs Naming Contract (Required)
 
 - Store project docs under `docs/`.

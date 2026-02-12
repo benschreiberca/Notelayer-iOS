@@ -87,6 +87,59 @@ private struct DataRowsSection: View {
     }
 }
 
+private struct InsightShareSlice: Identifiable {
+    let id: String
+    let label: String
+    let percentage: Double
+}
+
+private struct HorizontalShareChartSection: View {
+    let title: String
+    let slices: [InsightShareSlice]
+
+    var body: some View {
+        Section(title) {
+            if slices.isEmpty {
+                Text("Not enough data yet to build a distribution chart.")
+                    .foregroundStyle(.secondary)
+            } else {
+                Chart(slices) { slice in
+                    BarMark(
+                        x: .value("Share", slice.percentage),
+                        y: .value("Distribution", "Usage Share")
+                    )
+                    .foregroundStyle(by: .value("Segment", slice.label))
+                }
+                .chartXScale(domain: 0...100)
+                .chartXAxisLabel("Share of total (%)")
+                .chartYAxisLabel("Distribution")
+                .chartXAxis {
+                    AxisMarks(values: [0, 25, 50, 75, 100]) { _ in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel()
+                    }
+                }
+                .frame(height: 130)
+            }
+        }
+    }
+}
+
+private struct InsightTakeawayView: View {
+    let observation: String
+    let suggestion: String
+
+    var body: some View {
+        Section("Takeaway") {
+            Text("Observation: \(observation)")
+            Text("Suggestion: \(suggestion)")
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+    }
+}
+
 struct InsightsView: View {
     @StateObject private var store = LocalStore.shared
     @EnvironmentObject private var theme: ThemeManager
@@ -479,27 +532,47 @@ struct InsightsView: View {
 
     private func usageSnapshotCard(snapshot: InsightsSnapshotModel) -> some View {
         let topFeatures = Array(snapshot.mostUsedFeatures.prefix(5))
+        let topFeatureSlices = percentSlices(from: topFeatures)
         return NavigationLink(value: InsightsRoute.usage) {
             InsetCard {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Feature Usage")
                         .font(.headline)
 
-                    Chart(topFeatures) { item in
-                        BarMark(
-                            x: .value("Feature", item.title),
-                            y: .value("Events", item.value)
-                        )
-                        .foregroundStyle(theme.tokens.accent)
+                    if topFeatureSlices.isEmpty {
+                        Text("No feature usage data yet.")
+                            .font(.footnote)
+                            .foregroundStyle(theme.tokens.textSecondary)
+                    } else {
+                        Chart(topFeatureSlices) { slice in
+                            BarMark(
+                                x: .value("Share", slice.percentage),
+                                y: .value("Distribution", "Usage Share")
+                            )
+                            .foregroundStyle(by: .value("Segment", slice.label))
+                        }
+                        .chartXScale(domain: 0...100)
+                        .chartXAxisLabel("Share of window usage (%)")
+                        .chartYAxisLabel("Distribution")
+                        .frame(height: 145)
                     }
-                    .chartYAxis {
-                        AxisMarks(position: .leading)
-                    }
-                    .frame(height: 180)
-                    .accessibilityElement(children: .contain)
-                    .accessibilityLabel("Most used features")
 
-                    Text("Most/least used rankings are available in detail view.")
+                    ForEach(topFeatures) { item in
+                        HStack(spacing: 8) {
+                            Text(item.title)
+                                .lineLimit(1)
+                            Spacer()
+                            Text("\(item.value)")
+                                .monospacedDigit()
+                                .foregroundStyle(theme.tokens.textSecondary)
+                        }
+                        .font(.footnote)
+                    }
+
+                    Text("Observation: You keep revisiting a small set of tools. Suggestion: Keep the least-used features out of the way unless they earn a spot.")
+                        .font(.footnote)
+                        .foregroundStyle(theme.tokens.textSecondary)
+                    Text("Most/least used rankings with raw counts are available in detail view.")
                         .font(.footnote)
                         .foregroundStyle(theme.tokens.textSecondary)
                 }
@@ -549,11 +622,17 @@ struct InsightsView: View {
                         "Completed": differentiateWithoutColor ? Color.primary.opacity(0.8) : Color.green,
                         "App Usage": differentiateWithoutColor ? Color.secondary : Color.orange
                     ])
+                    .chartXAxisLabel("Hour of Day")
+                    .chartYAxisLabel("Events")
                     .chartLegend(position: .bottom, spacing: 12)
                     .frame(height: 200)
                     .accessibilityElement(children: .contain)
                     .accessibilityLabel("Time of day patterns for task and app usage")
                     .accessibilityValue("Most active hour \(snapshot.mostUsedHours.first?.title ?? "N/A")")
+
+                    Text("Observation: Your activity clusters into repeat hours. Suggestion: Schedule heavier work into those windows and keep the quiet hours for cleanup.")
+                        .font(.footnote)
+                        .foregroundStyle(theme.tokens.textSecondary)
                 }
             }
         }
@@ -626,6 +705,17 @@ struct InsightsView: View {
             selectedWindow: selectedWindow
         )
     }
+
+    private func percentSlices(from items: [InsightsRankingItem]) -> [InsightShareSlice] {
+        let total = max(1, items.reduce(0) { $0 + $1.value })
+        return items.map { item in
+            InsightShareSlice(
+                id: item.id,
+                label: item.title,
+                percentage: (Double(item.value) / Double(total)) * 100
+            )
+        }
+    }
 }
 
 private struct InsightsTrendDetailView: View {
@@ -657,6 +747,10 @@ private struct InsightsTrendDetailView: View {
                         ])
                         .chartLegend(position: .bottom, spacing: 12)
                         .frame(height: 240)
+
+                        Text("Observation: completions track additions with predictable lag. Suggestion: close the gap early in the week to avoid backlog rollovers.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -680,6 +774,10 @@ private struct InsightsTrendDetailView: View {
                         ])
                         .chartLegend(position: .bottom, spacing: 12)
                         .frame(height: 240)
+
+                        Text("Observation: all-time throughput is stable, not random. Suggestion: keep the same cadence and reduce context switches when spikes appear.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -713,6 +811,12 @@ private struct InsightsCategoryDetailView: View {
                 }
                 .frame(height: 260)
             }
+            HorizontalShareChartSection(
+                title: "Open Tasks Share by Category",
+                slices: percentSlices(
+                    stats: snapshot.categoryStats.map { (id: $0.id, label: $0.categoryName, value: $0.openCount) }
+                )
+            )
 
             DataRowsSection(
                 title: "Tasks Left per Category",
@@ -725,6 +829,10 @@ private struct InsightsCategoryDetailView: View {
                         trailingValueText: "\(stat.openCount)"
                     )
                 }
+            )
+            InsightTakeawayView(
+                observation: "Open workload is concentrated in a handful of categories.",
+                suggestion: "Pick one heavy category to reduce this week instead of spreading effort thin."
             )
 
             DataRowsSection(
@@ -739,6 +847,10 @@ private struct InsightsCategoryDetailView: View {
                     )
                 }
             )
+            InsightTakeawayView(
+                observation: "Calendar export behavior varies sharply by category.",
+                suggestion: "Automate reminders only for categories where export rates are consistently high."
+            )
         }
         .listStyle(.insetGrouped)
         .safeAreaInset(edge: .bottom) {
@@ -751,6 +863,18 @@ private struct InsightsCategoryDetailView: View {
                 "view_name": AnalyticsViewName.insightsCategoryDetail,
                 "tab_name": AnalyticsTabName.insights
             ])
+        }
+    }
+
+    private func percentSlices(stats: [(id: String, label: String, value: Int)]) -> [InsightShareSlice] {
+        let valid = stats.filter { $0.value > 0 }
+        let total = max(1, valid.reduce(0) { $0 + $1.value })
+        return valid.map { item in
+            InsightShareSlice(
+                id: item.id,
+                label: item.label,
+                percentage: (Double(item.value) / Double(total)) * 100
+            )
         }
     }
 }
@@ -782,9 +906,20 @@ private struct InsightsUsageDetailView: View {
                     "Completed": differentiateWithoutColor ? Color.primary : Color.green,
                     "App Usage": differentiateWithoutColor ? Color.secondary : Color.orange
                 ])
+                .chartXAxisLabel("Hour of Day")
+                .chartYAxisLabel("Events")
                 .chartLegend(position: .bottom, spacing: 12)
                 .frame(height: 220)
             }
+            InsightTakeawayView(
+                observation: "A few hours carry most of your task and app activity.",
+                suggestion: "Stack demanding work into those hours and keep low-energy slots for quick maintenance."
+            )
+
+            HorizontalShareChartSection(
+                title: "Most Used Features Chart",
+                slices: percentSlices(from: snapshot.mostUsedFeatures)
+            )
 
             DataRowsSection(
                 title: "Most Used Features",
@@ -796,6 +931,15 @@ private struct InsightsUsageDetailView: View {
                         trailingValueText: "\(item.value)"
                     )
                 }
+            )
+            InsightTakeawayView(
+                observation: "Your top features do most of the heavy lifting.",
+                suggestion: "If one tool dominates, promote its shortcut and demote the rest."
+            )
+
+            HorizontalShareChartSection(
+                title: "Least Used Features Chart",
+                slices: percentSlices(from: snapshot.leastUsedFeatures)
             )
 
             DataRowsSection(
@@ -809,6 +953,15 @@ private struct InsightsUsageDetailView: View {
                     )
                 }
             )
+            InsightTakeawayView(
+                observation: "Some features are barely in rotation.",
+                suggestion: "Hide or simplify underused paths unless they support rare but critical work."
+            )
+
+            HorizontalShareChartSection(
+                title: "Most Active Hours Chart",
+                slices: percentSlices(from: snapshot.mostUsedHours)
+            )
 
             DataRowsSection(
                 title: "Most Active Hours",
@@ -820,6 +973,15 @@ private struct InsightsUsageDetailView: View {
                         trailingValueText: "\(item.value)"
                     )
                 }
+            )
+            InsightTakeawayView(
+                observation: "Your best output clusters by hour, not by random chance.",
+                suggestion: "Reserve those peak hours for high-value tasks and meetings."
+            )
+
+            HorizontalShareChartSection(
+                title: "Least Active Hours Chart",
+                slices: percentSlices(from: snapshot.leastUsedHours)
             )
 
             DataRowsSection(
@@ -833,6 +995,10 @@ private struct InsightsUsageDetailView: View {
                     )
                 }
             )
+            InsightTakeawayView(
+                observation: "Quiet hours are consistently quiet.",
+                suggestion: "Use them for low-focus admin or protect them as intentional downtime."
+            )
         }
         .listStyle(.insetGrouped)
         .safeAreaInset(edge: .bottom) {
@@ -845,6 +1011,18 @@ private struct InsightsUsageDetailView: View {
                 "view_name": AnalyticsViewName.insightsUsageDetail,
                 "tab_name": AnalyticsTabName.insights
             ])
+        }
+    }
+
+    private func percentSlices(from items: [InsightsRankingItem]) -> [InsightShareSlice] {
+        let validItems = items.filter { $0.value > 0 }
+        let total = max(1, validItems.reduce(0) { $0 + $1.value })
+        return validItems.map { item in
+            InsightShareSlice(
+                id: item.id,
+                label: item.title,
+                percentage: (Double(item.value) / Double(total)) * 100
+            )
         }
     }
 }
@@ -867,6 +1045,10 @@ private struct InsightsOldestOpenTasksDetailView: View {
                 }
                 .frame(height: 220)
             }
+            InsightTakeawayView(
+                observation: "A small set of old tasks tends to stay open the longest.",
+                suggestion: "Convert the oldest items into smaller next actions or archive them intentionally."
+            )
 
             DataRowsSection(
                 title: "Oldest Open Tasks",
@@ -909,6 +1091,33 @@ private struct InsightsGapDetailView: View {
 
     var body: some View {
         List {
+            Section("Feature Usage Distribution") {
+                let usedCount = snapshot.featureStats.filter { $0.gapStatus == .used }.count
+                let underusedCount = snapshot.featureStats.filter { $0.gapStatus == .underused }.count
+                let unusedCount = snapshot.featureStats.filter { $0.gapStatus == .unused }.count
+                let slices = [
+                    InsightShareSlice(id: "used", label: "Used", percentage: percentage(value: usedCount, total: usedCount + underusedCount + unusedCount)),
+                    InsightShareSlice(id: "underused", label: "Underused", percentage: percentage(value: underusedCount, total: usedCount + underusedCount + unusedCount)),
+                    InsightShareSlice(id: "unused", label: "Unused", percentage: percentage(value: unusedCount, total: usedCount + underusedCount + unusedCount))
+                ].filter { $0.percentage > 0 }
+
+                if slices.isEmpty {
+                    Text("No feature-gap data yet.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Chart(slices) { slice in
+                        BarMark(
+                            x: .value("Share", slice.percentage),
+                            y: .value("Distribution", "Feature Gap Share")
+                        )
+                        .foregroundStyle(by: .value("Segment", slice.label))
+                    }
+                    .chartXScale(domain: 0...100)
+                    .chartXAxisLabel("Share of tracked features (%)")
+                    .chartYAxisLabel("Distribution")
+                    .frame(height: 130)
+                }
+            }
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Window shows how many times each feature was used in the current insights window. All-time shows total usage since tracking started on this device.")
@@ -920,6 +1129,10 @@ private struct InsightsGapDetailView: View {
             DataRowsSection(title: "Unused", rows: dataRows(for: .unused), emptyMessage: "None")
             DataRowsSection(title: "Underused", rows: dataRows(for: .underused), emptyMessage: "None")
             DataRowsSection(title: "Used", rows: dataRows(for: .used), emptyMessage: "None")
+            InsightTakeawayView(
+                observation: "Several features remain underused despite repeated app sessions.",
+                suggestion: "Pick one underused feature each week and decide whether to adopt it or ignore it on purpose."
+            )
         }
         .listStyle(.insetGrouped)
         .safeAreaInset(edge: .bottom) {
@@ -945,5 +1158,10 @@ private struct InsightsGapDetailView: View {
                 trailingValueText: "\(feature.windowCount)"
             )
         }
+    }
+
+    private func percentage(value: Int, total: Int) -> Double {
+        guard total > 0 else { return 0 }
+        return (Double(value) / Double(total)) * 100
     }
 }

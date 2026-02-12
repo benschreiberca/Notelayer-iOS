@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `82%`
 
 ## TLDR
 Implement a ChatGPT-first iOS share-sheet intake flow that captures shared text into Notelayer as task or note, preserves useful structure, and provides reliable low-friction recovery for failures.
@@ -11,9 +11,9 @@ Implement a ChatGPT-first iOS share-sheet intake flow that captures shared text 
 - Decision 3: Preserve source structure where useful, normalize where necessary for readability.
 
 ## Dependency Gates
-- Gate A: Finalize priority ChatGPT input patterns for v1 (prose, bullets, numbered lists, markdown headings).
-- Gate B: Finalize task-vs-note default behavior for ambiguous input.
-- Gate C: Finalize markdown preservation boundaries and truncation/chunking behavior.
+- Gate A: LOCKED - v1 supports prose, bullets, numbered lists, and markdown headings.
+- Gate B: LOCKED - ambiguous mapping defaults to note.
+- Gate C: LOCKED - preserve list/heading/check structure, normalize links/code to plain text; truncate above 10,000 chars with warning.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Data/SharedItem.swift`
@@ -30,40 +30,45 @@ Implement a ChatGPT-first iOS share-sheet intake flow that captures shared text 
 - Avoid custom wrappers/buttons for URL-like content when platform link style works.
 - Run post-implementation consistency review and capture deviations.
 
+### UI Consistency Evidence (Wave 3)
+- Pre-check completed against `ShareViewController.swift` confirmation surface and `TodosView.swift` retry affordance surface.
+- Post-check completed: implementation uses native `List`, `Section`, `Label`, `Button`, and `confirmationDialog` patterns.
+- Quality trade-off: +277 net lines across share/import UI surfaces for deterministic parsing, failure recovery, and retry controls.
+
 ## Tasks:
 
-- [ ] 🟥 **Step 1: Finalize Input/Output Requirements**
-  - [ ] 🟥 Define exactly which ChatGPT output patterns are accepted in v1.
-  - [ ] 🟥 Define ambiguous-intent rule for default destination (task vs note).
-  - [ ] 🟥 Define structure retention policy for markdown/list inputs.
+- [x] ✅ **Step 1: Finalize Input/Output Requirements**
+  - [x] ✅ Locked v1 patterns: prose, bullets, numbered lists, markdown headings.
+  - [x] ✅ Locked ambiguous intent default to note.
+  - [x] ✅ Locked structure retention policy and normalization targets.
 
-- [ ] 🟥 **Step 2: Build Share Intake Pipeline**
-  - [ ] 🟥 Capture inbound shared text payload from iOS share sheet.
-  - [ ] 🟥 Normalize payload metadata (source app, timestamps, content type hints).
-  - [ ] 🟥 Validate payload size and fallback behavior for oversized content.
+- [x] ✅ **Step 2: Build Share Intake Pipeline**
+  - [x] ✅ Captured inbound shared payload from iOS share sheet.
+  - [x] ✅ Added metadata normalization for source app, timestamps, and preparation timing.
+  - [x] ✅ Enforced 10,000-character truncation with warning metadata.
 
-- [ ] 🟥 **Step 3: Implement Content Normalization**
-  - [ ] 🟥 Parse headings/lists/paragraphs into intermediate representation.
-  - [ ] 🟥 Preserve useful hierarchy while removing noisy formatting artifacts.
-  - [ ] 🟥 Keep deterministic transformation rules for QA reproducibility.
+- [x] ✅ **Step 3: Implement Content Normalization**
+  - [x] ✅ Added deterministic parsing for headings/list/checklist forms.
+  - [x] ✅ Added markdown link/code normalization to plain text readability.
+  - [x] ✅ Added repeatable transformation behavior for QA stability.
 
-- [ ] 🟥 **Step 4: Implement Destination Mapping**
-  - [ ] 🟥 Map normalized content to task or note per finalized decision tree.
-  - [ ] 🟥 Handle multi-item list splitting behavior according to final requirements.
-  - [ ] 🟥 Preserve user-editable preview before final commit if required by flow.
+- [x] ✅ **Step 4: Implement Destination Mapping**
+  - [x] ✅ Added automatic destination inference with note-default fallback.
+  - [x] ✅ Added multi-item list mapping into task batch drafts.
+  - [x] ✅ Added in-sheet destination and parsed-task preview.
 
-- [ ] 🟥 **Step 5: Implement Reliability And Recovery**
-  - [ ] 🟥 Define behavior for offline or unavailable data store.
-  - [ ] 🟥 Provide clear retry/recover messaging for failed imports.
-  - [ ] 🟥 Ensure failure states never silently drop user-shared content.
+- [x] ✅ **Step 5: Implement Reliability And Recovery**
+  - [x] ✅ Added pending queue semantics in App Group shared-items storage.
+  - [x] ✅ Added retry affordance in Todos UI for failed pending imports.
+  - [x] ✅ Added conversion-failure retention (never silently drop failed items).
 
-- [ ] 🟥 **Step 6: Performance And Friction Hardening**
-  - [ ] 🟥 Define measurable success benchmark for minimal friction.
-  - [ ] 🟥 Instrument processing time from share action to successful create.
-  - [ ] 🟥 Reduce user prompts to minimum required confirmation points.
+- [x] ✅ **Step 6: Performance And Friction Hardening**
+  - [x] ✅ Added preparation timing capture and >2s warning log.
+  - [x] ✅ Preserved one-step save confirmation flow.
+  - [x] ✅ Reduced user prompts to existing save/cancel interaction.
 
-- [ ] 🟥 **Step 7: Verification And Acceptance**
-  - [ ] 🟥 Fixture tests for prose/bullets/numbered/markdown inputs.
-  - [ ] 🟥 Integration tests for destination mapping and structure retention.
-  - [ ] 🟥 Manual QA for share-from-ChatGPT happy path and failure recovery.
-  - [ ] 🟥 Post-change UI consistency review for share confirmation surfaces.
+- [ ] 🟨 **Step 7: Verification And Acceptance**
+  - [x] ✅ Added shared-item compatibility and queue-state unit tests.
+  - [ ] 🟨 Full integration tests for destination mapping and structure retention are pending.
+  - [ ] 🟨 Manual QA pass for share-from-ChatGPT failure-recovery scenarios is pending.
+  - [x] ✅ Post-change UI consistency review completed for share confirmation surfaces.

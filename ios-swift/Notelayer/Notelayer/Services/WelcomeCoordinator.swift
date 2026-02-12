@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// Manages welcome page state - tracks if user has seen and dismissed the welcome screen.
+/// Manages first-install onboarding visibility and completion state.
 @MainActor
 final class WelcomeCoordinator: ObservableObject {
     static let shared = WelcomeCoordinator()
@@ -19,9 +19,9 @@ final class WelcomeCoordinator: ObservableObject {
         load()
     }
     
-    /// Check if welcome should be shown (user not signed in AND hasn't dismissed welcome)
-    func shouldShowWelcome(isSignedIn: Bool) -> Bool {
-        return !isSignedIn && !hasSeenWelcome
+    /// Show onboarding when the first-install flow has not been completed.
+    func shouldShowWelcome() -> Bool {
+        !hasSeenWelcome
     }
     
     /// Mark welcome as seen/dismissed permanently

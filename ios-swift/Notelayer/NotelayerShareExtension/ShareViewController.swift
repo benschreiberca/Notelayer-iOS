@@ -9,6 +9,17 @@ class ShareViewController: UIViewController {
     
     // MARK: - Properties
     
+    private typealias PreparedShareText = (
+        text: String,
+        title: String,
+        destination: SharedImportDestination,
+        taskDrafts: [SharedTaskDraft],
+        warnings: [String],
+        wasTruncated: Bool,
+        preparationDurationMs: Int
+    )
+
+    private let maxShareCharacters = 10_000
     private var hostingController: UIHostingController<ShareExtensionView>?
     private var contentModel: ShareContentModel?
     
@@ -18,20 +29,49 @@ class ShareViewController: UIViewController {
         let url: String?
         let text: String?
         let sourceApp: String?
+        let destination: SharedImportDestination
+        let taskDrafts: [SharedTaskDraft]
+        let warnings: [String]
+        let importTimestamp: Date
+        let wasTruncated: Bool
+        let preparationDurationMs: Int?
     }
     
     /// Observable model for sharing content between UIKit and SwiftUI
     class ShareContentModel: ObservableObject {
         @Published var title: String
+        @Published var destination: SharedImportDestination
+        @Published var taskDrafts: [SharedTaskDraft]
         let url: String?
         let text: String?
         let sourceApp: String?
+        let warnings: [String]
+        let importTimestamp: Date
+        let wasTruncated: Bool
+        let preparationDurationMs: Int?
         
         init(content: ExtractedContent) {
             self.title = content.title
+            self.destination = content.destination
+            self.taskDrafts = content.taskDrafts
             self.url = content.url
             self.text = content.text
             self.sourceApp = content.sourceApp
+            self.warnings = content.warnings
+            self.importTimestamp = content.importTimestamp
+            self.wasTruncated = content.wasTruncated
+            self.preparationDurationMs = content.preparationDurationMs
+        }
+
+        var destinationLabel: String {
+            switch destination {
+            case .task:
+                return "Task"
+            case .note:
+                return "Note"
+            case .taskBatch:
+                return "Task List"
+            }
         }
     }
     
@@ -110,11 +150,18 @@ class ShareViewController: UIViewController {
             // Show UI immediately with URL as title, then fetch page title in background
             DispatchQueue.main.async {
                 let sourceApp = self?.getSourceAppName() ?? "Safari"
+                let now = Date()
                 let content = ExtractedContent(
                     title: url.absoluteString,
                     url: url.absoluteString,
                     text: nil,
-                    sourceApp: sourceApp
+                    sourceApp: sourceApp,
+                    destination: .task,
+                    taskDrafts: [],
+                    warnings: [],
+                    importTimestamp: now,
+                    wasTruncated: false,
+                    preparationDurationMs: 0
                 )
                 let model = ShareContentModel(content: content)
                 self?.contentModel = model
@@ -164,11 +211,26 @@ class ShareViewController: UIViewController {
             
             DispatchQueue.main.async {
                 let sourceApp = self?.getSourceAppName() ?? "Unknown"
-                let content = ExtractedContent(
-                    title: self?.generateTitleFromText(text) ?? text,
-                    url: nil,
+                let prepared = self?.prepareSharedText(text) ?? self?.fallbackPreparedText(text) ?? (
                     text: text,
-                    sourceApp: sourceApp
+                    title: self?.generateTitleFromText(text) ?? text,
+                    destination: SharedImportDestination.note,
+                    taskDrafts: [],
+                    warnings: [],
+                    wasTruncated: false,
+                    preparationDurationMs: 0
+                )
+                let content = ExtractedContent(
+                    title: prepared.title,
+                    url: nil,
+                    text: prepared.text,
+                    sourceApp: sourceApp,
+                    destination: prepared.destination,
+                    taskDrafts: prepared.taskDrafts,
+                    warnings: prepared.warnings,
+                    importTimestamp: Date(),
+                    wasTruncated: prepared.wasTruncated,
+                    preparationDurationMs: prepared.preparationDurationMs
                 )
                 self?.contentModel = ShareContentModel(content: content)
                 self?.showUI()
@@ -216,6 +278,154 @@ class ShareViewController: UIViewController {
     private func generateTitleFromText(_ text: String) -> String {
         let firstLine = text.components(separatedBy: .newlines).first ?? text
         return String(firstLine.prefix(50))
+    }
+
+    private func fallbackPreparedText(_ text: String) -> PreparedShareText {
+        (
+            text: text,
+            title: generateTitleFromText(text),
+            destination: .note,
+            taskDrafts: [],
+            warnings: [],
+            wasTruncated: false,
+            preparationDurationMs: 0
+        )
+    }
+
+    private func prepareSharedText(_ rawText: String) -> PreparedShareText {
+        let start = Date()
+        let normalizedNewlines = rawText.replacingOccurrences(of: "\r\n", with: "\n")
+        var warnings: [String] = []
+        var workingText = normalizedNewlines
+        var wasTruncated = false
+
+        if workingText.count > maxShareCharacters {
+            workingText = String(workingText.prefix(maxShareCharacters))
+            wasTruncated = true
+            warnings.append("Long share text was truncated to 10,000 characters.")
+        }
+
+        let normalizedText = normalizeMarkdownForImport(workingText)
+        let drafts = parseTaskDrafts(from: normalizedText)
+        let destination = inferredDestination(from: normalizedText, drafts: drafts)
+        let title = inferredTitle(from: normalizedText, destination: destination, drafts: drafts)
+        let durationMs = Int(Date().timeIntervalSince(start) * 1000.0)
+        if durationMs > 2000 {
+            NSLog("⚠️ [ShareViewController] Share preparation exceeded 2s: %dms", durationMs)
+        }
+
+        return (
+            text: normalizedText,
+            title: title,
+            destination: destination,
+            taskDrafts: drafts,
+            warnings: warnings,
+            wasTruncated: wasTruncated,
+            preparationDurationMs: durationMs
+        )
+    }
+
+    private func normalizeMarkdownForImport(_ text: String) -> String {
+        var normalized = text
+        normalized = normalized.replacingOccurrences(of: "```", with: "")
+        normalized = normalized.replacingOccurrences(of: "`", with: "")
+
+        // Convert markdown links into readable plain text.
+        let linkPattern = #"\[([^\]]+)\]\(([^)]+)\)"#
+        if let regex = try? NSRegularExpression(pattern: linkPattern) {
+            let range = NSRange(normalized.startIndex..., in: normalized)
+            normalized = regex.stringByReplacingMatches(
+                in: normalized,
+                options: [],
+                range: range,
+                withTemplate: "$1 ($2)"
+            )
+        }
+
+        return normalized.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func parseTaskDrafts(from text: String) -> [SharedTaskDraft] {
+        let lines = text.components(separatedBy: .newlines)
+        var drafts: [SharedTaskDraft] = []
+
+        let numberedRegex = try? NSRegularExpression(pattern: #"^\s*\d+[.)]\s+(.+)$"#)
+        let bulletRegex = try? NSRegularExpression(pattern: #"^\s*[-*+]\s+(.+)$"#)
+        let checklistRegex = try? NSRegularExpression(pattern: #"^\s*[-*+]\s+\[(x|X| )\]\s+(.+)$"#)
+
+        for rawLine in lines {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { continue }
+            let nsRange = NSRange(line.startIndex..., in: line)
+
+            if let checklistRegex,
+               let match = checklistRegex.firstMatch(in: line, options: [], range: nsRange),
+               match.numberOfRanges >= 3,
+               let titleRange = Range(match.range(at: 2), in: line) {
+                let title = line[titleRange].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !title.isEmpty {
+                    drafts.append(SharedTaskDraft(title: title, notes: nil, isChecklistItem: true))
+                }
+                continue
+            }
+
+            if let numberedRegex,
+               let match = numberedRegex.firstMatch(in: line, options: [], range: nsRange),
+               match.numberOfRanges >= 2,
+               let titleRange = Range(match.range(at: 1), in: line) {
+                let title = line[titleRange].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !title.isEmpty {
+                    drafts.append(SharedTaskDraft(title: title))
+                }
+                continue
+            }
+
+            if let bulletRegex,
+               let match = bulletRegex.firstMatch(in: line, options: [], range: nsRange),
+               match.numberOfRanges >= 2,
+               let titleRange = Range(match.range(at: 1), in: line) {
+                let title = line[titleRange].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !title.isEmpty {
+                    drafts.append(SharedTaskDraft(title: title))
+                }
+            }
+        }
+
+        return drafts
+    }
+
+    private func inferredDestination(from text: String, drafts: [SharedTaskDraft]) -> SharedImportDestination {
+        if drafts.count > 1 {
+            return .taskBatch
+        }
+        if drafts.count == 1 {
+            return .task
+        }
+        // Ambiguous prose defaults to note.
+        return .note
+    }
+
+    private func inferredTitle(from text: String, destination: SharedImportDestination, drafts: [SharedTaskDraft]) -> String {
+        switch destination {
+        case .taskBatch:
+            return "Imported task list"
+        case .task:
+            if let first = drafts.first?.title, !first.isEmpty {
+                return first
+            }
+            return generateTitleFromText(text)
+        case .note:
+            let headingLine = text
+                .components(separatedBy: .newlines)
+                .first(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix("#") })
+            let firstHeading = headingLine?
+                .replacingOccurrences(of: "#", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if let firstHeading, !firstHeading.isEmpty {
+                return firstHeading
+            }
+            return generateTitleFromText(text)
+        }
     }
     
     /// Get source app name from extension context (best effort)
@@ -290,7 +500,7 @@ class ShareViewController: UIViewController {
     
     // MARK: - Save
     
-    /// Save task to App Group UserDefaults with all fields
+    /// Save share import payload into App Group queue with pending status.
     private func saveTask(
         title: String,
         model: ShareContentModel,
@@ -301,54 +511,70 @@ class ShareViewController: UIViewController {
         dueDate: Date?,
         reminderDate: Date?
     ) {
-        guard !title.isEmpty else {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else {
             showError("Please enter a title")
             return
         }
-        
-        // Create shared item with all fields
+
+        let trimmedNotes = notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedURL = url?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let drafts: [SharedTaskDraft] = model.taskDrafts.map { draft in
+            var updated = draft
+            if let trimmedNotes, !trimmedNotes.isEmpty, (updated.notes ?? "").isEmpty {
+                updated.notes = trimmedNotes
+            }
+            return updated
+        }
+
         let sharedItem = SharedItem(
-            title: title,
-            url: url,
-            text: notes,
+            title: trimmedTitle,
+            url: trimmedURL?.isEmpty == true ? nil : trimmedURL,
+            text: trimmedNotes?.isEmpty == true ? nil : trimmedNotes,
             sourceApp: model.sourceApp,
             categories: categories,
             priority: priority,
             dueDate: dueDate,
-            reminderDate: reminderDate
+            reminderDate: reminderDate,
+            destination: model.destination,
+            taskDrafts: drafts,
+            status: .pending,
+            importTimestamp: model.importTimestamp,
+            wasTruncated: model.wasTruncated,
+            preparationDurationMs: model.preparationDurationMs
         )
-        
+
         NSLog("========================================")
-        NSLog("💾 [ShareViewController] Saving shared item: %@", title)
+        NSLog("💾 [ShareViewController] Saving shared item: %@", trimmedTitle)
         NSLog("========================================")
-        
+
         // Save to App Group UserDefaults
         guard let userDefaults = UserDefaults(suiteName: "group.com.notelayer.app") else {
             NSLog("❌ [ShareViewController] Failed to access App Group")
-            showError("Failed to save")
+            showError("Unable to access shared storage. Try again.")
             return
         }
-        
+
         // Get existing items
         var items: [SharedItem] = []
         if let data = userDefaults.data(forKey: "com.notelayer.app.sharedItems"),
            let decoded = try? JSONDecoder().decode([SharedItem].self, from: data) {
             items = decoded
         }
-        
-        // Add new item
+
+        // Add new pending import item
         items.append(sharedItem)
-        
+
         // Save back
         if let encoded = try? JSONEncoder().encode(items) {
             userDefaults.set(encoded, forKey: "com.notelayer.app.sharedItems")
             userDefaults.synchronize()
-            
+
             NSLog("✅ [ShareViewController] Saved successfully")
             NSLog("   Total items in storage: %d", items.count)
             NSLog("   Saved to key: com.notelayer.app.sharedItems")
             NSLog("   App Group: group.com.notelayer.app")
-            
+
             // Verify it was saved
             if let verifyData = userDefaults.data(forKey: "com.notelayer.app.sharedItems"),
                let verifyItems = try? JSONDecoder().decode([SharedItem].self, from: verifyData) {
@@ -358,11 +584,11 @@ class ShareViewController: UIViewController {
             }
             
             NSLog("========================================")
-            
+
             showSuccessAndDismiss()
         } else {
             NSLog("❌ [ShareViewController] Failed to encode items")
-            showError("Failed to save")
+            showError("Unable to queue this share. Please try again.")
         }
     }
     
@@ -371,7 +597,7 @@ class ShareViewController: UIViewController {
         // Show brief success message
         let alert = UIAlertController(
             title: "✓ Saved!",
-            message: "Task added to Notelayer",
+            message: "Import queued for Notelayer",
             preferredStyle: .alert
         )
         present(alert, animated: true)
@@ -415,7 +641,48 @@ struct ShareExtensionView: View {
             List {
                 TaskEditorTitleSection(title: $contentModel.title, focus: $titleFieldFocused)
 
-                if !availableCategories.isEmpty {
+                Section("Detected Import Type") {
+                    HStack {
+                        Text("Destination")
+                        Spacer()
+                        Text(contentModel.destinationLabel)
+                            .foregroundColor(.secondary)
+                    }
+                    if contentModel.destination == .taskBatch {
+                        Text("\(contentModel.taskDrafts.count) list items will become staged tasks.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if contentModel.destination == .note {
+                        Text("Ambiguous or prose content defaults to a note.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if !contentModel.warnings.isEmpty {
+                    Section("Import Warning") {
+                        ForEach(contentModel.warnings, id: \.self) { warning in
+                            Text(warning)
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                        }
+                    }
+                }
+
+                if contentModel.destination == .taskBatch && !contentModel.taskDrafts.isEmpty {
+                    Section("Parsed Task Preview") {
+                        ForEach(contentModel.taskDrafts) { draft in
+                            HStack {
+                                Image(systemName: draft.isChecklistItem ? "checklist" : "list.bullet")
+                                    .foregroundColor(.secondary)
+                                Text(draft.title)
+                                    .lineLimit(2)
+                            }
+                        }
+                    }
+                }
+
+                if showsTaskControls && !availableCategories.isEmpty {
                     TaskEditorCategorySection(
                         categories: availableCategories,
                         selectedIds: $selectedCategories,
@@ -423,77 +690,83 @@ struct ShareExtensionView: View {
                     )
                 }
 
-                TaskEditorPrioritySection(priority: $priority)
+                if showsTaskControls {
+                    TaskEditorPrioritySection(priority: $priority)
+                }
 
-                Section("Due Date") {
-                    Button {
-                        if dueDate == nil {
-                            dueDate = Date()
-                        }
-                        showingDueDatePicker = true
-                    } label: {
-                        HStack {
-                            Text("Due Date")
-                            Spacer()
-                            if let dueDate = dueDate {
-                                Text(dueDate.formatted(date: .abbreviated, time: .shortened))
-                                    .foregroundColor(.secondary)
-                            } else {
-                                Text("Tap to set date & time")
-                                    .foregroundColor(.secondary)
+                if showsTaskControls {
+                    Section("Due Date") {
+                        Button {
+                            if dueDate == nil {
+                                dueDate = Date()
                             }
-                            Image(systemName: "calendar")
-                                .foregroundColor(.blue)
-                        }
-                    }
-
-                    if dueDate != nil {
-                        Button(role: .destructive) {
-                            dueDate = nil
+                            showingDueDatePicker = true
                         } label: {
-                            Text("Remove Due Date")
+                            HStack {
+                                Text("Due Date")
+                                Spacer()
+                                if let dueDate = dueDate {
+                                    Text(dueDate.formatted(date: .abbreviated, time: .shortened))
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("Tap to set date & time")
+                                        .foregroundColor(.secondary)
+                                }
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+
+                        if dueDate != nil {
+                            Button(role: .destructive) {
+                                dueDate = nil
+                            } label: {
+                                Text("Remove Due Date")
+                            }
                         }
                     }
                 }
 
-                Section("Nag") {
-                    if let activeReminderDate = reminderDate {
-                        Button {
-                            showingReminderPicker = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "bell.fill")
-                                    .foregroundColor(.orange)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(activeReminderDate.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                    Text(relativeTimeText(for: activeReminderDate))
+                if showsTaskControls {
+                    Section("Nag") {
+                        if let activeReminderDate = reminderDate {
+                            Button {
+                                showingReminderPicker = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "bell.fill")
+                                        .foregroundColor(.orange)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(activeReminderDate.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.body)
+                                            .foregroundColor(.primary)
+                                        Text(relativeTimeText(for: activeReminderDate))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
                             }
-                        }
-                        .buttonStyle(.plain)
+                            .buttonStyle(.plain)
 
-                        Button(role: .destructive) {
-                            reminderDate = nil
-                        } label: {
-                            Text("Stop nagging me")
-                        }
-                    } else {
-                        Button {
-                            showingReminderPicker = true
-                        } label: {
-                            HStack {
-                                Text("Nag me later")
-                                Spacer()
-                                Image(systemName: "bell.badge.plus")
-                                    .foregroundColor(.blue)
+                            Button(role: .destructive) {
+                                reminderDate = nil
+                            } label: {
+                                Text("Stop nagging me")
+                            }
+                        } else {
+                            Button {
+                                showingReminderPicker = true
+                            } label: {
+                                HStack {
+                                    Text("Nag me later")
+                                    Spacer()
+                                    Image(systemName: "bell.badge.plus")
+                                        .foregroundColor(.blue)
+                                }
                             }
                         }
                     }
@@ -536,10 +809,10 @@ struct ShareExtensionView: View {
                             contentModel.title,
                             trimmedURL.isEmpty ? nil : trimmedURL,
                             trimmedNotes.isEmpty ? nil : trimmedNotes,
-                            Array(selectedCategories),
-                            priority,
-                            dueDate,
-                            reminderDate
+                            showsTaskControls ? Array(selectedCategories) : [],
+                            showsTaskControls ? priority : .medium,
+                            showsTaskControls ? dueDate : nil,
+                            showsTaskControls ? reminderDate : nil
                         )
                     }
                     .font(.body.weight(.semibold))
@@ -595,6 +868,10 @@ struct ShareExtensionView: View {
 
     private var shouldShowURLSection: Bool {
         !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || contentModel.url != nil
+    }
+
+    private var showsTaskControls: Bool {
+        contentModel.destination != .note
     }
 
     private func relativeTimeText(for date: Date) -> String {

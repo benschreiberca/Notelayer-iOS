@@ -112,6 +112,20 @@ class ScreenshotGenerationTests: XCTestCase {
         let todos = firstMatchButton(containing: "To-Dos")
         return todos.exists ? todos : firstMatchButton(containing: "Todos")
     }
+
+    func gearMenuButton() -> XCUIElement {
+        let identified = app.buttons["app-header-gear-menu"]
+        if identified.exists {
+            return identified
+        }
+
+        let sfSymbolMatch = app.buttons.matching(identifier: "gearshape.fill").firstMatch
+        if sfSymbolMatch.exists {
+            return sfSymbolMatch
+        }
+
+        return app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'gear' OR label CONTAINS[c] 'settings'")).firstMatch
+    }
     
     // MARK: - Screenshot Tests
     
@@ -154,15 +168,9 @@ class ScreenshotGenerationTests: XCTestCase {
         todosTab.tap()
         
         // Tap gear icon
-        let gearButton = app.buttons.matching(identifier: "gearshape").firstMatch
-        if !gearButton.exists {
-            // Try finding by accessibility label
-            let menuButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'gear' OR label CONTAINS 'settings'")).firstMatch
-            waitForElement(menuButton)
-            menuButton.tap()
-        } else {
-            gearButton.tap()
-        }
+        let menuButton = gearMenuButton()
+        waitForElement(menuButton)
+        menuButton.tap()
         
         sleep(1)
         
@@ -247,14 +255,9 @@ class ScreenshotGenerationTests: XCTestCase {
         todosTab.tap()
         
         // Tap gear icon
-        let gearButton = app.buttons.matching(identifier: "gearshape").firstMatch
-        if !gearButton.exists {
-            let menuButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'gear' OR label CONTAINS 'settings'")).firstMatch
-            waitForElement(menuButton)
-            menuButton.tap()
-        } else {
-            gearButton.tap()
-        }
+        let menuButton = gearMenuButton()
+        waitForElement(menuButton)
+        menuButton.tap()
         
         sleep(1)
         
@@ -422,13 +425,11 @@ class ScreenshotGenerationTests: XCTestCase {
 
         let newTaskCell = firstMatchElement(containing: "Plan weekend hike")
         guard newTaskCell.waitForExistence(timeout: 5.0) else {
-            XCTSkip("Task cell not visible in Category view.")
-            return
+            throw XCTSkip("Task cell not visible in Category view.")
         }
         let categoryGroupHeader = firstCategoryHeader()
         guard categoryGroupHeader.waitForExistence(timeout: 5.0) else {
-            XCTSkip("Category header not visible in Category view.")
-            return
+            throw XCTSkip("Category header not visible in Category view.")
         }
         newTaskCell.press(forDuration: 0.6, thenDragTo: categoryGroupHeader)
 
@@ -445,8 +446,7 @@ class ScreenshotGenerationTests: XCTestCase {
 
         let highGroupHeader = firstMatchElement(containing: "High")
         guard highGroupHeader.waitForExistence(timeout: 5.0) else {
-            XCTSkip("Priority header not visible in Priority view.")
-            return
+            throw XCTSkip("Priority header not visible in Priority view.")
         }
         newTaskCell.press(forDuration: 0.6, thenDragTo: highGroupHeader)
 

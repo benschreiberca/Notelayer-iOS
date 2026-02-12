@@ -20,7 +20,7 @@ struct TodosView: View {
     @State private var showingProfileSettings = false
     @State private var viewMode: TodoViewMode = .list
     @State private var sharePayload: SharePayload? = nil
-    @State private var scrollOffset: CGFloat = 0
+    @State private var hasScheduledSharedImport = false
     @State private var calendarExportError: CalendarExportError? = nil
     @State private var calendarEditSession: CalendarEventEditSession? = nil
     @State private var taskToSetReminder: Task? = nil
@@ -35,7 +35,7 @@ struct TodosView: View {
     @EnvironmentObject private var authService: AuthService
 
     var body: some View {
-        let tasks = store.tasks
+        let tasks = store.experimentalFeaturesEnabled ? store.topLevelTasks : store.tasks
         let partitioned = splitTasksByCompletion(tasks)
         let doingTasks = partitioned.doing
         let doneTasks = partitioned.done
@@ -56,6 +56,37 @@ struct TodosView: View {
 
                 Divider()
 
+                if store.pendingSharedImportCount > 0 {
+                    Button {
+                        store.retryPendingSharedImports()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Label(
+                                "\(store.pendingSharedImportCount) shared import\(store.pendingSharedImportCount == 1 ? "" : "s") pending",
+                                systemImage: "arrow.triangle.2.circlepath"
+                            )
+                            .font(.subheadline)
+                            Spacer()
+                            Text("Retry")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.plain)
+
+                    if let lastError = store.lastSharedImportError, !lastError.isEmpty {
+                        Text(lastError)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 6)
+                    }
+
+                    Divider()
+                }
+
                 TabView(selection: $viewMode) {
                     TodoListModeView(
                         tasks: filteredTasks,
@@ -63,7 +94,6 @@ struct TodosView: View {
                         categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
                         },
@@ -78,7 +108,6 @@ struct TodosView: View {
                         categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
                         },
@@ -93,7 +122,6 @@ struct TodosView: View {
                         categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
                         },
@@ -108,7 +136,6 @@ struct TodosView: View {
                         categories: store.sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
-                        scrollOffset: $scrollOffset,
                         onExportToCalendar: { task in
                             _Concurrency.Task { await exportTaskToCalendar(task) }
                         },
@@ -167,9 +194,6 @@ struct TodosView: View {
                         onProfileSettings: { showingProfileSettings = true }
                     )
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
             }
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.sortedCategories)
@@ -302,18 +326,17 @@ struct TodosView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenTaskFromNotification"))) { notification in
                 if let taskId = notification.userInfo?["taskId"] as? String,
                    let task = store.tasks.first(where: { $0.id == taskId }) {
+                    guard editingTask?.id != task.id else { return }
+                    Keyboard.dismissIfNeeded()
                     editingTask = task
                 }
             }
             .onAppear {
-                // Process shared items AFTER backend has time to sync
-                // This prevents Firebase from overwriting newly added tasks
-                NSLog("👀 [TodosView] onAppear - waiting for backend sync before processing shared items")
-                
-                // Wait 2 seconds for initial sync to complete, then process shared items
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    NSLog("🔄 [TodosView] Backend sync should be done, processing shared items NOW")
-                    LocalStore.shared.processSharedItems()
+                if !hasScheduledSharedImport {
+                    hasScheduledSharedImport = true
+                    // Kick off shared import processing once per app session after initial sync settles.
+                    // LocalStore runs this on a utility queue to keep UI interaction responsive.
+                    store.processSharedItems(after: 2.0)
                 }
                 // Analytics: start session timing for the active Todos mode.
                 modeViewSession = AnalyticsService.shared.trackViewOpen(
@@ -526,6 +549,32 @@ private enum TodoDateBucket: String, CaseIterable {
 private let endDropTaskId = "__end__"
 private let groupListTopPadding: CGFloat = 8
 
+private struct TodoModeScrollScaffold<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView {
+            content
+                .padding(.top, groupListTopPadding)
+                .padding(.bottom, 12)
+        }
+        // Keep the last card clear of the floating tab pill while preserving normal viewport height.
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: AppBottomClearance.contentBottomSpacerHeight)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { Keyboard.dismissIfNeeded() }
+        )
+    }
+}
+
 // MARK: - Mode views (ScrollView + inset cards)
 private struct TodoListModeView: View {
     @StateObject private var store = LocalStore.shared
@@ -534,21 +583,13 @@ private struct TodoListModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
-    @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
     
     var body: some View {
         let categoryLookup = makeCategoryLookup(categories)
-        ScrollView {
-            GeometryReader { geometry in
-                Color.clear.preference(
-                    key: ScrollOffsetPreferenceKey.self,
-                    value: geometry.frame(in: .named("scroll")).minY
-                )
-            }
-            .frame(height: 0)
+        TodoModeScrollScaffold {
             LazyVStack(spacing: 12) {
                 TodoGroupCard(
                     mode: .list,
@@ -565,8 +606,10 @@ private struct TodoListModeView: View {
                         tasks: sortedByOrderIndexDesc(tasks),
                         categoryLookup: categoryLookup,
                         sourceGroupId: "all",
+                        showingDone: showingDone,
+                        hierarchyEnabled: store.experimentalFeaturesEnabled,
                         onToggleComplete: toggleComplete,
-                        onTap: { editingTask = $0 },
+                        onTap: openEditor(for:),
                         onShare: { sharePayload = SharePayload(items: [$0.title]) },
                         onCopy: { UIPasteboard.general.string = $0.title },
                         onAddToCalendar: onExportToCalendar,
@@ -585,18 +628,6 @@ private struct TodoListModeView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .padding(.top, groupListTopPadding)
-            .padding(.bottom, 12)
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .background(
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { Keyboard.dismiss() }
-        )
-        .coordinateSpace(name: "scroll")
-        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-            scrollOffset = value
         }
     }
     
@@ -606,6 +637,12 @@ private struct TodoListModeView: View {
         } else {
             store.completeTask(id: task.id)
         }
+    }
+
+    private func openEditor(for task: Task) {
+        guard editingTask?.id != task.id else { return }
+        Keyboard.dismissIfNeeded()
+        editingTask = task
     }
     
     private func reorderWithinSameGroup(draggedId: String, beforeTaskId: String?) {
@@ -631,7 +668,6 @@ private struct TodoPriorityModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
-    @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
@@ -641,14 +677,7 @@ private struct TodoPriorityModeView: View {
         // Pre-group once to avoid repeated filtering in each priority lane.
         let tasksByPriority = Dictionary(grouping: tasks, by: { $0.priority })
         let categoryLookup = makeCategoryLookup(categories)
-        ScrollView {
-            GeometryReader { geometry in
-                Color.clear.preference(
-                    key: ScrollOffsetPreferenceKey.self,
-                    value: geometry.frame(in: .named("scroll")).minY
-                )
-            }
-            .frame(height: 0)
+        TodoModeScrollScaffold {
             LazyVStack(spacing: 12) {
                 ForEach(Priority.allCases, id: \.self) { priority in
                     let groupTasks = tasksByPriority[priority] ?? []
@@ -669,8 +698,10 @@ private struct TodoPriorityModeView: View {
                             tasks: sortedByOrderIndexDesc(groupTasks),
                             categoryLookup: categoryLookup,
                             sourceGroupId: priority.rawValue,
+                            showingDone: showingDone,
+                            hierarchyEnabled: false,
                             onToggleComplete: toggleComplete,
-                            onTap: { editingTask = $0 },
+                            onTap: openEditor(for:),
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
                             onAddToCalendar: onExportToCalendar,
@@ -698,18 +729,6 @@ private struct TodoPriorityModeView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.top, groupListTopPadding)
-            .padding(.bottom, 12)
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .background(
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { Keyboard.dismiss() }
-        )
-        .coordinateSpace(name: "scroll")
-        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-            scrollOffset = value
         }
     }
     
@@ -719,6 +738,12 @@ private struct TodoPriorityModeView: View {
         } else {
             store.completeTask(id: task.id)
         }
+    }
+
+    private func openEditor(for task: Task) {
+        guard editingTask?.id != task.id else { return }
+        Keyboard.dismissIfNeeded()
+        editingTask = task
     }
     
     private func applyPriorityDrop(payload: TodoDragPayload, destination: Priority, beforeTaskId: String?) {
@@ -754,7 +779,6 @@ private struct TodoCategoryModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
-    @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
@@ -772,14 +796,7 @@ private struct TodoCategoryModeView: View {
         let uncategorizedIndex = min(max(store.uncategorizedPosition, 0), categories.count)
         let beforeCategories = Array(categories.prefix(uncategorizedIndex))
         let afterCategories = Array(categories.dropFirst(uncategorizedIndex))
-        ScrollView {
-            GeometryReader { geometry in
-                Color.clear.preference(
-                    key: ScrollOffsetPreferenceKey.self,
-                    value: geometry.frame(in: .named("scroll")).minY
-                )
-            }
-            .frame(height: 0)
+        TodoModeScrollScaffold {
             LazyVStack(spacing: 12) {
                 ForEach(beforeCategories) { category in
                     groupDropSlot(targetKey: category.id)
@@ -810,18 +827,6 @@ private struct TodoCategoryModeView: View {
                     .frame(height: 1)
                 groupDropSlot(targetKey: "_end", isEndSlot: true)
             }
-            .padding(.top, groupListTopPadding)
-            .padding(.bottom, 12)
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .background(
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { Keyboard.dismiss() }
-        )
-        .coordinateSpace(name: "scroll")
-        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-            scrollOffset = value
         }
     }
 
@@ -852,8 +857,10 @@ private struct TodoCategoryModeView: View {
                 tasks: sortedByOrderIndexDesc(groupTasks),
                 categoryLookup: categoryLookup,
                 sourceGroupId: category.id,
+                showingDone: showingDone,
+                hierarchyEnabled: false,
                 onToggleComplete: toggleComplete,
-                onTap: { editingTask = $0 },
+                onTap: openEditor(for:),
                 onShare: { sharePayload = SharePayload(items: [$0.title]) },
                 onCopy: { UIPasteboard.general.string = $0.title },
                 onAddToCalendar: onExportToCalendar,
@@ -908,8 +915,10 @@ private struct TodoCategoryModeView: View {
                 tasks: sortedByOrderIndexDesc(uncategorizedTasks),
                 categoryLookup: categoryLookup,
                 sourceGroupId: "Uncategorized",
+                showingDone: showingDone,
+                hierarchyEnabled: false,
                 onToggleComplete: toggleComplete,
-                onTap: { editingTask = $0 },
+                onTap: openEditor(for:),
                 onShare: { sharePayload = SharePayload(items: [$0.title]) },
                 onCopy: { UIPasteboard.general.string = $0.title },
                 onAddToCalendar: onExportToCalendar,
@@ -943,6 +952,12 @@ private struct TodoCategoryModeView: View {
         } else {
             store.completeTask(id: task.id)
         }
+    }
+
+    private func openEditor(for task: Task) {
+        guard editingTask?.id != task.id else { return }
+        Keyboard.dismissIfNeeded()
+        editingTask = task
     }
 
     private func handleGroupDragStart(groupKey: String, collapseGroupId: String, isCollapsed: Bool) {
@@ -1106,7 +1121,6 @@ private struct TodoDateModeView: View {
     let categories: [Category]
     @Binding var editingTask: Task?
     @Binding var sharePayload: SharePayload?
-    @Binding var scrollOffset: CGFloat
     let onExportToCalendar: (Task) -> Void
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
@@ -1116,14 +1130,7 @@ private struct TodoDateModeView: View {
         // Pre-group to avoid repeated bucket filtering across each date section.
         let tasksByBucket = groupTasksByDateBucket(tasks)
         let categoryLookup = makeCategoryLookup(categories)
-        ScrollView {
-            GeometryReader { geometry in
-                Color.clear.preference(
-                    key: ScrollOffsetPreferenceKey.self,
-                    value: geometry.frame(in: .named("scroll")).minY
-                )
-            }
-            .frame(height: 0)
+        TodoModeScrollScaffold {
             LazyVStack(spacing: 12) {
                 ForEach(TodoDateBucket.allCases, id: \.self) { bucket in
                     let groupTasks = tasksByBucket[bucket] ?? []
@@ -1144,8 +1151,10 @@ private struct TodoDateModeView: View {
                             tasks: sortedByOrderIndexDesc(groupTasks),
                             categoryLookup: categoryLookup,
                             sourceGroupId: bucket.rawValue,
+                            showingDone: showingDone,
+                            hierarchyEnabled: false,
                             onToggleComplete: toggleComplete,
-                            onTap: { editingTask = $0 },
+                            onTap: openEditor(for:),
                             onShare: { sharePayload = SharePayload(items: [$0.title]) },
                             onCopy: { UIPasteboard.general.string = $0.title },
                             onAddToCalendar: onExportToCalendar,
@@ -1174,18 +1183,6 @@ private struct TodoDateModeView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.top, groupListTopPadding)
-            .padding(.bottom, 12)
-        }
-        .scrollDismissesKeyboard(.immediately)
-        .background(
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { Keyboard.dismiss() }
-        )
-        .coordinateSpace(name: "scroll")
-        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-            scrollOffset = value
         }
     }
     
@@ -1195,6 +1192,12 @@ private struct TodoDateModeView: View {
         } else {
             store.completeTask(id: task.id)
         }
+    }
+
+    private func openEditor(for task: Task) {
+        guard editingTask?.id != task.id else { return }
+        Keyboard.dismissIfNeeded()
+        editingTask = task
     }
     
     private func applyDateDrop(payload: TodoDragPayload, destinationBucket: TodoDateBucket, beforeTaskId: String?) {
@@ -1299,7 +1302,7 @@ private struct TodoGroupCardHeader: View {
             withAnimation(.snappy) {
                 onToggleCollapsed?()
             }
-            Keyboard.dismiss()
+            Keyboard.dismissIfNeeded()
         }
     }
 }
@@ -1409,6 +1412,7 @@ private struct TaskRowDropDelegate: DropDelegate {
     let isEndZone: Bool
     @Binding var hoveredTaskId: String?
     @Binding var isEndTargeted: Bool
+    @Binding var isDragSessionActive: Bool
     let onDropMove: (TodoDragPayload, String?) -> Bool
 
     func validateDrop(info: DropInfo) -> Bool {
@@ -1416,6 +1420,7 @@ private struct TaskRowDropDelegate: DropDelegate {
     }
 
     func dropEntered(info: DropInfo) {
+        isDragSessionActive = true
         if isEndZone {
             hoveredTaskId = nil
             isEndTargeted = true
@@ -1435,13 +1440,16 @@ private struct TaskRowDropDelegate: DropDelegate {
         if targetTaskId == nil || isEndZone {
             isEndTargeted = false
         }
+        isDragSessionActive = false
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+        isDragSessionActive = true
+        return DropProposal(operation: .move)
     }
 
     func performDrop(info: DropInfo) -> Bool {
+        isDragSessionActive = false
         guard let provider = info.itemProviders(for: [UTType.notelayerTodoDragPayload]).first else { return false }
         provider.loadDataRepresentation(forTypeIdentifier: UTType.notelayerTodoDragPayload.identifier) { data, _ in
             guard let data, let payload = try? JSONDecoder().decode(TodoDragPayload.self, from: data) else { return }
@@ -1462,6 +1470,8 @@ private struct TodoGroupTaskList: View {
     let categoryLookup: [String: Category]
     /// Identifier representing the group the rows are being rendered within (used as drag sourceGroupId).
     let sourceGroupId: String
+    let showingDone: Bool
+    let hierarchyEnabled: Bool
     let onToggleComplete: (Task) -> Void
     let onTap: (Task) -> Void
     let onShare: (Task) -> Void
@@ -1473,6 +1483,9 @@ private struct TodoGroupTaskList: View {
     let onDropMove: (TodoDragPayload, String?) -> Bool
     @State private var hoveredTaskId: String? = nil
     @State private var isEndDropTargeted = false
+    @State private var isDragSessionActive = false
+    @State private var expandedParentTaskIds: Set<String> = []
+    @State private var parentDeleteCandidate: Task?
     
     var body: some View {
         VStack(spacing: 8) {
@@ -1485,47 +1498,51 @@ private struct TodoGroupTaskList: View {
                     .contentShape(Rectangle())
                     .dropDestination(for: TodoDragPayload.self) { items, _ in
                         guard let payload = items.first else { return false }
+                        if hierarchyEnabled && payload.sourceGroupId.hasPrefix("subtask:") {
+                            return false
+                        }
                         return onDropMove(payload, nil)
                     }
             } else {
                 ForEach(tasks) { task in
-                    TaskItemView(
-                        task: task,
-                        categoryLookup: categoryLookup,
-                        onToggleComplete: { onToggleComplete(task) },
-                        onTap: { onTap(task) }
-                    )
-                    .contentShape(Rectangle())
-                    .draggable(TodoDragPayload(taskId: task.id, sourceGroupId: sourceGroupId))
-                    .rowContextMenu(
-                        shareTitle: "Share…",
-                        onShare: { onShare(task) },
-                        onCopy: { onCopy(task) },
-                        onAddToCalendar: { onAddToCalendar(task) },
-                        hasReminder: task.reminderDate != nil,
-                        onSetReminder: { onSetReminder(task) },
-                        onRemoveReminder: { onRemoveReminder(task) },
-                        onDelete: {
-                            store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
-                            UndoCoordinator.shared.activateResponder()
+                    topLevelRow(for: task)
+
+                    if hierarchyEnabled, expandedParentTaskIds.contains(task.id) {
+                        ForEach(store.subtasks(for: task.id, includeCompleted: showingDone)) { subtask in
+                            subtaskRow(subtask, parentTaskId: task.id)
                         }
-                    )
-                    .onDrop(
-                        of: [UTType.notelayerTodoDragPayload],
-                        delegate: TaskRowDropDelegate(
-                            targetTaskId: task.id,
-                            isEndZone: false,
-                            hoveredTaskId: $hoveredTaskId,
-                            isEndTargeted: $isEndDropTargeted,
-                            onDropMove: onDropMove
-                        )
-                    )
-                    .overlay(alignment: .top) {
-                        if hoveredTaskId == task.id {
-                            Divider()
-                        }
+
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(height: 10)
+                            .contentShape(Rectangle())
+                            .onDrop(
+                                of: [UTType.notelayerTodoDragPayload],
+                                delegate: TaskRowDropDelegate(
+                                    targetTaskId: nil,
+                                    isEndZone: true,
+                                    hoveredTaskId: $hoveredTaskId,
+                                    isEndTargeted: $isEndDropTargeted,
+                                    isDragSessionActive: $isDragSessionActive,
+                                    onDropMove: { payload, beforeTaskId in
+                                        applySubtaskDrop(
+                                            payload: payload,
+                                            parentTaskId: task.id,
+                                            beforeTaskId: beforeTaskId
+                                        )
+                                        return true
+                                    }
+                                )
+                            )
+                            .overlay(alignment: .top) {
+                                if isEndDropTargeted {
+                                    Divider()
+                                }
+                            }
+                            .padding(.leading, 34)
                     }
                 }
+
                 Rectangle()
                     .fill(Color.clear)
                     .frame(height: 14)
@@ -1537,7 +1554,13 @@ private struct TodoGroupTaskList: View {
                             isEndZone: true,
                             hoveredTaskId: $hoveredTaskId,
                             isEndTargeted: $isEndDropTargeted,
-                            onDropMove: onDropMove
+                            isDragSessionActive: $isDragSessionActive,
+                            onDropMove: { payload, beforeTaskId in
+                                if hierarchyEnabled && payload.sourceGroupId.hasPrefix("subtask:") {
+                                    return false
+                                }
+                                return onDropMove(payload, beforeTaskId)
+                            }
                         )
                     )
                     .overlay(alignment: .top) {
@@ -1549,19 +1572,198 @@ private struct TodoGroupTaskList: View {
         }
         // Requested: increase padding between group headers and list cards (top & bottom)
         .padding(.vertical, 4)
-        .simultaneousGesture(TapGesture().onEnded { Keyboard.dismiss() })
+        .simultaneousGesture(TapGesture().onEnded { Keyboard.dismissIfNeeded() })
+        .confirmationDialog(
+            "Delete Project Task",
+            isPresented: Binding(
+                get: { parentDeleteCandidate != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        parentDeleteCandidate = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let parentDeleteCandidate {
+                Button("Delete Project and Subtasks", role: .destructive) {
+                    store.deleteParentTask(id: parentDeleteCandidate.id, strategy: .deleteSubtasks)
+                    UndoCoordinator.shared.activateResponder()
+                    self.parentDeleteCandidate = nil
+                }
+                Button("Delete Project, Keep Subtasks") {
+                    store.deleteParentTask(id: parentDeleteCandidate.id, strategy: .detachSubtasks)
+                    UndoCoordinator.shared.activateResponder()
+                    self.parentDeleteCandidate = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                parentDeleteCandidate = nil
+            }
+        } message: {
+            Text("Choose what to do with subtasks before deleting this parent task.")
+        }
+    }
+
+    private func topLevelRow(for task: Task) -> some View {
+        let subtaskCount = hierarchyEnabled ? store.subtaskCount(for: task.id) : 0
+        return TaskItemView(
+            task: task,
+            categoryLookup: categoryLookup,
+            subtaskCount: subtaskCount,
+            isSubtasksExpanded: expandedParentTaskIds.contains(task.id),
+            isSubtask: false,
+            onToggleSubtasks: subtaskCount > 0 ? {
+                toggleSubtasks(for: task.id)
+            } : nil,
+            onAddSubtask: hierarchyEnabled ? {
+                createSubtask(forParentId: task.id)
+            } : nil,
+            onToggleComplete: { onToggleComplete(task) },
+            onTap: { onTap(task) }
+        )
+        .contentShape(Rectangle())
+        .draggable(TodoDragPayload(taskId: task.id, sourceGroupId: sourceGroupId))
+        .rowContextMenu(
+            shareTitle: "Share…",
+            isEnabled: !isDragSessionActive,
+            onShare: { onShare(task) },
+            onCopy: { onCopy(task) },
+            onAddToCalendar: { onAddToCalendar(task) },
+            hasReminder: task.reminderDate != nil,
+            onSetReminder: { onSetReminder(task) },
+            onRemoveReminder: { onRemoveReminder(task) },
+            onDelete: {
+                handleDelete(task: task)
+            }
+        )
+        .onDrop(
+            of: [UTType.notelayerTodoDragPayload],
+            delegate: TaskRowDropDelegate(
+                targetTaskId: task.id,
+                isEndZone: false,
+                hoveredTaskId: $hoveredTaskId,
+                isEndTargeted: $isEndDropTargeted,
+                isDragSessionActive: $isDragSessionActive,
+                onDropMove: { payload, beforeTaskId in
+                    if hierarchyEnabled && payload.sourceGroupId.hasPrefix("subtask:") {
+                        return false
+                    }
+                    return onDropMove(payload, beforeTaskId)
+                }
+            )
+        )
+        .overlay(alignment: .top) {
+            if hoveredTaskId == task.id {
+                Divider()
+            }
+        }
+    }
+
+    private func subtaskRow(_ subtask: Task, parentTaskId: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "arrow.turn.down.right")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 6)
+            TaskItemView(
+                task: subtask,
+                categoryLookup: categoryLookup,
+                subtaskCount: 0,
+                isSubtasksExpanded: false,
+                isSubtask: true,
+                onToggleSubtasks: nil,
+                onAddSubtask: nil,
+                onToggleComplete: { onToggleComplete(subtask) },
+                onTap: { onTap(subtask) }
+            )
+        }
+        .padding(.leading, 26)
+        .draggable(TodoDragPayload(taskId: subtask.id, sourceGroupId: "subtask:\(parentTaskId)"))
+        .rowContextMenu(
+            shareTitle: "Share…",
+            isEnabled: !isDragSessionActive,
+            onShare: { onShare(subtask) },
+            onCopy: { onCopy(subtask) },
+            onAddToCalendar: { onAddToCalendar(subtask) },
+            hasReminder: subtask.reminderDate != nil,
+            onSetReminder: { onSetReminder(subtask) },
+            onRemoveReminder: { onRemoveReminder(subtask) },
+            onDelete: {
+                store.deleteTask(id: subtask.id, undoManager: resolvedUndoManager)
+                UndoCoordinator.shared.activateResponder()
+            }
+        )
+        .onDrop(
+            of: [UTType.notelayerTodoDragPayload],
+            delegate: TaskRowDropDelegate(
+                targetTaskId: subtask.id,
+                isEndZone: false,
+                hoveredTaskId: $hoveredTaskId,
+                isEndTargeted: $isEndDropTargeted,
+                isDragSessionActive: $isDragSessionActive,
+                onDropMove: { payload, beforeTaskId in
+                    applySubtaskDrop(payload: payload, parentTaskId: parentTaskId, beforeTaskId: beforeTaskId)
+                    return true
+                }
+            )
+        )
+        .overlay(alignment: .top) {
+            if hoveredTaskId == subtask.id {
+                Divider()
+            }
+        }
+    }
+
+    private func toggleSubtasks(for parentTaskId: String) {
+        withAnimation(.snappy) {
+            if expandedParentTaskIds.contains(parentTaskId) {
+                expandedParentTaskIds.remove(parentTaskId)
+            } else {
+                expandedParentTaskIds.insert(parentTaskId)
+            }
+        }
+    }
+
+    private func createSubtask(forParentId parentTaskId: String) {
+        guard let newSubtaskId = store.addSubtask(to: parentTaskId),
+              let newSubtask = store.tasks.first(where: { $0.id == newSubtaskId }) else {
+            return
+        }
+        expandedParentTaskIds.insert(parentTaskId)
+        onTap(newSubtask)
+    }
+
+    private func handleDelete(task: Task) {
+        if hierarchyEnabled, store.hasSubtasks(parentId: task.id) {
+            parentDeleteCandidate = task
+            return
+        }
+        store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
+        UndoCoordinator.shared.activateResponder()
+    }
+
+    private func applySubtaskDrop(payload: TodoDragPayload, parentTaskId: String, beforeTaskId: String?) {
+        guard payload.taskId != parentTaskId else { return }
+        store.setParent(for: payload.taskId, parentId: parentTaskId)
+
+        var ordered = store.subtasks(for: parentTaskId, includeCompleted: showingDone).map(\.id)
+        ordered.removeAll { $0 == payload.taskId }
+        if beforeTaskId == endDropTaskId {
+            ordered.append(payload.taskId)
+        } else if let beforeTaskId, let insertIndex = ordered.firstIndex(of: beforeTaskId) {
+            ordered.insert(payload.taskId, at: insertIndex)
+        } else {
+            ordered.insert(payload.taskId, at: 0)
+        }
+        withAnimation {
+            store.reorderTasks(orderedIds: ordered)
+        }
+        expandedParentTaskIds.insert(parentTaskId)
     }
 
     private var resolvedUndoManager: UndoManager? {
         // Route delete undo registration through the same manager used by the shake responder.
         UndoCoordinator.shared.undoManager
-    }
-}
-
-// Preference key for tracking scroll offset
-private struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }

@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `70%`
 
 ## TLDR
 Implement first-install onboarding with video-first orientation, contextual cues, and approved non-time-based starting category presets that include finance/banking/investing in each preset.
@@ -14,9 +14,9 @@ Implement first-install onboarding with video-first orientation, contextual cues
 - Decision 6: Onboarding UI visibility is gated by `Enable Experimental Features`.
 
 ## Dependency Gates
-- Gate A: Final decision whether video skip is immediate or delayed by short intro segment.
-- Gate B: Final decision whether recommended preset is pre-selected or highlighted only.
-- Gate C: `PRD_01` feature-gate implementation available for onboarding visibility checks.
+- Gate A: LOCKED - video skip becomes available after a 3-second intro segment.
+- Gate B: LOCKED - `Everyday Balance` is pre-selected and visually marked recommended.
+- Gate C: LOCKED - onboarding UI visibility is gated by `PRD_01`.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/WelcomeView.swift`
@@ -32,6 +32,10 @@ Implement first-install onboarding with video-first orientation, contextual cues
 - Keep onboarding screens aligned with platform-standard section/list/text controls.
 - Avoid custom wrappers and decorative cards unless needed for orientation video surface.
 - Run post-implementation consistency review and capture line-count impact if deviations exist.
+
+### UI Consistency Evidence (2026-02-11)
+- Pre-check completed against `NotesView.swift` standard patterns.
+- Post-check completed: onboarding uses native `NavigationStack`, toolbar actions, and lightweight sectioned content.
 
 ## Tasks:
 

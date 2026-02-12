@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `70%`
 
 ## TLDR
 Implement a single user-controlled experimental features switch in the gear dropdown (`Enable Experimental Features`) that gates experimental UI visibility for Insights, Voice Input, First-Time Onboarding, and Project-Based Tasks, with deterministic local + account-synced state behavior.
@@ -14,8 +14,8 @@ Implement a single user-controlled experimental features switch in the gear drop
 - Decision 6: v1 visibility scope includes Insights, Voice Input entry, First-Time Onboarding UI, and Project-Based Tasks UI.
 
 ## Dependency Gates
-- Gate A: Final signoff on local-vs-synced conflict resolution policy at launch.
-- Gate B: Confirm exact location/style in gear menu matches existing control patterns.
+- Gate A: LOCKED - local-first immediate render, then timestamp last-write-wins reconcile.
+- Gate B: LOCKED - gear menu uses native checkbox/toggle-like control style.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift`
@@ -34,6 +34,11 @@ Implement a single user-controlled experimental features switch in the gear drop
 - Keep control implementation platform-standard (native menu/toggle/label patterns).
 - If custom UI is required, document why and line-count impact.
 - After implementation, run a second consistency pass and record deltas.
+
+### UI Consistency Evidence (2026-02-11)
+- Pre-check completed against `NotesView.swift` (standard bearer) and `RootTabsView.swift`/`TodosView.swift` (deviators).
+- Post-check completed: gear control uses native `Menu` + `Toggle`; route/hint messaging uses native text+icon/button primitives.
+- Intentional exceptions retained: existing floating tab pill and new floating voice button are deliberate brand/UX elements.
 
 ## Tasks:
 

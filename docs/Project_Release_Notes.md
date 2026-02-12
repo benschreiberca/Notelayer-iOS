@@ -1,6 +1,37 @@
 # TestFlight Release Notes
 
-## [2026-02-11] - The Tabs Learned Personal Space
+## Release Entry Standard (From This Release Forward)
+- Header format: `## [YYYY-MM-DD] - vX.Y.Z (Build N) - Release Title`
+- Section 1: `App Store Update Description` (single app-store-ready summary for the update field)
+- Section 2: `Detailed Notes` (keep current `What’s New` + `Why it matters` format)
+
+## [2026-02-12] - v1.4.5 (Build 1) - The App Stopped Holding Its Breath
+
+### App Store Update Description
+- Improved launch and interaction responsiveness to reduce freeze-like behavior.
+- Added experimental voice capture with a review screen before tasks are saved.
+- Refined Insights with clearer drilldown rows, stronger oldest-open-task reporting, and better bottom spacing.
+- Polished To-Dos interactions and settings menu behavior for a cleaner, more consistent experience.
+
+### Detailed Notes
+- **What’s New**: Startup work now gets out of your way sooner, and the app is less likely to feel stuck while loading.
+- **Why it matters**: Less waiting around wondering if the app is thinking or napping.
+- **What’s New**: Experimental voice capture now records ideas, stages them for review, and lets you save clean tasks intentionally.
+- **Why it matters**: You can talk fast, then keep only what you actually meant.
+- **What’s New**: Insights now uses more consistent data rows and stronger oldest-open-task views, with cleaner spacing near the floating tabs.
+- **Why it matters**: The numbers are easier to scan, and the bottom of the page no longer plays hide-and-seek.
+- **What’s New**: To-Dos drag/menu behavior and keyboard interactions were tightened, and gear menu labels/order were cleaned up.
+- **Why it matters**: Fewer weird interactions, fewer accidental taps, less UI improv theater.
+
+## [2026-02-11] - v1.4.4 (Build 1) - The Tabs Learned Personal Space
+
+### App Store Update Description
+- Improved layout and readability across Notes, To-Dos, and Insights.
+- Fixed bottom navigation overlap so the last card stays visible while scrolling.
+- Standardized Insights row styling so key values are easier to scan.
+- Refined Insights detail behavior with cleaner spacing and clearer data presentation.
+
+### Detailed Notes
 - **What’s New**: The floating tab pill now keeps a consistent buffer at the bottom of Notes, To-Dos, Insights, and Insights drilldowns.
 - **Why it matters**: The last card no longer gets sat on by navigation furniture.
 - **What’s New**: “Features You’re Using in the App” now stays fully visible at the bottom of Insights when you scroll.

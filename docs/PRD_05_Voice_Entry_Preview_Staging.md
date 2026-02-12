@@ -1,7 +1,7 @@
 # PRD 05: Voice Entry Preview And Staging
 
-Last Updated: 2026-02-10
-Status: Mostly Clarified
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: Voice Capture Quality Control
 
 ## Purpose
@@ -26,6 +26,7 @@ You do not trust voice-to-text reliability enough to allow direct save into the 
 - Background behavior: staging persists through app background/foreground in same session.
 - Performance target: preview appears in <= 2 seconds p95 from end of recording.
 - Voice preview/staging UI visibility is controlled by `Enable Experimental Features`.
+- No auto-discard timeout for unsaved staging in v1.
 
 ## Goals
 
@@ -67,7 +68,7 @@ You do not trust voice-to-text reliability enough to allow direct save into the 
 
 ## Open Questions
 
-1. Should there be a configurable timeout after which unsaved staging is auto-discarded?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

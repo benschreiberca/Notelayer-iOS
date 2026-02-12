@@ -136,6 +136,63 @@ final class InsightsAggregatorTests: XCTestCase {
         XCTAssertEqual(snapshot.openTaskAgeBuckets.reduce(0) { $0 + $1.count }, 2)
     }
 
+    func testTaskTotalsExcludeSubtasksFromTopLevelCounts() {
+        let now = utcDate(2026, 2, 9, 12, 0)
+        let tasks = [
+            TodoTask(
+                id: "parent",
+                title: "Project Parent",
+                categories: [],
+                priority: .medium,
+                dueDate: nil,
+                completedAt: nil,
+                taskNotes: nil,
+                createdAt: utcDate(2026, 2, 1),
+                updatedAt: utcDate(2026, 2, 1),
+                orderIndex: nil,
+                parentTaskId: nil
+            ),
+            TodoTask(
+                id: "subtask",
+                title: "Project Step",
+                categories: [],
+                priority: .medium,
+                dueDate: nil,
+                completedAt: nil,
+                taskNotes: nil,
+                createdAt: utcDate(2026, 2, 2),
+                updatedAt: utcDate(2026, 2, 2),
+                orderIndex: nil,
+                parentTaskId: "parent"
+            ),
+            TodoTask(
+                id: "standalone",
+                title: "Standalone",
+                categories: [],
+                priority: .medium,
+                dueDate: nil,
+                completedAt: nil,
+                taskNotes: nil,
+                createdAt: utcDate(2026, 2, 3),
+                updatedAt: utcDate(2026, 2, 3),
+                orderIndex: nil,
+                parentTaskId: nil
+            )
+        ]
+
+        let snapshot = InsightsAggregator.buildSnapshot(
+            tasks: tasks,
+            categories: [],
+            telemetry: InsightsTelemetrySnapshot(scopeKey: "test-user", rawEvents: [], aggregateBuckets: []),
+            selectedWindow: .days30,
+            now: now,
+            calendar: utcCalendar
+        )
+
+        XCTAssertEqual(snapshot.totals.all, 2)
+        XCTAssertEqual(snapshot.totals.open, 2)
+    }
+
     func testWindowBoundariesIncludeStartAndEndDays() {
         let now = utcDate(2026, 2, 9, 12, 0)
         let tasks = [

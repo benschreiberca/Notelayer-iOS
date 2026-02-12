@@ -17,6 +17,8 @@ struct TaskEditView: View {
     @State private var showReminderPicker = false
     @State private var showCustomDatePicker = false
     @State private var customDate = Date()
+    @State private var selectedParentTaskId: String?
+    @State private var showingParentDeletionDialog = false
     
     init(task: Task, categories: [Category]) {
         self.task = task
@@ -25,6 +27,7 @@ struct TaskEditView: View {
         _priority = State(initialValue: task.priority)
         _dueDate = State(initialValue: task.dueDate)
         _taskNotes = State(initialValue: task.taskNotes ?? "")
+        _selectedParentTaskId = State(initialValue: task.parentTaskId)
     }
     
     var body: some View {
@@ -41,6 +44,24 @@ struct TaskEditView: View {
                 }
 
                 TaskEditorPrioritySection(priority: $priority)
+
+                if store.experimentalFeaturesEnabled {
+                    Section("Project Structure") {
+                        Picker("Parent Task", selection: $selectedParentTaskId) {
+                            Text("Standalone Task").tag(String?.none)
+                            ForEach(store.availableParentTasks(excluding: task.id)) { parent in
+                                Text(parent.title).tag(Optional(parent.id))
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        if selectedParentTaskId != nil {
+                            Text("Subtasks inherit parent categories when created.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
                 
                 Section("Due Date") {
                     Button {
@@ -124,9 +145,11 @@ struct TaskEditView: View {
                 
                 Section {
                     Button(role: .destructive) {
-                        store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
-                        UndoCoordinator.shared.activateResponder()
-                        dismiss()
+                        if store.experimentalFeaturesEnabled && store.hasSubtasks(parentId: task.id) {
+                            showingParentDeletionDialog = true
+                        } else {
+                            deleteTaskAndDismiss()
+                        }
                     } label: {
                         HStack {
                             Spacer()
@@ -223,6 +246,25 @@ struct TaskEditView: View {
                     }
                 )
             }
+            .confirmationDialog(
+                "Delete Project Task",
+                isPresented: $showingParentDeletionDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Project and Subtasks", role: .destructive) {
+                    store.deleteParentTask(id: task.id, strategy: .deleteSubtasks)
+                    UndoCoordinator.shared.activateResponder()
+                    dismiss()
+                }
+                Button("Delete Project, Keep Subtasks") {
+                    store.deleteParentTask(id: task.id, strategy: .detachSubtasks)
+                    UndoCoordinator.shared.activateResponder()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Choose what to do with subtasks before deleting this parent task.")
+            }
         }
     }
     
@@ -250,6 +292,13 @@ struct TaskEditView: View {
             task.dueDate = dueDate
             task.taskNotes = taskNotes.isEmpty ? nil : taskNotes
         }
+        store.setParent(for: task.id, parentId: selectedParentTaskId)
+    }
+
+    private func deleteTaskAndDismiss() {
+        store.deleteTask(id: task.id, undoManager: resolvedUndoManager)
+        UndoCoordinator.shared.activateResponder()
+        dismiss()
     }
     
     private func exportTaskToCalendar() async {

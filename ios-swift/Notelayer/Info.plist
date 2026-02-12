@@ -39,6 +39,10 @@
 	<true/>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Notelayer needs calendar access to create events from your tasks.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Notelayer needs microphone access to capture voice input and convert it into staged tasks.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Notelayer uses speech recognition to transcribe voice input into editable staged tasks.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Notelayer sends reminders for your tasks at the times you choose.</string>
 	<key>UIApplicationSceneManifest</key>

@@ -12,7 +12,7 @@ final class FirebaseBackendService: ObservableObject {
     private var backendUserId: String?
     private var isForceSyncInProgress = false
     private var cancellable: AnyCancellable?
-    private var metadataCancellable: AnyCancellable?
+    private var metadataCancellables: Set<AnyCancellable> = []
     private var suppressMetadataWrites = false
     nonisolated(unsafe) private var listeners: [ListenerRegistration] = []
 
@@ -29,7 +29,7 @@ final class FirebaseBackendService: ObservableObject {
 
     deinit {
         cancellable?.cancel()
-        metadataCancellable?.cancel()
+        metadataCancellables.forEach { $0.cancel() }
         stopListeners()
     }
 
@@ -38,8 +38,8 @@ final class FirebaseBackendService: ObservableObject {
         backend = nil
         backendUserId = nil
         store.attachBackend(nil)
-        metadataCancellable?.cancel()
-        metadataCancellable = nil
+        metadataCancellables.forEach { $0.cancel() }
+        metadataCancellables.removeAll()
         InsightsTelemetryStore.shared.setUserScope(user?.uid)
 
         guard let user else {
@@ -91,6 +91,25 @@ final class FirebaseBackendService: ObservableObject {
                 suppressMetadataWrites = false
             } else if store.uncategorizedPosition != 0 {
                 try await backend.upsertCategoryGroupMetadata(uncategorizedPosition: store.uncategorizedPosition)
+            }
+
+            let remoteExperimental = try await backend.fetchExperimentalFeatureMetadata()
+            let remoteInsightsHint = try await backend.fetchInsightsHintMetadata()
+
+            suppressMetadataWrites = true
+            store.beginExperimentalReconciliation()
+            let shouldPushExperimental = store.reconcileExperimentalPreference(
+                remoteEnabled: remoteExperimental?.isEnabled,
+                remoteUpdatedAt: remoteExperimental?.updatedAt
+            )
+            let shouldPushHint = store.reconcileInsightsHintState(remoteInsightsHint)
+            suppressMetadataWrites = false
+
+            if shouldPushExperimental {
+                try await backend.upsertExperimentalFeatureMetadata(preference: store.experimentalFeaturesPreference)
+            }
+            if shouldPushHint {
+                try await backend.upsertInsightsHintMetadata(store.insightsHintState)
             }
         } catch {
             #if DEBUG
@@ -185,13 +204,42 @@ final class FirebaseBackendService: ObservableObject {
                     self.store.applyRemoteUncategorizedPosition(position)
                     self.suppressMetadataWrites = false
                 }
+            },
+            backend.listenExperimentalFeatureMetadata { [weak self] remoteEnabled, remoteUpdatedAt in
+                _Concurrency.Task { @MainActor in
+                    guard let self else { return }
+                    self.suppressMetadataWrites = true
+                    let shouldPushLocal = self.store.reconcileExperimentalPreference(
+                        remoteEnabled: remoteEnabled,
+                        remoteUpdatedAt: remoteUpdatedAt
+                    )
+                    self.suppressMetadataWrites = false
+                    if shouldPushLocal {
+                        try? await backend.upsertExperimentalFeatureMetadata(
+                            preference: self.store.experimentalFeaturesPreference
+                        )
+                    }
+                }
+            },
+            backend.listenInsightsHintMetadata { [weak self] remoteState in
+                _Concurrency.Task { @MainActor in
+                    guard let self else { return }
+                    self.suppressMetadataWrites = true
+                    let shouldPushLocal = self.store.reconcileInsightsHintState(remoteState)
+                    self.suppressMetadataWrites = false
+                    if shouldPushLocal {
+                        try? await backend.upsertInsightsHintMetadata(self.store.insightsHintState)
+                    }
+                }
             }
         ]
     }
 
     private func startMetadataSync(using backend: FirestoreBackend) {
-        metadataCancellable?.cancel()
-        metadataCancellable = store.$uncategorizedPosition
+        metadataCancellables.forEach { $0.cancel() }
+        metadataCancellables.removeAll()
+
+        store.$uncategorizedPosition
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] position in
@@ -200,6 +248,29 @@ final class FirebaseBackendService: ObservableObject {
                     try? await backend.upsertCategoryGroupMetadata(uncategorizedPosition: position)
                 }
             }
+            .store(in: &metadataCancellables)
+
+        store.$experimentalFeaturesPreference
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] preference in
+                guard let self, !self.suppressMetadataWrites else { return }
+                _Concurrency.Task {
+                    try? await backend.upsertExperimentalFeatureMetadata(preference: preference)
+                }
+            }
+            .store(in: &metadataCancellables)
+
+        store.$insightsHintState
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] hintState in
+                guard let self, !self.suppressMetadataWrites else { return }
+                _Concurrency.Task {
+                    try? await backend.upsertInsightsHintMetadata(hintState)
+                }
+            }
+            .store(in: &metadataCancellables)
     }
 
     func deleteAllUserData() async throws {
@@ -315,17 +386,7 @@ private final class FirestoreBackend: BackendSyncing {
     }
 
     func fetchCategoryGroupMetadata() async throws -> Int? {
-        let snapshot = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DocumentSnapshot, Error>) in
-            userDocument.getDocument { snapshot, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if let snapshot {
-                    continuation.resume(returning: snapshot)
-                } else {
-                    continuation.resume(throwing: FirestoreBackendError.missingSnapshot)
-                }
-            }
-        }
+        let snapshot = try await fetchUserDocumentSnapshot()
         return snapshot.data()?["uncategorizedPosition"] as? Int
     }
 
@@ -334,6 +395,95 @@ private final class FirestoreBackend: BackendSyncing {
             guard let snapshot, error == nil else { return }
             let position = snapshot.data()?["uncategorizedPosition"] as? Int
             handler(position)
+        }
+    }
+
+    func upsertExperimentalFeatureMetadata(preference: ExperimentalFeaturePreference) async throws {
+        try await setData(on: userDocument, data: [
+            "experimentalFeaturesEnabled": preference.isEnabled,
+            "experimentalFeaturesUpdatedAt": firestoreSafeDate(preference.updatedAt)
+        ])
+    }
+
+    func fetchExperimentalFeatureMetadata() async throws -> (isEnabled: Bool, updatedAt: Date)? {
+        let snapshot = try await fetchUserDocumentSnapshot()
+        guard let data = snapshot.data(),
+              let isEnabled = data["experimentalFeaturesEnabled"] as? Bool else {
+            return nil
+        }
+        let updatedAt = dateValue(from: data["experimentalFeaturesUpdatedAt"]) ?? AppDateBounds.metadataBaseline
+        return (isEnabled, updatedAt)
+    }
+
+    func listenExperimentalFeatureMetadata(_ handler: @escaping (Bool?, Date?) -> Void) -> ListenerRegistration {
+        userDocument.addSnapshotListener { snapshot, error in
+            guard let snapshot, error == nil else { return }
+            let data = snapshot.data()
+            let isEnabled = data?["experimentalFeaturesEnabled"] as? Bool
+            let updatedAt = self.dateValue(from: data?["experimentalFeaturesUpdatedAt"])
+            handler(isEnabled, updatedAt)
+        }
+    }
+
+    func upsertInsightsHintMetadata(_ state: InsightsHintState) async throws {
+        var data: [String: Any] = [
+            "insightsHintShowCount": state.showCount,
+            "insightsHintDismissCount": state.dismissCount,
+            "insightsHintUpdatedAt": firestoreSafeDate(state.updatedAt)
+        ]
+        if let lastShownAt = state.lastShownAt {
+            data["insightsHintLastShownAt"] = firestoreSafeDate(lastShownAt)
+        } else {
+            data["insightsHintLastShownAt"] = FieldValue.delete()
+        }
+        if let lastDismissedAt = state.lastDismissedAt {
+            data["insightsHintLastDismissedAt"] = firestoreSafeDate(lastDismissedAt)
+        } else {
+            data["insightsHintLastDismissedAt"] = FieldValue.delete()
+        }
+        if let interactedAt = state.interactedAt {
+            data["insightsHintInteractedAt"] = firestoreSafeDate(interactedAt)
+        } else {
+            data["insightsHintInteractedAt"] = FieldValue.delete()
+        }
+        try await setData(on: userDocument, data: data)
+    }
+
+    func fetchInsightsHintMetadata() async throws -> InsightsHintState? {
+        let snapshot = try await fetchUserDocumentSnapshot()
+        guard let data = snapshot.data(),
+              data["insightsHintUpdatedAt"] != nil else {
+            return nil
+        }
+        let updatedAt = dateValue(from: data["insightsHintUpdatedAt"]) ?? AppDateBounds.metadataBaseline
+        return InsightsHintState(
+            showCount: data["insightsHintShowCount"] as? Int ?? 0,
+            dismissCount: data["insightsHintDismissCount"] as? Int ?? 0,
+            lastShownAt: dateValue(from: data["insightsHintLastShownAt"]),
+            lastDismissedAt: dateValue(from: data["insightsHintLastDismissedAt"]),
+            interactedAt: dateValue(from: data["insightsHintInteractedAt"]),
+            updatedAt: updatedAt
+        )
+    }
+
+    func listenInsightsHintMetadata(_ handler: @escaping (InsightsHintState?) -> Void) -> ListenerRegistration {
+        userDocument.addSnapshotListener { snapshot, error in
+            guard let snapshot, error == nil else { return }
+            let data = snapshot.data()
+            guard let data,
+                  data["insightsHintUpdatedAt"] != nil else {
+                handler(nil)
+                return
+            }
+            let state = InsightsHintState(
+                showCount: data["insightsHintShowCount"] as? Int ?? 0,
+                dismissCount: data["insightsHintDismissCount"] as? Int ?? 0,
+                lastShownAt: self.dateValue(from: data["insightsHintLastShownAt"]),
+                lastDismissedAt: self.dateValue(from: data["insightsHintLastDismissedAt"]),
+                interactedAt: self.dateValue(from: data["insightsHintInteractedAt"]),
+                updatedAt: self.dateValue(from: data["insightsHintUpdatedAt"]) ?? AppDateBounds.metadataBaseline
+            )
+            handler(state)
         }
     }
 
@@ -385,6 +535,20 @@ private final class FirestoreBackend: BackendSyncing {
         let snapshot = try await getDocuments(from: categoriesCollection)
         return snapshot.documents.compactMap { document in
             category(from: document)
+        }
+    }
+
+    private func fetchUserDocumentSnapshot() async throws -> DocumentSnapshot {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DocumentSnapshot, Error>) in
+            userDocument.getDocument { snapshot, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let snapshot {
+                    continuation.resume(returning: snapshot)
+                } else {
+                    continuation.resume(throwing: FirestoreBackendError.missingSnapshot)
+                }
+            }
         }
     }
 
@@ -457,7 +621,7 @@ private final class FirestoreBackend: BackendSyncing {
         [
             "id": note.id.uuidString,
             "text": note.text,
-            "createdAt": note.createdAt
+            "createdAt": firestoreSafeDate(note.createdAt)
         ]
     }
 
@@ -467,13 +631,13 @@ private final class FirestoreBackend: BackendSyncing {
             "title": task.title,
             "categories": task.categories,
             "priority": task.priority.rawValue,
-            "createdAt": task.createdAt,
-            "updatedAt": task.updatedAt,
+            "createdAt": firestoreSafeDate(task.createdAt),
+            "updatedAt": firestoreSafeDate(task.updatedAt),
             "orderIndex": task.orderIndex as Any
         ]
-        if let dueDate = task.dueDate { data["dueDate"] = dueDate }
+        if let dueDate = task.dueDate { data["dueDate"] = firestoreSafeDate(dueDate) }
         if let completedAt = task.completedAt {
-            data["completedAt"] = completedAt
+            data["completedAt"] = firestoreSafeDate(completedAt)
         } else {
             // Ensure completedAt is removed when restoring a task.
             data["completedAt"] = FieldValue.delete()
@@ -482,7 +646,7 @@ private final class FirestoreBackend: BackendSyncing {
         
         // Reminder fields
         if let reminderDate = task.reminderDate {
-            data["reminderDate"] = reminderDate
+            data["reminderDate"] = firestoreSafeDate(reminderDate)
         } else {
             data["reminderDate"] = FieldValue.delete()
         }
@@ -490,6 +654,17 @@ private final class FirestoreBackend: BackendSyncing {
             data["reminderNotificationId"] = reminderNotificationId
         } else {
             data["reminderNotificationId"] = FieldValue.delete()
+        }
+
+        if let parentTaskId = task.parentTaskId {
+            data["parentTaskId"] = parentTaskId
+        } else {
+            data["parentTaskId"] = FieldValue.delete()
+        }
+        if let parentManualReopenAt = task.parentManualReopenAt {
+            data["parentManualReopenAt"] = firestoreSafeDate(parentManualReopenAt)
+        } else {
+            data["parentManualReopenAt"] = FieldValue.delete()
         }
         
         return data
@@ -531,6 +706,8 @@ private final class FirestoreBackend: BackendSyncing {
         // Reminder fields
         let reminderDate = dateValue(from: data["reminderDate"])
         let reminderNotificationId = data["reminderNotificationId"] as? String
+        let parentTaskId = data["parentTaskId"] as? String
+        let parentManualReopenAt = dateValue(from: data["parentManualReopenAt"])
         
         return Task(
             id: id,
@@ -544,7 +721,9 @@ private final class FirestoreBackend: BackendSyncing {
             updatedAt: updatedAt,
             orderIndex: orderIndex,
             reminderDate: reminderDate,
-            reminderNotificationId: reminderNotificationId
+            reminderNotificationId: reminderNotificationId,
+            parentTaskId: parentTaskId,
+            parentManualReopenAt: parentManualReopenAt
         )
     }
 
@@ -564,15 +743,19 @@ private final class FirestoreBackend: BackendSyncing {
 
     private func dateValue(from value: Any?) -> Date? {
         if let timestamp = value as? Timestamp {
-            return timestamp.dateValue()
+            return firestoreSafeDate(timestamp.dateValue())
         }
         if let date = value as? Date {
-            return date
+            return firestoreSafeDate(date)
         }
         if let interval = value as? TimeInterval {
-            return Date(timeIntervalSince1970: interval)
+            return firestoreSafeDate(Date(timeIntervalSince1970: interval))
         }
         return nil
+    }
+
+    private func firestoreSafeDate(_ date: Date) -> Date {
+        AppDateBounds.clampedForFirestore(date)
     }
 
     private func intValue(from value: Any?) -> Int? {

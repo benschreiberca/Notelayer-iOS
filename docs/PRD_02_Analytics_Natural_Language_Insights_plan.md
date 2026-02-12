@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `65%`
 
 ## TLDR
 Refactor Insights presentation into plain-English language with explicit chart context and interpretation: every chart section includes chart + visible values + two-sentence takeaway (observation then suggestion), while preserving raw counts.
@@ -70,3 +70,10 @@ Refactor Insights presentation into plain-English language with explicit chart c
   - [ ] 🟥 Accessibility QA: axis labels/readability with Dynamic Type and VoiceOver summaries.
   - [ ] 🟥 Run post-implementation UI consistency review and capture findings.
   - [ ] 🟥 Regression QA: raw numeric counts remain visible across Insights sections.
+
+## UI Consistency Evidence (2026-02-11)
+- Pre-check completed against existing `InsightsView.swift` section/list patterns.
+- Post-check completed after label, chart-axis, and takeaway updates:
+- kept native `List`, `Section`, and `Chart` patterns,
+- avoided snackbar-style messaging,
+- retained raw counts under each visualization.

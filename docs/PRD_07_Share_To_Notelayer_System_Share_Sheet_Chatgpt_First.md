@@ -1,7 +1,7 @@
 # PRD 07: Share To Notelayer System Share Sheet (ChatGPT-First)
 
-Last Updated: 2026-02-10
-Status: Draft For Clarification
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: External Capture Ingestion
 
 ## Purpose
@@ -42,31 +42,38 @@ Users creating task-relevant content in ChatGPT need a direct capture path into 
 3. Structure from source text should be preserved where practical.
 4. Flow should minimize user friction and app switching overhead.
 
+## Decisions Locked (2026-02-11)
+
+- Priority input patterns for v1: plain prose, bullets, numbered lists, and markdown headings.
+- Ambiguous destination defaults to note.
+- Destination is inferred automatically in v1 (no forced chooser each time).
+- Structure preservation rule:
+- preserve headings, bullets/numbering, and checklist semantics where possible,
+- normalize links/code blocks to plain text for readability.
+- Long content rule: accept up to 10,000 characters, then truncate with a warning.
+- List mapping rule: multiple list items become multiple staged tasks.
+- Source attribution rule: store source app + import timestamp.
+- Offline/unavailable store rule: queue import locally as pending and offer retry.
+- Conversion failure rule: keep pending draft, show recovery action, never silently drop.
+- Duplicate detection is out of scope for v1.
+- Minimal friction benchmark:
+- p95 import preparation time <= 2 seconds for typical shares,
+- no more than one required confirmation step before saving.
+
 ## Dependencies
 
 - Can be rollout-gated through `PRD_01` if needed.
 - May intersect with task hierarchy behavior in `PRD_08` for future structure mapping.
 
-## Risks And Unknowns
+## Risks
 
 - ChatGPT output formats vary significantly and can challenge parsing consistency.
 - Aggressive structure preservation may create noisy data.
 - Ambiguous task-versus-note mapping can reduce user trust.
 
-## High-Level Clarification Questions
+## Open Questions
 
-1. What exact ChatGPT output patterns are priority for v1 (bullets, numbered plans, markdown headings, plain prose)?
-2. Should default destination be task or note when intent is ambiguous?
-3. Do you want users to choose destination every time, or infer automatically with fallback?
-4. How much markdown should be preserved versus normalized for readability in Notelayer?
-5. Should long responses be truncated, chunked, or accepted as-is?
-6. Should multiple list items in shared text become multiple tasks or one structured task/note?
-7. What source attribution, if any, should be retained for shared content?
-8. What should happen if share is initiated while app data store is unavailable/offline?
-9. What error-recovery path should exist when share conversion fails?
-10. Should duplicate share content detection exist in v1?
-11. Are there privacy expectations for what shared content is persisted or transformed?
-12. What is the success benchmark for "minimal friction" in this flow?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

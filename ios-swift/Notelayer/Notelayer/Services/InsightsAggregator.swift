@@ -174,21 +174,22 @@ struct InsightsAggregator {
     ) -> InsightsSnapshotModel {
         let todayStart = calendar.startOfDay(for: now)
         let windowStart = calendar.date(byAdding: .day, value: -(selectedWindow.rawValue - 1), to: todayStart) ?? todayStart
+        let topLevelTasks = tasks.filter { $0.parentTaskId == nil }
 
         let totals = InsightsTaskTotals(
-            all: tasks.count,
-            open: tasks.filter { $0.completedAt == nil }.count,
-            done: tasks.filter { $0.completedAt != nil }.count
+            all: topLevelTasks.count,
+            open: topLevelTasks.filter { $0.completedAt == nil }.count,
+            done: topLevelTasks.filter { $0.completedAt != nil }.count
         )
 
-        let trendWindow = buildTaskTrend(tasks: tasks, startDate: windowStart, endDate: todayStart, calendar: calendar)
-        let allTimeStart = earliestTaskDay(tasks: tasks, fallback: todayStart, calendar: calendar)
-        let trendAllTime = buildTaskTrend(tasks: tasks, startDate: allTimeStart, endDate: todayStart, calendar: calendar)
+        let trendWindow = buildTaskTrend(tasks: topLevelTasks, startDate: windowStart, endDate: todayStart, calendar: calendar)
+        let allTimeStart = earliestTaskDay(tasks: topLevelTasks, fallback: todayStart, calendar: calendar)
+        let trendAllTime = buildTaskTrend(tasks: topLevelTasks, startDate: allTimeStart, endDate: todayStart, calendar: calendar)
 
         let telemetryRecords = normalizeTelemetry(snapshot: telemetry, calendar: calendar)
 
         let categoryStats = buildCategoryStats(
-            tasks: tasks,
+            tasks: topLevelTasks,
             categories: categories,
             telemetryRecords: telemetryRecords,
             windowStart: windowStart,
@@ -196,8 +197,8 @@ struct InsightsAggregator {
         )
         let tasksLeftUncategorized = categoryStats.first(where: { $0.isUncategorized })?.openCount ?? 0
 
-        let hourBuckets = buildHourBuckets(tasks: tasks, telemetryRecords: telemetryRecords, calendar: calendar)
-        let oldestOpenTaskData = buildOldestOpenTaskData(tasks: tasks, now: now, calendar: calendar)
+        let hourBuckets = buildHourBuckets(tasks: topLevelTasks, telemetryRecords: telemetryRecords, calendar: calendar)
+        let oldestOpenTaskData = buildOldestOpenTaskData(tasks: topLevelTasks, now: now, calendar: calendar)
 
         let featureStats = buildFeatureStats(telemetryRecords: telemetryRecords, windowStart: windowStart, now: now)
 
@@ -616,35 +617,35 @@ struct InsightsAggregator {
 
     private static func featureCatalog() -> [(key: String, title: String)] {
         [
-            (InsightsFeatureKey.taskCreate, "Task Create"),
-            (InsightsFeatureKey.taskEdit, "Task Edit"),
-            (InsightsFeatureKey.taskComplete, "Task Complete"),
-            (InsightsFeatureKey.taskRestore, "Task Restore"),
-            (InsightsFeatureKey.taskDelete, "Task Delete"),
-            (InsightsFeatureKey.taskReorder, "Task Reorder"),
-            (InsightsFeatureKey.dueDateSet, "Due Date Set"),
-            (InsightsFeatureKey.dueDateCleared, "Due Date Cleared"),
-            (InsightsFeatureKey.reminderSet, "Reminder Set"),
-            (InsightsFeatureKey.reminderCleared, "Reminder Cleared"),
-            (InsightsFeatureKey.reminderPermissionPrompted, "Reminder Permission Prompt"),
-            (InsightsFeatureKey.reminderPermissionDenied, "Reminder Permission Denied"),
-            (InsightsFeatureKey.calendarExportInitiated, "Calendar Export Start"),
-            (InsightsFeatureKey.calendarExportPresented, "Calendar Export Presented"),
-            (InsightsFeatureKey.calendarExportPermissionDenied, "Calendar Export Permission Denied"),
-            (InsightsFeatureKey.categoryCreate, "Category Create"),
-            (InsightsFeatureKey.categoryRename, "Category Rename"),
-            (InsightsFeatureKey.categoryReorder, "Category Reorder"),
-            (InsightsFeatureKey.categoryDelete, "Category Delete"),
-            (InsightsFeatureKey.categoryAssign, "Category Assign"),
-            (InsightsFeatureKey.tabSelect, "Tab Select"),
-            (InsightsFeatureKey.viewOpen, "View Open"),
-            (InsightsFeatureKey.viewDuration, "View Duration"),
-            (InsightsFeatureKey.todosModeSwitch, "Todos Mode Switch"),
-            (InsightsFeatureKey.todosFilterChange, "Todos Filter Change"),
-            (InsightsFeatureKey.notesUsage, "Notes Usage"),
-            (InsightsFeatureKey.themeChange, "Theme Change"),
-            (InsightsFeatureKey.profileSettingsOpen, "Profile & Settings Open"),
-            (InsightsFeatureKey.insightsDrilldownOpen, "Insights Drilldown Open")
+            (InsightsFeatureKey.taskCreate, "Tasks Created"),
+            (InsightsFeatureKey.taskEdit, "Tasks Edited"),
+            (InsightsFeatureKey.taskComplete, "Tasks Completed"),
+            (InsightsFeatureKey.taskRestore, "Completed Tasks Reopened"),
+            (InsightsFeatureKey.taskDelete, "Tasks Deleted"),
+            (InsightsFeatureKey.taskReorder, "Task Reorders"),
+            (InsightsFeatureKey.dueDateSet, "Due Dates Added"),
+            (InsightsFeatureKey.dueDateCleared, "Due Dates Removed"),
+            (InsightsFeatureKey.reminderSet, "Reminders Added"),
+            (InsightsFeatureKey.reminderCleared, "Reminders Removed"),
+            (InsightsFeatureKey.reminderPermissionPrompted, "Reminder Permission Requests"),
+            (InsightsFeatureKey.reminderPermissionDenied, "Reminder Permission Denials"),
+            (InsightsFeatureKey.calendarExportInitiated, "Calendar Export Attempts"),
+            (InsightsFeatureKey.calendarExportPresented, "Calendar Export Screens Opened"),
+            (InsightsFeatureKey.calendarExportPermissionDenied, "Calendar Export Permission Denials"),
+            (InsightsFeatureKey.categoryCreate, "Categories Created"),
+            (InsightsFeatureKey.categoryRename, "Category Renames"),
+            (InsightsFeatureKey.categoryReorder, "Category Reorders"),
+            (InsightsFeatureKey.categoryDelete, "Categories Deleted"),
+            (InsightsFeatureKey.categoryAssign, "Category Assignments"),
+            (InsightsFeatureKey.tabSelect, "Tab Switches"),
+            (InsightsFeatureKey.viewOpen, "# of detailed Task views"),
+            (InsightsFeatureKey.viewDuration, "Time Spent in Views"),
+            (InsightsFeatureKey.todosModeSwitch, "To-Do View Mode Switches"),
+            (InsightsFeatureKey.todosFilterChange, "Doing/Done Filter Changes"),
+            (InsightsFeatureKey.notesUsage, "Notes Tab Opens"),
+            (InsightsFeatureKey.themeChange, "Theme Changes"),
+            (InsightsFeatureKey.profileSettingsOpen, "Profile and Settings Opens"),
+            (InsightsFeatureKey.insightsDrilldownOpen, "# of Insight analytics views")
         ]
     }
 

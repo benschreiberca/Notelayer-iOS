@@ -1,6 +1,6 @@
 # Docs Feature Implementation Plans Index
 
-Last Updated: 2026-02-10
+Last Updated: 2026-02-12
 Source: `docs/` markdown scan
 
 ## Purpose
@@ -10,6 +10,7 @@ Group implementation/planning docs for feature-centric scanning.
 ## File List
 
 - [App_Icon_Update_Plan.md](App_Icon_Update_Plan.md)
+- [App_Launch_Hang_Untappable_And_Watchdog_Crash_Implementation_Plan.md](App_Launch_Hang_Untappable_And_Watchdog_Crash_Implementation_Plan.md)
 - [App_Review_Notes_Plan.md](App_Review_Notes_Plan.md)
 - [App_Store_Metadata_Plan.md](App_Store_Metadata_Plan.md)
 - [Auth_And_Onboarding_Implementation_Plan.md](Auth_And_Onboarding_Implementation_Plan.md)
@@ -29,6 +30,7 @@ Group implementation/planning docs for feature-centric scanning.
 - [Firebase_Build_Errors_Plan.md](Firebase_Build_Errors_Plan.md)
 - [Insights_Implementation_Plan.md](Insights_Implementation_Plan.md)
 - [Ios_Standard_Consistency_Plan.md](Ios_Standard_Consistency_Plan.md)
+- [Low_Risk_Responsiveness_Optimization_Implementation_Plan.md](Low_Risk_Responsiveness_Optimization_Implementation_Plan.md)
 - [Pre_Submission_Check_Plan.md](Pre_Submission_Check_Plan.md)
 - [Privacy_Policy_Plan.md](Privacy_Policy_Plan.md)
 - [Project_Feature_Master_Plan.md](Project_Feature_Master_Plan.md)
@@ -54,6 +56,7 @@ Group implementation/planning docs for feature-centric scanning.
 - [Theme_System_V2_Plan.md](Theme_System_V2_Plan.md)
 - [Theme_Ui_Inconsistencies_Plan.md](Theme_Ui_Inconsistencies_Plan.md)
 - [Todos_Header_Alignment_Regression_Implementation_Plan.md](Todos_Header_Alignment_Regression_Implementation_Plan.md)
+- [Todos_Insights_Bottom_Clearance_Parity_Implementation_Plan.md](Todos_Insights_Bottom_Clearance_Parity_Implementation_Plan.md)
 - [Ui_Consistency_Fixes_Plan.md](Ui_Consistency_Fixes_Plan.md)
 - [Ui_Consistency_Fixes_Plan_2026_01_29.md](Ui_Consistency_Fixes_Plan_2026_01_29.md)
 - [Usage_Analytics_Plan.md](Usage_Analytics_Plan.md)

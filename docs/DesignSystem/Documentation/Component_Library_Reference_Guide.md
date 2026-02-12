@@ -28,3 +28,8 @@ This is the design-system mapping for core components.
 - Standard contract: primary (left), optional secondary (below), trailing value (right).
 - Use one shared row pattern for all drilldown tables to avoid section-specific styling drift.
 - Reference: `docs/DesignSystem/Documentation/Data_Row_Patterns_Reference_Guide.md`
+
+## Floating Tab Bottom Clearance (Scrollable Screens)
+- Standard contract: apply bottom clearance on the scrolling container (`ScrollView`/`List`) so last content clears the floating tab pill.
+- Use one shared token: `AppBottomClearance.contentBottomSpacerHeight`.
+- Reference: `docs/DesignSystem/Documentation/Floating_Tab_Bottom_Clearance_Reference_Guide.md`

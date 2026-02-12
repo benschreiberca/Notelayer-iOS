@@ -1,7 +1,7 @@
 # PRD 04: Voice Entry Structured Capture
 
-Last Updated: 2026-02-10
-Status: Mostly Clarified
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: Voice Task Creation
 
 ## Purpose
@@ -20,6 +20,8 @@ Voice capture is faster than typing, but only valuable when parsing creates clea
 - Split bias is toward granular tasks.
 - Unknown category guesses must map to existing categories only.
 - Low-confidence guesses should be visibly indicated in preview.
+- Parse-quality threshold for `Needs Review` in v1 is confidence `< 0.65`.
+- Confidence display uses a single level: `Needs Review`.
 - Parser must produce a title; fallback title uses first 6 words.
 - Fallback title should also cap to 55 visible characters (truncate with ellipsis if needed).
 
@@ -70,8 +72,7 @@ Voice capture is faster than typing, but only valuable when parsing creates clea
 
 ## Open Questions
 
-1. What parse-quality threshold should mark an item as `Needs Review` in v1?
-2. Should low-confidence flags use one level (`Needs Review`) or multiple confidence tiers?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

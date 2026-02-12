@@ -15,6 +15,16 @@ struct Note: Identifiable, Codable {
     }
 }
 
+extension Notification.Name {
+    static let experimentalFeaturesDidChange = Notification.Name("Notelayer.ExperimentalFeatures.DidChange")
+    static let openOnboardingRequested = Notification.Name("Notelayer.Onboarding.OpenRequested")
+}
+
+enum ParentTaskDeletionStrategy {
+    case deleteSubtasks
+    case detachSubtasks
+}
+
 class LocalStore: ObservableObject {
     static let shared = LocalStore()
     
@@ -22,6 +32,14 @@ class LocalStore: ObservableObject {
     @Published var tasks: [Task] = []
     @Published var categories: [Category] = []
     @Published private(set) var uncategorizedPosition: Int = 0
+    @Published private(set) var experimentalFeaturesPreference: ExperimentalFeaturePreference = .default
+    @Published private(set) var insightsHintState: InsightsHintState = .default
+    @Published var voiceStagingDrafts: [VoiceParsedTaskDraft] = []
+    @Published var voiceSourceTranscript: String = ""
+    @Published var isVoiceStagingPresented: Bool = false
+    @Published private(set) var pendingSharedImportCount: Int = 0
+    @Published private(set) var lastSharedImportError: String?
+    @Published private(set) var lastSharedImportProcessedAt: Date?
 
     private var backend: BackendSyncing?
     private var suppressBackendWrites = false
@@ -30,7 +48,21 @@ class LocalStore: ObservableObject {
     private let tasksKey = "com.notelayer.app.tasks"
     private let categoriesKey = "com.notelayer.app.categories"
     private let uncategorizedPositionKey = "com.notelayer.app.todos.uncategorizedPosition"
+    private let experimentalFeaturesEnabledKey = "com.notelayer.app.experimentalFeatures.enabled"
+    private let experimentalFeaturesUpdatedAtKey = "com.notelayer.app.experimentalFeatures.updatedAt"
+    private let insightsHintStateKey = "com.notelayer.app.insights.hintState"
+    private let voiceStagingDraftsKey = "com.notelayer.app.voice.stagingDrafts"
+    private let voiceSourceTranscriptKey = "com.notelayer.app.voice.sourceTranscript"
     private let backendUserIdKey = "com.notelayer.app.backendUserId"
+    private let sharedItemsQueueKey = "com.notelayer.app.sharedItems"
+    private var hasStoredExperimentalPreference = false
+    private var hasStoredInsightsHintState = false
+    private let sharedImportProcessingQueue = DispatchQueue(
+        label: "com.notelayer.app.sharedImport.processing",
+        qos: .utility
+    )
+    private let sharedImportProcessingLock = NSLock()
+    private var isSharedImportProcessing = false
     
     // Use isolated data store for screenshot generation to protect user's real data
     private static var isScreenshotMode: Bool {
@@ -52,7 +84,9 @@ class LocalStore: ObservableObject {
     
     private init() {
         load()
-        migrateIfNeeded()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+            self?.migrateIfNeeded()
+        }
     }
 
     nonisolated static func categorySort(_ lhs: Category, _ rhs: Category) -> Bool {
@@ -64,6 +98,14 @@ class LocalStore: ObservableObject {
 
     var sortedCategories: [Category] {
         categories.sorted(by: Self.categorySort)
+    }
+
+    var topLevelTasks: [Task] {
+        tasks.filter { $0.parentTaskId == nil }
+    }
+
+    var experimentalFeaturesEnabled: Bool {
+        experimentalFeaturesPreference.isEnabled
     }
 
     func attachBackend(_ backend: BackendSyncing?) {
@@ -80,10 +122,23 @@ class LocalStore: ObservableObject {
             tasks = []
             categories = []
             uncategorizedPosition = 0
+            experimentalFeaturesPreference = .default
+            insightsHintState = .default
+            voiceStagingDrafts = []
+            voiceSourceTranscript = ""
+            isVoiceStagingPresented = false
+            pendingSharedImportCount = 0
+            lastSharedImportError = nil
+            lastSharedImportProcessedAt = nil
+            hasStoredExperimentalPreference = false
+            hasStoredInsightsHintState = false
             saveNotes()
             saveTasks()
             saveCategories()
             saveUncategorizedPosition()
+            saveExperimentalFeaturesPreference()
+            saveInsightsHintState()
+            saveVoiceStaging()
             migrateIfNeeded()
         }
     }
@@ -91,7 +146,7 @@ class LocalStore: ObservableObject {
     func applyRemoteSnapshot(notes: [Note], tasks: [Task], categories: [Category]) {
         applyRemoteUpdate {
             self.notes = notes
-            self.tasks = tasks
+            self.tasks = sanitizeHierarchy(tasks)
             self.categories = categories
                 .sorted(by: Self.categorySort)
             saveNotes()
@@ -110,12 +165,13 @@ class LocalStore: ObservableObject {
 
     func applyRemoteTasks(_ tasks: [Task]) {
         applyRemoteUpdate {
-            self.tasks = tasks
+            let sanitizedTasks = sanitizeHierarchy(tasks)
+            self.tasks = sanitizedTasks
             saveTasks()
             
             // Reschedule reminders for synced tasks
             // Notifications don't sync across devices, only reminder data syncs
-            rescheduleRemindersAfterSync(tasks)
+            rescheduleRemindersAfterSync(sanitizedTasks)
         }
     }
 
@@ -171,6 +227,22 @@ class LocalStore: ObservableObject {
         updates()
         suppressBackendWrites = wasSuppressed
     }
+
+    private func sanitizeHierarchy(_ tasks: [Task]) -> [Task] {
+        let lookup = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0) })
+        return tasks.map { task in
+            var sanitized = task
+            if let parentId = task.parentTaskId {
+                if parentId == task.id || lookup[parentId]?.parentTaskId != nil || lookup[parentId] == nil {
+                    sanitized.parentTaskId = nil
+                }
+            }
+            if sanitized.parentTaskId != nil {
+                sanitized.parentManualReopenAt = nil
+            }
+            return sanitized
+        }
+    }
     
     // MARK: - Load & Save
     
@@ -189,9 +261,76 @@ class LocalStore: ObservableObject {
            let decodedCategories = try? JSONDecoder().decode([Category].self, from: categoriesData) {
             categories = decodedCategories
         }
+        if categories.isEmpty {
+            categories = Category.defaultCategories
+        }
 
         if let savedPosition = userDefaults.object(forKey: uncategorizedPositionKey) as? Int {
             uncategorizedPosition = savedPosition
+        }
+
+        if userDefaults.object(forKey: experimentalFeaturesEnabledKey) != nil {
+            hasStoredExperimentalPreference = true
+            let enabled = userDefaults.bool(forKey: experimentalFeaturesEnabledKey)
+            let persistedUpdatedAt = userDefaults.object(forKey: experimentalFeaturesUpdatedAtKey) as? Date
+                ?? AppDateBounds.metadataBaseline
+            let updatedAt = AppDateBounds.clampedForFirestore(persistedUpdatedAt)
+            experimentalFeaturesPreference = ExperimentalFeaturePreference(
+                isEnabled: enabled,
+                updatedAt: updatedAt,
+                state: enabled ? .on : .off
+            )
+        } else {
+            hasStoredExperimentalPreference = false
+            experimentalFeaturesPreference = .default
+        }
+
+        if let hintData = userDefaults.data(forKey: insightsHintStateKey),
+           let decodedHintState = try? JSONDecoder().decode(InsightsHintState.self, from: hintData) {
+            insightsHintState = InsightsHintState(
+                showCount: decodedHintState.showCount,
+                dismissCount: decodedHintState.dismissCount,
+                lastShownAt: decodedHintState.lastShownAt,
+                lastDismissedAt: decodedHintState.lastDismissedAt,
+                interactedAt: decodedHintState.interactedAt,
+                updatedAt: AppDateBounds.clampedForFirestore(decodedHintState.updatedAt)
+            )
+            hasStoredInsightsHintState = true
+        } else {
+            insightsHintState = .default
+            hasStoredInsightsHintState = false
+        }
+
+        if let draftsData = userDefaults.data(forKey: voiceStagingDraftsKey),
+           let decodedDrafts = try? JSONDecoder().decode([VoiceParsedTaskDraft].self, from: draftsData) {
+            voiceStagingDrafts = decodedDrafts
+        } else {
+            voiceStagingDrafts = []
+        }
+        voiceSourceTranscript = userDefaults.string(forKey: voiceSourceTranscriptKey) ?? ""
+        isVoiceStagingPresented = !voiceStagingDrafts.isEmpty
+        refreshSharedImportQueueStatusAsync()
+    }
+
+    private func refreshSharedImportQueueStatusAsync() {
+        sharedImportProcessingQueue.async { [weak self] in
+            guard let self else { return }
+            guard let userDefaults = UserDefaults(suiteName: self.appGroupIdentifier) else {
+                DispatchQueue.main.async { [weak self] in
+                    self?.pendingSharedImportCount = 0
+                    self?.lastSharedImportError = nil
+                }
+                return
+            }
+
+            let queuedItems = self.decodeSharedItems(from: userDefaults)
+            let pendingCount = queuedItems.count
+            let firstError = queuedItems.first(where: { $0.status == .failed })?.lastError
+
+            DispatchQueue.main.async { [weak self] in
+                self?.pendingSharedImportCount = pendingCount
+                self?.lastSharedImportError = firstError
+            }
         }
     }
 
@@ -200,11 +339,11 @@ class LocalStore: ObservableObject {
         if categories.isEmpty {
             categories = Category.defaultCategories
             saveCategories()
-            return
         }
 
         // Categories: normalize color field to hex (supports older non-hex values)
         var changed = false
+        var tasksChanged = false
         for idx in categories.indices {
             let c = categories[idx]
             let normalized = CategoryColorDefaults.normalizeHexOrDefault(c.color, categoryId: c.id)
@@ -226,8 +365,30 @@ class LocalStore: ObservableObject {
             uncategorizedPosition = clampedPosition
             saveUncategorizedPosition()
         }
+
+        // Tasks: enforce one-level hierarchy and clear invalid parent references.
+        let taskLookup = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0) })
+        for idx in tasks.indices {
+            let currentId = tasks[idx].id
+            if let parentId = tasks[idx].parentTaskId {
+                let parent = taskLookup[parentId]
+                let parentIsTopLevel = parent?.parentTaskId == nil
+                if parent == nil || !parentIsTopLevel || parentId == currentId {
+                    tasks[idx].parentTaskId = nil
+                    tasksChanged = true
+                }
+            }
+            if tasks[idx].parentTaskId != nil, tasks[idx].parentManualReopenAt != nil {
+                tasks[idx].parentManualReopenAt = nil
+                tasksChanged = true
+            }
+        }
+
         if changed {
             saveCategories()
+        }
+        if tasksChanged {
+            saveTasks()
         }
     }
     
@@ -255,7 +416,173 @@ class LocalStore: ObservableObject {
     private func saveUncategorizedPosition() {
         userDefaults.set(uncategorizedPosition, forKey: uncategorizedPositionKey)
     }
-    
+
+    private func saveExperimentalFeaturesPreference() {
+        userDefaults.set(experimentalFeaturesPreference.isEnabled, forKey: experimentalFeaturesEnabledKey)
+        userDefaults.set(
+            AppDateBounds.clampedForFirestore(experimentalFeaturesPreference.updatedAt),
+            forKey: experimentalFeaturesUpdatedAtKey
+        )
+        hasStoredExperimentalPreference = true
+    }
+
+    private func saveInsightsHintState() {
+        if let data = try? JSONEncoder().encode(insightsHintState) {
+            userDefaults.set(data, forKey: insightsHintStateKey)
+            hasStoredInsightsHintState = true
+        }
+    }
+
+    private func saveVoiceStaging() {
+        if voiceStagingDrafts.isEmpty {
+            userDefaults.removeObject(forKey: voiceStagingDraftsKey)
+            userDefaults.removeObject(forKey: voiceSourceTranscriptKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(voiceStagingDrafts) {
+            userDefaults.set(data, forKey: voiceStagingDraftsKey)
+            userDefaults.set(voiceSourceTranscript, forKey: voiceSourceTranscriptKey)
+        }
+    }
+
+    // MARK: - Experimental Features
+
+    func beginExperimentalReconciliation() {
+        experimentalFeaturesPreference.state = .pendingSyncReconcile
+    }
+
+    @discardableResult
+    func reconcileExperimentalPreference(
+        remoteEnabled: Bool?,
+        remoteUpdatedAt: Date?
+    ) -> Bool {
+        let local = experimentalFeaturesPreference
+        var shouldPushLocal = false
+
+        if let remoteEnabled, let remoteUpdatedAt {
+            if !hasStoredExperimentalPreference {
+                experimentalFeaturesPreference = ExperimentalFeaturePreference(
+                    isEnabled: remoteEnabled,
+                    updatedAt: remoteUpdatedAt,
+                    state: remoteEnabled ? .on : .off
+                )
+            } else if remoteUpdatedAt > local.updatedAt {
+                experimentalFeaturesPreference = ExperimentalFeaturePreference(
+                    isEnabled: remoteEnabled,
+                    updatedAt: remoteUpdatedAt,
+                    state: remoteEnabled ? .on : .off
+                )
+            } else {
+                shouldPushLocal = true
+                experimentalFeaturesPreference.state = local.isEnabled ? .on : .off
+            }
+        } else {
+            experimentalFeaturesPreference.state = local.isEnabled ? .on : .off
+            shouldPushLocal = hasStoredExperimentalPreference
+        }
+
+        saveExperimentalFeaturesPreference()
+        return shouldPushLocal
+    }
+
+    func setExperimentalFeaturesEnabled(_ enabled: Bool, source: String = "user") {
+        let previousValue = experimentalFeaturesPreference.isEnabled
+        guard previousValue != enabled else { return }
+
+        experimentalFeaturesPreference = ExperimentalFeaturePreference(
+            isEnabled: enabled,
+            updatedAt: Date(),
+            state: enabled ? .on : .off
+        )
+        saveExperimentalFeaturesPreference()
+
+        NotificationCenter.default.post(
+            name: .experimentalFeaturesDidChange,
+            object: nil,
+            userInfo: [
+                "oldValue": previousValue,
+                "newValue": enabled,
+                "source": source
+            ]
+        )
+    }
+
+    // MARK: - Insights Hint State
+
+    @discardableResult
+    func reconcileInsightsHintState(_ remote: InsightsHintState?) -> Bool {
+        let local = insightsHintState
+        var shouldPushLocal = false
+
+        if let remote {
+            if !hasStoredInsightsHintState {
+                insightsHintState = remote
+            } else if remote.updatedAt > local.updatedAt {
+                insightsHintState = remote
+            } else {
+                shouldPushLocal = true
+            }
+        } else {
+            shouldPushLocal = hasStoredInsightsHintState
+        }
+
+        saveInsightsHintState()
+        return shouldPushLocal
+    }
+
+    func shouldShowInsightsHint(now: Date = Date()) -> Bool {
+        insightsHintState.shouldShowHint(now: now)
+    }
+
+    func markInsightsHintShown(now: Date = Date()) {
+        var next = insightsHintState
+        next.showCount += 1
+        next.lastShownAt = now
+        next.updatedAt = now
+        insightsHintState = next
+        saveInsightsHintState()
+    }
+
+    func dismissInsightsHint(now: Date = Date()) {
+        var next = insightsHintState
+        next.dismissCount += 1
+        next.lastDismissedAt = now
+        next.updatedAt = now
+        insightsHintState = next
+        saveInsightsHintState()
+    }
+
+    func recordInsightsInteraction(now: Date = Date()) {
+        var next = insightsHintState
+        guard next.interactedAt == nil else { return }
+        next.interactedAt = now
+        next.updatedAt = now
+        insightsHintState = next
+        saveInsightsHintState()
+    }
+
+    // MARK: - Voice Staging
+
+    func stageVoiceDrafts(_ drafts: [VoiceParsedTaskDraft], transcript: String) {
+        voiceStagingDrafts = drafts
+        voiceSourceTranscript = transcript
+        isVoiceStagingPresented = !drafts.isEmpty
+        saveVoiceStaging()
+    }
+
+    func updateVoiceStagingDrafts(_ drafts: [VoiceParsedTaskDraft]) {
+        voiceStagingDrafts = drafts
+        isVoiceStagingPresented = !drafts.isEmpty
+        saveVoiceStaging()
+    }
+
+    func clearVoiceStaging() {
+        voiceStagingDrafts = []
+        voiceSourceTranscript = ""
+        isVoiceStagingPresented = false
+        saveVoiceStaging()
+    }
+
     // MARK: - Notes
     
     func addNote(_ note: Note) {
@@ -284,27 +611,46 @@ class LocalStore: ObservableObject {
         if newTask.orderIndex == nil {
             newTask.orderIndex = Int(Date().timeIntervalSince1970 * 1000)
         }
-        tasks.append(newTask)
-        saveTasks()
-        // Analytics: log task creation without PII.
-        AnalyticsService.shared.logEvent(AnalyticsEventName.taskCreated, params: [
-            "priority": newTask.priority.rawValue,
-            "category_count": newTask.categories.count,
-            "has_due_date": newTask.dueDate != nil,
-            "has_reminder": newTask.reminderDate != nil,
-            "category_ids_csv": newTask.categories.joined(separator: ",")
-        ])
-        if !newTask.categories.isEmpty {
-            // Analytics: separate signal for category assignment on create.
-            AnalyticsService.shared.logEvent(AnalyticsEventName.categoryAssignedToTask, params: [
-                "category_count": newTask.categories.count,
-                "source_view": "Task Create"
-            ])
+        if let parentId = newTask.parentTaskId {
+            if let parent = tasks.first(where: { $0.id == parentId && $0.parentTaskId == nil }) {
+                if newTask.categories.isEmpty {
+                    newTask.categories = parent.categories
+                }
+            } else {
+                // Enforce one-level hierarchy and prevent orphaned parent references.
+                newTask.parentTaskId = nil
+            }
+        } else {
+            newTask.parentManualReopenAt = nil
         }
+        tasks.append(newTask)
+        if let parentId = newTask.parentTaskId {
+            reconcileParentCompletion(parentId: parentId, resetManualOverride: true)
+        }
+        saveTasks()
+        logTaskCreatedAnalytics(for: newTask)
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: newTask) }
         }
         return newTask.id
+    }
+
+    private func logTaskCreatedAnalytics(for task: Task) {
+        // Analytics: log task creation without PII.
+        AnalyticsService.shared.logEvent(AnalyticsEventName.taskCreated, params: [
+            "priority": task.priority.rawValue,
+            "category_count": task.categories.count,
+            "has_due_date": task.dueDate != nil,
+            "has_reminder": task.reminderDate != nil,
+            "category_ids_csv": task.categories.joined(separator: ",")
+        ])
+        if !task.categories.isEmpty {
+            // Analytics: separate signal for category assignment on create.
+            AnalyticsService.shared.logEvent(AnalyticsEventName.categoryAssignedToTask, params: [
+                "category_count": task.categories.count,
+                "source_view": "Task Create"
+            ])
+        }
     }
     
     func updateTask(id: String, updates: (inout Task) -> Void) {
@@ -359,11 +705,124 @@ class LocalStore: ObservableObject {
             _Concurrency.Task { try? await backend.upsert(task: task) }
         }
     }
+
+    func subtasks(for parentId: String, includeCompleted: Bool? = nil) -> [Task] {
+        tasks
+            .filter { task in
+                guard task.parentTaskId == parentId else { return false }
+                if let includeCompleted {
+                    return includeCompleted ? task.completedAt != nil : task.completedAt == nil
+                }
+                return true
+            }
+            .sorted { (lhs, rhs) in
+                (lhs.orderIndex ?? 0) > (rhs.orderIndex ?? 0)
+            }
+    }
+
+    func subtaskCount(for parentId: String) -> Int {
+        tasks.reduce(into: 0) { count, task in
+            if task.parentTaskId == parentId {
+                count += 1
+            }
+        }
+    }
+
+    func hasSubtasks(parentId: String) -> Bool {
+        tasks.contains(where: { $0.parentTaskId == parentId })
+    }
+
+    func availableParentTasks(excluding taskId: String) -> [Task] {
+        topLevelTasks
+            .filter { task in
+                task.id != taskId
+            }
+            .sorted { (lhs, rhs) in
+                (lhs.orderIndex ?? 0) > (rhs.orderIndex ?? 0)
+            }
+    }
+
+    func addSubtask(to parentId: String, title: String = "New subtask", priority: Priority = .medium) -> String? {
+        guard let parent = tasks.first(where: { $0.id == parentId && $0.parentTaskId == nil }) else {
+            return nil
+        }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let subtask = Task(
+            title: trimmed,
+            categories: parent.categories,
+            priority: priority,
+            parentTaskId: parentId
+        )
+        return addTask(subtask)
+    }
+
+    func setParent(for taskId: String, parentId: String?) {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+        let oldParentId = tasks[index].parentTaskId
+
+        if parentId == taskId {
+            return
+        }
+        if parentId != nil, hasSubtasks(parentId: taskId) {
+            // v1 prevents nesting: a task with subtasks cannot become a subtask.
+            return
+        }
+        if let parentId,
+           !tasks.contains(where: { $0.id == parentId && $0.parentTaskId == nil }) {
+            return
+        }
+
+        tasks[index].parentTaskId = parentId
+        tasks[index].updatedAt = Date()
+        if parentId != nil {
+            tasks[index].parentManualReopenAt = nil
+            if tasks[index].categories.isEmpty, let parentId,
+               let parent = tasks.first(where: { $0.id == parentId }) {
+                tasks[index].categories = parent.categories
+            }
+        }
+        saveTasks()
+
+        if let oldParentId {
+            reconcileParentCompletion(parentId: oldParentId, resetManualOverride: true)
+        }
+        if let parentId {
+            reconcileParentCompletion(parentId: parentId, resetManualOverride: true)
+        }
+
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(tasks: tasks) }
+        }
+    }
+
+    func deleteParentTask(id: String, strategy: ParentTaskDeletionStrategy) {
+        guard hasSubtasks(parentId: id) else {
+            deleteTask(id: id)
+            return
+        }
+
+        switch strategy {
+        case .deleteSubtasks:
+            let childIds = subtasks(for: id).map(\.id)
+            for childId in childIds {
+                deleteTask(id: childId)
+            }
+            deleteTask(id: id)
+        case .detachSubtasks:
+            let childIds = subtasks(for: id).map(\.id)
+            for childId in childIds {
+                setParent(for: childId, parentId: nil)
+            }
+            deleteTask(id: id)
+        }
+    }
     
     func deleteTask(id: String) {
         // Capture reminder info before deletion
         let taskToDelete = tasks.first(where: { $0.id == id })
         let notificationId = taskToDelete?.reminderNotificationId
+        let parentId = taskToDelete?.parentTaskId
         
         // Remove task
         tasks.removeAll { $0.id == id }
@@ -386,6 +845,10 @@ class LocalStore: ObservableObject {
         // Sync deletion to backend
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.deleteTask(id: id) }
+        }
+
+        if let parentId {
+            reconcileParentCompletion(parentId: parentId, resetManualOverride: true)
         }
     }
 
@@ -424,6 +887,7 @@ class LocalStore: ObservableObject {
         task.completedAt = Date()
         task.reminderDate = nil
         task.reminderNotificationId = nil
+        task.parentManualReopenAt = nil
         
         tasks[index] = task
         saveTasks()
@@ -448,6 +912,10 @@ class LocalStore: ObservableObject {
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: task) }
         }
+
+        if let parentId = task.parentTaskId {
+            reconcileParentCompletion(parentId: parentId, resetManualOverride: false)
+        }
     }
     
     func restoreTask(id: String) {
@@ -462,6 +930,11 @@ class LocalStore: ObservableObject {
         
         // Update completion state
         task.completedAt = nil
+        let childCount = subtaskCount(for: task.id)
+        if childCount > 0 {
+            // Manual reopen override: keep parent open even if all subtasks are still complete.
+            task.parentManualReopenAt = Date()
+        }
         
         // Handle reminder restoration
         if let reminderDate, let notificationId {
@@ -496,6 +969,62 @@ class LocalStore: ObservableObject {
         
         if let backend, !suppressBackendWrites {
             _Concurrency.Task { try? await backend.upsert(task: task) }
+        }
+
+        if let parentId = task.parentTaskId {
+            reconcileParentCompletion(parentId: parentId, resetManualOverride: true)
+        }
+    }
+
+    private func reconcileParentCompletion(parentId: String, resetManualOverride: Bool) {
+        guard let parentIndex = tasks.firstIndex(where: { $0.id == parentId && $0.parentTaskId == nil }) else {
+            return
+        }
+        let children = tasks.filter { $0.parentTaskId == parentId }
+        guard !children.isEmpty else {
+            if tasks[parentIndex].parentManualReopenAt != nil {
+                tasks[parentIndex].parentManualReopenAt = nil
+                tasks[parentIndex].updatedAt = Date()
+                saveTasks()
+                if let backend, !suppressBackendWrites {
+                    _Concurrency.Task { try? await backend.upsert(task: tasks[parentIndex]) }
+                }
+            }
+            return
+        }
+
+        var parent = tasks[parentIndex]
+        var didChange = false
+        let allSubtasksCompleted = children.allSatisfy { $0.completedAt != nil }
+
+        if resetManualOverride, parent.parentManualReopenAt != nil {
+            parent.parentManualReopenAt = nil
+            didChange = true
+        }
+
+        if allSubtasksCompleted {
+            if parent.parentManualReopenAt == nil, parent.completedAt == nil {
+                parent.completedAt = Date()
+                parent.updatedAt = Date()
+                didChange = true
+            }
+        } else {
+            if parent.completedAt != nil {
+                parent.completedAt = nil
+                parent.updatedAt = Date()
+                didChange = true
+            }
+            if parent.parentManualReopenAt != nil {
+                parent.parentManualReopenAt = nil
+                didChange = true
+            }
+        }
+
+        guard didChange else { return }
+        tasks[parentIndex] = parent
+        saveTasks()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(task: parent) }
         }
     }
     
@@ -687,6 +1216,19 @@ class LocalStore: ObservableObject {
         saveUncategorizedPosition()
     }
 
+    func applyOnboardingPresetCategories(_ presetCategories: [Category]) {
+        categories = presetCategories.enumerated().map { index, category in
+            var updated = category
+            updated.order = index
+            return updated
+        }
+        setUncategorizedPosition(min(uncategorizedPosition, categories.count))
+        saveCategories()
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(categories: categories) }
+        }
+    }
+
     func deleteCategory(id: String, reassignTo replacementId: String? = nil) {
         let resolvedReplacementId: String? = {
             guard let replacementId, replacementId != id else { return nil }
@@ -756,90 +1298,330 @@ class LocalStore: ObservableObject {
     }
     
     // MARK: - Share Extension Integration
-    
+
+    func retryPendingSharedImports() {
+        processSharedItems()
+    }
+
     /// Process shared items from the share extension
-    /// Called on app launch to convert shared items into tasks
+    /// Called on app launch to convert shared items into tasks or notes.
+    /// Processing is intentionally offloaded to a utility queue to keep the launch path responsive.
     func processSharedItems() {
+        scheduleSharedImportProcessing(after: 0)
+    }
+
+    func processSharedItems(after delay: TimeInterval) {
+        scheduleSharedImportProcessing(after: delay)
+    }
+
+    private func scheduleSharedImportProcessing(after delay: TimeInterval) {
+        sharedImportProcessingLock.lock()
+        if isSharedImportProcessing {
+            sharedImportProcessingLock.unlock()
+            return
+        }
+        isSharedImportProcessing = true
+        sharedImportProcessingLock.unlock()
+
+        let work: () -> Void = { [weak self] in
+            guard let self else { return }
+            self.processSharedItemsOnBackgroundQueue()
+        }
+
+        let clampedDelay = max(0, delay)
+        if clampedDelay > 0 {
+            sharedImportProcessingQueue.asyncAfter(deadline: .now() + clampedDelay, execute: work)
+        } else {
+            sharedImportProcessingQueue.async(execute: work)
+        }
+    }
+
+    private func finishSharedImportProcessing() {
+        sharedImportProcessingLock.lock()
+        isSharedImportProcessing = false
+        sharedImportProcessingLock.unlock()
+    }
+
+    private func processSharedItemsOnBackgroundQueue() {
         NSLog("========================================")
         NSLog("🔍 [LocalStore] processSharedItems() START")
         NSLog("   App Group: %@", appGroupIdentifier)
         NSLog("========================================")
-        
+
+        let processedAt = Date()
+
         guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
-            NSLog("❌ [LocalStore] Failed to access App Group for shared items")
+            DispatchQueue.main.async { [weak self] in
+                self?.lastSharedImportProcessedAt = processedAt
+                self?.lastSharedImportError = "Shared import storage is unavailable on this device."
+                self?.finishSharedImportProcessing()
+            }
             return
         }
-        
-        NSLog("✅ [LocalStore] Accessed UserDefaults for App Group")
-        
-        // Get shared items
-        guard let data = userDefaults.data(forKey: "com.notelayer.app.sharedItems") else {
-            NSLog("ℹ️ [LocalStore] No shared items data found")
-            return
-        }
-        
-        guard let sharedItems = try? JSONDecoder().decode([SharedItem].self, from: data) else {
-            NSLog("❌ [LocalStore] Failed to decode shared items")
-            return
-        }
-        
+
+        let sharedItems = decodeSharedItems(from: userDefaults)
         guard !sharedItems.isEmpty else {
-            NSLog("ℹ️ [LocalStore] Shared items array is empty")
+            DispatchQueue.main.async { [weak self] in
+                self?.lastSharedImportProcessedAt = processedAt
+                self?.pendingSharedImportCount = 0
+                self?.lastSharedImportError = nil
+                self?.finishSharedImportProcessing()
+            }
             return
         }
-        
+
         NSLog("📥 [LocalStore] Processing %d shared item(s)", sharedItems.count)
-        for (index, item) in sharedItems.enumerated() {
-            NSLog("   Item %d: %@", index + 1, item.title)
-        }
-        
-        // Success! Tasks have been added
-        NSLog("✅ [LocalStore] Successfully processed \(sharedItems.count) shared item(s)")
-        
-        // Convert to tasks
+
+        var failedItems: [SharedItem] = []
+        var importedCount = 0
+        var failedCount = 0
+        var importedNotes: [Note] = []
+        var importedTasks: [Task] = []
+
         for item in sharedItems {
-            let taskNotes = buildTaskNotes(from: item)
+            do {
+                let payload = try buildSharedImportPayload(from: item.markedPending())
+                importedNotes.append(contentsOf: payload.notes)
+                importedTasks.append(contentsOf: payload.tasks)
+                importedCount += 1
+            } catch {
+                failedCount += 1
+                let reason = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                failedItems.append(item.markedFailed(reason: reason))
+                NSLog("❌ [LocalStore] Failed to process shared item %@: %@", item.title, reason)
+            }
+        }
+
+        let persistenceError = persistSharedItemsForBackground(failedItems, into: userDefaults)
+
+        NSLog("✅ [LocalStore] Imported \(importedCount) shared item(s), failed \(failedCount)")
+        if !failedItems.isEmpty {
+            NSLog("⚠️ [LocalStore] Retained %d pending shared item(s) for retry", failedItems.count)
+        } else {
+            NSLog("🧹 [LocalStore] Cleared shared items from App Group")
+        }
+
+        userDefaults.synchronize()
+        NSLog("========================================")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            self.lastSharedImportProcessedAt = processedAt
+            self.applySharedImports(notes: importedNotes, tasks: importedTasks)
+            self.pendingSharedImportCount = failedItems.count
+            self.lastSharedImportError = failedItems.first?.lastError ?? persistenceError
+            self.finishSharedImportProcessing()
+        }
+    }
+
+    private func persistSharedItemsForBackground(_ items: [SharedItem], into userDefaults: UserDefaults) -> String? {
+        if items.isEmpty {
+            userDefaults.removeObject(forKey: sharedItemsQueueKey)
+            return nil
+        }
+        guard let encoded = try? JSONEncoder().encode(items) else {
+            return "Unable to persist pending shared imports."
+        }
+        userDefaults.set(encoded, forKey: sharedItemsQueueKey)
+        return nil
+    }
+
+    private func applySharedImports(notes importedNotes: [Note], tasks importedTasks: [Task]) {
+        if !importedNotes.isEmpty {
+            notes.append(contentsOf: importedNotes)
+            saveNotes()
+            if let backend, !suppressBackendWrites {
+                _Concurrency.Task { try? await backend.upsert(notes: importedNotes) }
+            }
+        }
+
+        if importedTasks.isEmpty {
+            return
+        }
+
+        let baseOrderIndex = Int(Date().timeIntervalSince1970 * 1000)
+        var preparedTasks: [Task] = []
+        preparedTasks.reserveCapacity(importedTasks.count)
+
+        for (offset, task) in importedTasks.enumerated() {
+            var newTask = task
+            if newTask.orderIndex == nil {
+                newTask.orderIndex = baseOrderIndex + offset
+            }
+            if let parentId = newTask.parentTaskId {
+                if let parent = tasks.first(where: { $0.id == parentId && $0.parentTaskId == nil }) {
+                    if newTask.categories.isEmpty {
+                        newTask.categories = parent.categories
+                    }
+                } else {
+                    // Enforce one-level hierarchy and prevent orphaned parent references.
+                    newTask.parentTaskId = nil
+                }
+            } else {
+                newTask.parentManualReopenAt = nil
+            }
+            preparedTasks.append(newTask)
+        }
+
+        tasks.append(contentsOf: preparedTasks)
+        saveTasks()
+
+        for task in preparedTasks {
+            logTaskCreatedAnalytics(for: task)
+        }
+
+        if let backend, !suppressBackendWrites {
+            _Concurrency.Task { try? await backend.upsert(tasks: preparedTasks) }
+        }
+    }
+
+    private func decodeSharedItems(from userDefaults: UserDefaults) -> [SharedItem] {
+        guard let data = userDefaults.data(forKey: sharedItemsQueueKey),
+              let decoded = try? JSONDecoder().decode([SharedItem].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+
+    private func buildSharedImportPayload(from item: SharedItem) throws -> (notes: [Note], tasks: [Task]) {
+        switch resolvedDestination(for: item) {
+        case .note:
+            let noteText = buildImportedNoteText(from: item)
+            guard !noteText.isEmpty else {
+                throw SharedImportProcessingError.emptyPayload
+            }
+            return ([Note(text: noteText)], [])
+        case .task:
+            let title = resolvedTaskTitle(for: item)
+            guard !title.isEmpty else {
+                throw SharedImportProcessingError.missingTaskTitle
+            }
+            let notes = buildImportedTaskNotes(from: item, overrideBody: nil)
             let task = Task(
-                title: item.title,
+                title: title,
                 categories: item.categories,
                 priority: item.priority,
                 dueDate: item.dueDate,
-                taskNotes: taskNotes,
+                taskNotes: notes.isEmpty ? nil : notes,
                 reminderDate: item.reminderDate
             )
-            _ = addTask(task)
-            
-            NSLog("✅ [LocalStore] Created task from shared item: %@", item.title)
+            return ([], [task])
+        case .taskBatch:
+            let drafts = item.taskDrafts
+                .map { draft in
+                    var sanitized = draft
+                    sanitized.title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return sanitized
+                }
+                .filter { !$0.title.isEmpty }
+            guard !drafts.isEmpty else {
+                throw SharedImportProcessingError.noTaskDrafts
+            }
+            var batchTasks: [Task] = []
+            batchTasks.reserveCapacity(drafts.count)
+            for draft in drafts {
+                let notes = buildImportedTaskNotes(from: item, overrideBody: draft.notes)
+                let task = Task(
+                    title: draft.title,
+                    categories: item.categories,
+                    priority: item.priority,
+                    dueDate: item.dueDate,
+                    taskNotes: notes.isEmpty ? nil : notes,
+                    reminderDate: item.reminderDate
+                )
+                batchTasks.append(task)
+            }
+            return ([], batchTasks)
         }
-        
-        // Clear shared items
-        userDefaults.removeObject(forKey: "com.notelayer.app.sharedItems")
-        userDefaults.synchronize()
-        
-        NSLog("🧹 [LocalStore] Cleared shared items from App Group")
-        NSLog("========================================")
     }
-    
-    /// Build task notes from shared item
-    /// Formats URL and text content with attribution
-    private func buildTaskNotes(from item: SharedItem) -> String {
-        var notes = ""
-        
-        // Add URL if present (clickable)
-        if let url = item.url {
-            notes += "\(url)\n\n"
+
+    private func resolvedDestination(for item: SharedItem) -> SharedImportDestination {
+        if item.taskDrafts.count > 1 {
+            return .taskBatch
         }
-        
-        // Add text if present
-        if let text = item.text {
-            notes += "\(text)\n\n"
+        return item.destination
+    }
+
+    private func resolvedTaskTitle(for item: SharedItem) -> String {
+        let trimmedTitle = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedTitle.isEmpty {
+            return trimmedTitle
         }
-        
-        // Add attribution
-        if let sourceApp = item.sourceApp {
-            notes += "Shared from \(sourceApp)"
+        guard let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+            return ""
         }
-        
-        return notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackWords = text
+            .split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+            .prefix(6)
+            .joined(separator: " ")
+        return String(fallbackWords)
+    }
+
+    private func buildImportedTaskNotes(from item: SharedItem, overrideBody: String?) -> String {
+        var sections: [String] = []
+        if let url = item.url?.trimmingCharacters(in: .whitespacesAndNewlines), !url.isEmpty {
+            sections.append(url)
+        }
+        let body = (overrideBody ?? item.text)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let body, !body.isEmpty {
+            sections.append(body)
+        }
+        sections.append(sharedImportAttributionLine(for: item))
+        if item.wasTruncated {
+            sections.append("Import truncated to 10,000 characters.")
+        }
+        return sections.joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func buildImportedNoteText(from item: SharedItem) -> String {
+        var sections: [String] = []
+        let trimmedTitle = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedTitle.isEmpty {
+            sections.append("# \(trimmedTitle)")
+        }
+        if let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            sections.append(text)
+        }
+        if let url = item.url?.trimmingCharacters(in: .whitespacesAndNewlines), !url.isEmpty {
+            sections.append(url)
+        }
+        sections.append(sharedImportAttributionLine(for: item))
+        if item.wasTruncated {
+            sections.append("Import truncated to 10,000 characters.")
+        }
+        return sections.joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func sharedImportAttributionLine(for item: SharedItem) -> String {
+        let source = item.sourceApp?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sourceLabel = (source?.isEmpty == false) ? source! : "Share Sheet"
+        return "Imported from \(sourceLabel) on \(sharedImportDateFormatter.string(from: item.importTimestamp))"
+    }
+
+    private var sharedImportDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }
+
+    private enum SharedImportProcessingError: LocalizedError {
+        case emptyPayload
+        case missingTaskTitle
+        case noTaskDrafts
+
+        var errorDescription: String? {
+            switch self {
+            case .emptyPayload:
+                return "Shared content was empty."
+            case .missingTaskTitle:
+                return "Unable to determine a task title."
+            case .noTaskDrafts:
+                return "No valid task items were found in the shared list."
+            }
+        }
     }
 }

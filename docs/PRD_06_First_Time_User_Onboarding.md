@@ -1,7 +1,7 @@
 # PRD 06: First-Time User Onboarding (Composite)
 
-Last Updated: 2026-02-10
-Status: Mostly Clarified
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: New User Activation
 
 ## Purpose
@@ -20,6 +20,8 @@ New users need a fast path to understanding and initial structure without setup 
 - Preset selection itself is not reversible as one-click onboarding action.
 - Users can still change categories later via `Manage Categories`.
 - One preset should be marked as recommended.
+- Recommended preset is `Everyday Balance`, visually marked and pre-selected by default.
+- Video skip appears after a 3-second intro segment.
 - Duration guidance:
 - hard cap around 2 minutes,
 - recommended target is 60 to 90 seconds.
@@ -95,8 +97,7 @@ New users need a fast path to understanding and initial structure without setup 
 
 ## Open Questions
 
-1. Should video be skippable immediately or only after a short intro segment?
-2. Should recommended preset be pre-selected by default, or only visually highlighted?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

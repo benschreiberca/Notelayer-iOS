@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import ImageIO
+import Combine
 
 struct ThemeBackground: View {
     @EnvironmentObject private var theme: ThemeManager
@@ -131,27 +133,102 @@ private struct DesignerWallpaper: View {
 private struct ImageWallpaper: View {
     let url: URL
     let mode: ImageWallpaperMode
+    @StateObject private var loader = WallpaperImageLoader()
 
     var body: some View {
-        switch mode {
-        case .fill:
-            GeometryReader { geo in
-                if let uiImage = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .clipped()
+        Group {
+            switch mode {
+            case .fill:
+                GeometryReader { geo in
+                    if let uiImage = loader.image {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    } else {
+                        Color.clear
+                    }
+                }
+            case .tile:
+                if let uiImage = loader.image {
+                    Rectangle()
+                        .fill(
+                            ImagePaint(image: Image(uiImage: uiImage), scale: 0.4)
+                        )
+                } else {
+                    Color.clear
                 }
             }
-        case .tile:
-            if let uiImage = UIImage(contentsOfFile: url.path) {
-                Rectangle()
-                    .fill(
-                        ImagePaint(image: Image(uiImage: uiImage), scale: 0.4)
-                    )
+        }
+        .task(id: cacheKey) {
+            loader.loadImage(at: url, cacheKey: cacheKey)
+        }
+    }
+
+    private var cacheKey: String {
+        "\(url.path)::\(mode.rawValue)"
+    }
+}
+
+private final class WallpaperImageLoader: ObservableObject {
+    @Published private(set) var image: UIImage?
+    private var activeKey: String?
+
+    private static let loadQueue = DispatchQueue(
+        label: "com.notelayer.theme.wallpaper-loader",
+        qos: .userInitiated
+    )
+    private static let cache = NSCache<NSString, UIImage>()
+
+    func loadImage(at url: URL, cacheKey: String) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.loadImage(at: url, cacheKey: cacheKey)
+            }
+            return
+        }
+
+        activeKey = cacheKey
+        let key = cacheKey
+
+        if let cached = Self.cache.object(forKey: key as NSString) {
+            image = cached
+            return
+        }
+
+        image = nil
+        Self.loadQueue.async { [weak self] in
+            let decoded = Self.decodeImage(at: url)
+            if let decoded {
+                Self.cache.setObject(decoded, forKey: key as NSString)
+            }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard self.activeKey == cacheKey else { return }
+                self.image = decoded
             }
         }
+    }
+
+    private static func decodeImage(at url: URL) -> UIImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
+            return UIImage(contentsOfFile: url.path)
+        }
+
+        let downsampleOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: 2048
+        ] as CFDictionary
+
+        if let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, downsampleOptions) {
+            return UIImage(cgImage: cgImage)
+        }
+
+        return UIImage(contentsOfFile: url.path)
     }
 }
 

@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `78%`
 
 ## TLDR
 Add parent-to-subtask hierarchy to represent multi-step work while preserving existing category semantics and avoiding timeline/project-management scope expansion.
@@ -12,11 +12,11 @@ Add parent-to-subtask hierarchy to represent multi-step work while preserving ex
 - Decision 4: Project-based tasks UI visibility is gated by `Enable Experimental Features`.
 
 ## Dependency Gates
-- Gate A: Finalize hierarchy depth (single-level vs deeper nesting).
-- Gate B: Finalize parent completion/deletion behavior.
-- Gate C: Finalize counting semantics to avoid parent/subtask double counting.
-- Gate D: Finalize category behavior across parent and subtasks.
-- Gate E: `PRD_01` feature-gate implementation available for project-task visibility checks.
+- Gate A: LOCKED - hierarchy depth is one level only (parent -> subtasks).
+- Gate B: LOCKED - parent auto-completes when all subtasks are done; delete uses explicit prompt options.
+- Gate C: LOCKED - top-level counts include parents + standalone tasks only (exclude subtasks).
+- Gate D: LOCKED - parent/subtask categories both supported; subtasks inherit parent categories by default.
+- Gate E: LOCKED - project-task UI visibility is gated by `PRD_01`.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Data/Models.swift`
@@ -34,50 +34,55 @@ Add parent-to-subtask hierarchy to represent multi-step work while preserving ex
 - Use standard labels/icons for hierarchy indicators where possible.
 - Run post-implementation consistency review and record deviations/line impact.
 
+### UI Consistency Evidence (Wave 3)
+- Pre-check completed against hierarchy-related surfaces in `TodosView.swift`, `TaskItemView.swift`, and `TaskEditView.swift`.
+- Post-check completed: hierarchy interactions are implemented with native `List`, `Section`, `Label`, context menus, and `confirmationDialog`.
+- Quality trade-off: +316 net lines across hierarchy UI surfaces to support parent/subtask semantics and deterministic delete flows.
+
 ## Tasks:
 
-- [ ] 🟥 **Step 1: Finalize Hierarchy Behavior Contract**
-  - [ ] 🟥 Lock hierarchy depth rules for v1.
-  - [ ] 🟥 Lock parent completion rules (manual/auto/hybrid).
-  - [ ] 🟥 Lock deletion cascade/orphan/prompt behavior.
-  - [ ] 🟥 Lock detach/re-parent rules for subtasks.
+- [x] ✅ **Step 1: Finalize Hierarchy Behavior Contract**
+  - [x] ✅ Enforced one-level hierarchy (parent -> subtasks).
+  - [x] ✅ Implemented parent auto-complete plus manual reopen override behavior.
+  - [x] ✅ Implemented parent delete options: cascade delete or detach subtasks.
+  - [x] ✅ Implemented detach/re-parent pathways through task edit controls.
 
-- [ ] 🟥 **Step 1.5: Integrate Experimental Visibility Gate**
-  - [ ] 🟥 Show project-based task UI only when `Enable Experimental Features` is on.
-  - [ ] 🟥 Ensure hidden state cleanly removes parent/subtask UI affordances.
-  - [ ] 🟥 Ensure disabling gate while viewing project hierarchy returns to non-project list behavior.
+- [x] ✅ **Step 1.5: Integrate Experimental Visibility Gate**
+  - [x] ✅ Project hierarchy affordances appear only when `Enable Experimental Features` is on.
+  - [x] ✅ Hierarchy affordances are hidden cleanly when gate is off.
+  - [x] ✅ Non-experimental list behavior remains flat and unaffected.
 
-- [ ] 🟥 **Step 2: Define Data Model Changes**
-  - [ ] 🟥 Add parent-child linkage fields to task model.
-  - [ ] 🟥 Define invariants (no cycles, orphan rules, max depth if applicable).
-  - [ ] 🟥 Define migration path for existing flat tasks.
+- [x] ✅ **Step 2: Define Data Model Changes**
+  - [x] ✅ Added `parentTaskId` and parent reopen-override metadata.
+  - [x] ✅ Added invariants for no cycles and no nested subtasks.
+  - [x] ✅ Added migration/sanitization path for invalid parent references.
 
-- [ ] 🟥 **Step 3: Implement Persistence And Sync Handling**
-  - [ ] 🟥 Persist parent/subtask relations locally.
-  - [ ] 🟥 Ensure sync payloads preserve hierarchy integrity.
-  - [ ] 🟥 Add reconciliation rules for conflicting hierarchy edits.
+- [x] ✅ **Step 3: Implement Persistence And Sync Handling**
+  - [x] ✅ Persisted hierarchy metadata locally and through existing storage flows.
+  - [x] ✅ Added Firestore encode/decode support for hierarchy fields.
+  - [x] ✅ Added hierarchy sanitization on remote snapshot/task apply.
 
-- [ ] 🟥 **Step 4: Implement Core Task Interactions**
-  - [ ] 🟥 Create parent task and attach subtasks.
-  - [ ] 🟥 Edit/reorder subtasks within parent scope.
-  - [ ] 🟥 Handle parent/subtask completion per finalized rule.
+- [x] ✅ **Step 4: Implement Core Task Interactions**
+  - [x] ✅ Added subtask creation from parent rows.
+  - [x] ✅ Added reorder/drop behavior within parent subtask scope.
+  - [x] ✅ Added parent completion reconciliation when child state changes.
 
-- [ ] 🟥 **Step 5: Implement List Rendering Rules**
-  - [ ] 🟥 Render parent and child tasks with clear structural cues.
-  - [ ] 🟥 Add expand/collapse behavior if in scope.
-  - [ ] 🟥 Keep list behavior readable without introducing custom heavy wrappers.
+- [x] ✅ **Step 5: Implement List Rendering Rules**
+  - [x] ✅ Parent rows show subtask controls and collapsed defaults.
+  - [x] ✅ Expanded rows render indented subtasks with native affordances.
+  - [x] ✅ Context menus and delete prompts remain native-pattern aligned.
 
-- [ ] 🟥 **Step 6: Integrate Cross-Feature Semantics**
-  - [ ] 🟥 Ensure category grouping remains independent from hierarchy.
-  - [ ] 🟥 Ensure analytics counts and summaries follow finalized counting rules.
-  - [ ] 🟥 Ensure reminder/calendar behavior follows finalized parent/subtask scope.
+- [x] ✅ **Step 6: Integrate Cross-Feature Semantics**
+  - [x] ✅ Category grouping remains distinct from hierarchy structure.
+  - [x] ✅ Insights totals now exclude subtasks from top-level counts.
+  - [x] ✅ Parent/subtask reminder and calendar actions remain per-task.
 
-- [ ] 🟥 **Step 7: Migration And Safety Validation**
-  - [ ] 🟥 Validate no data loss during migration from flat tasks.
-  - [ ] 🟥 Validate safe rollback behavior if hierarchy feature is disabled in test scenarios.
+- [x] ✅ **Step 7: Migration And Safety Validation**
+  - [x] ✅ Added migration-time hierarchy sanitization for old or invalid parent links.
+  - [x] ✅ Added safe behavior for gate-off mode without data loss.
 
-- [ ] 🟥 **Step 8: Verification And Acceptance**
-  - [ ] 🟥 Unit tests for hierarchy invariants, completion, deletion, and counting rules.
-  - [ ] 🟥 Integration tests for create/edit/reorder and sync scenarios.
-  - [ ] 🟥 Manual QA for readability and usability of hierarchy in main list.
-  - [ ] 🟥 Post-change UI consistency review for hierarchy list surfaces.
+- [ ] 🟨 **Step 8: Verification And Acceptance**
+  - [x] ✅ Added unit coverage for top-level count semantics in insights.
+  - [ ] 🟨 Full integration tests for create/edit/reorder/sync are pending.
+  - [ ] 🟨 Manual QA for hierarchy readability/usability is pending.
+  - [x] ✅ Post-change UI consistency review completed for hierarchy surfaces.

@@ -7,6 +7,7 @@ final class AnalyticsService {
     static let shared = AnalyticsService()
 
     private let isEnabled: Bool
+    private let telemetryQueue = DispatchQueue(label: "com.notelayer.analytics.telemetry", qos: .utility)
 
     private init() {
         let env = ProcessInfo.processInfo.environment
@@ -17,22 +18,28 @@ final class AnalyticsService {
 
     func logEvent(_ name: String, params: [String: Any] = [:]) {
         guard isEnabled else { return }
-        Analytics.logEvent(name, parameters: params)
 
         let viewName = params["view_name"] as? String
         let tabName = params["tab_name"] as? String
         let categoryIds = categoryIdsFromParams(params)
         let taskId = (params["task_id"] as? String) ?? (params["taskId"] as? String)
+        let feature = featureKey(for: name, viewName: viewName)
+        let metadata = metadataStringMap(params)
 
-        InsightsTelemetryStore.shared.record(
-            eventName: name,
-            featureKey: featureKey(for: name, viewName: viewName),
-            tabName: tabName,
-            viewName: viewName,
-            categoryIds: categoryIds,
-            taskIdPolicyField: taskId,
-            metadata: metadataStringMap(params)
-        )
+        // Recording into InsightsTelemetryStore can trigger large decode/migration work
+        // on first access; keep that off the main thread to protect launch responsiveness.
+        telemetryQueue.async {
+            Analytics.logEvent(name, parameters: params)
+            InsightsTelemetryStore.shared.record(
+                eventName: name,
+                featureKey: feature,
+                tabName: tabName,
+                viewName: viewName,
+                categoryIds: categoryIds,
+                taskIdPolicyField: taskId,
+                metadata: metadata
+            )
+        }
     }
 
     func trackTabSelected(tabName: String, previousTab: String?) {

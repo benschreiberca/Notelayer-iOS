@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `75%`
 
 ## TLDR
 Implement voice entry from a floating action button above the bottom tab area, with English parsing that produces granular staged tasks, existing-category-only guesses, confidence flags, and deterministic fallback title behavior.
@@ -13,9 +13,9 @@ Implement voice entry from a floating action button above the bottom tab area, w
 - Decision 5: Entry point is a floating action button hovering above the bottom tab area.
 
 ## Dependency Gates
-- Gate A: Final parse confidence threshold for `Needs Review` state.
-- Gate B: Final decision on one-level vs multi-tier confidence display.
-- Gate C: Voice entry button visibility is gated by `PRD_01` experimental toggle.
+- Gate A: LOCKED - `Needs Review` threshold is confidence `< 0.65`.
+- Gate B: LOCKED - confidence display is single-level `Needs Review`.
+- Gate C: LOCKED - voice entry button visibility is gated by `PRD_01` experimental toggle.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/TaskInputView.swift`
@@ -29,6 +29,10 @@ Implement voice entry from a floating action button above the bottom tab area, w
 - Standard-Bearer for preview UI checks: `ios-swift/Notelayer/Notelayer/Views/TodosView.swift`.
 - Use standard labels/icons and avoid decorative wrappers for confidence hints.
 - Run read-only consistency review before and after preview-surface updates.
+
+### UI Consistency Evidence (2026-02-11)
+- Pre-check completed for voice entry surfaces relative to `TodosView.swift`.
+- Post-check completed: voice capture flow uses native `Form`, `Section`, and toolbar actions.
 
 ## Tasks:
 

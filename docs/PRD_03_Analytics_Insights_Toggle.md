@@ -1,7 +1,7 @@
 # PRD 03: Analytics Insights Toggle
 
-Last Updated: 2026-02-10
-Status: Mostly Clarified
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: Analytics Visibility Control
 
 ## Purpose
@@ -27,6 +27,8 @@ Insights should remain hidden unless the user turns on experimental features.
 - `Enable this feature in Experimental Features.`
 - First-time Insights visibility should show a small hint cue.
 - Do not use snackbars.
+- Local-vs-synced conflict policy inherits `PRD_01` directly.
+- Hint frequency state is account-synced.
 
 ## Hint Frequency Best-Practice Policy (Recommended)
 
@@ -76,7 +78,7 @@ Based on Apple TipKit guidance to show tips sparingly and avoid repetitive tips:
 
 ## Open Questions
 
-1. If sync and local disagree at launch, should this PRD inherit the `PRD_01` conflict policy directly?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

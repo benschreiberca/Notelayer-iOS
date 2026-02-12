@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `70%`
 
 ## TLDR
 Make Insights visibility fully dependent on `Enable Experimental Features`, including hidden-route handling, first-time hint behavior, and consistent behavior across local and synced state.
@@ -12,8 +12,8 @@ Make Insights visibility fully dependent on `Enable Experimental Features`, incl
 - Decision 4: Mid-session disable from Insights exits to list view with genie-style transition.
 
 ## Dependency Gates
-- Gate A: Inherit final local/sync conflict policy from PRD 01.
-- Gate B: Confirm hint dismissal persistence behavior (local only vs account synced).
+- Gate A: LOCKED - inherits PRD 01 local/sync conflict policy directly.
+- Gate B: LOCKED - hint dismissal/interaction state is account-synced.
 
 ## Integration Surfaces (Expected)
 - `ios-swift/Notelayer/Notelayer/Views/RootTabsView.swift`
@@ -28,6 +28,10 @@ Make Insights visibility fully dependent on `Enable Experimental Features`, incl
 - Keep blocked-route and hint presentation native and minimal (no snackbar).
 - Use standard label/icon/section patterns for any hint/blocked state messaging.
 - Run post-implementation consistency pass for route states and hint UI.
+
+### UI Consistency Evidence (2026-02-11)
+- Pre-check completed against `TodosView.swift` (standard bearer) and `RootTabsView.swift`/`InsightsView.swift` (deviators).
+- Post-check completed: hidden-route and first-time hint UX use native inline banner pattern (no snackbar).
 
 ## Tasks:
 

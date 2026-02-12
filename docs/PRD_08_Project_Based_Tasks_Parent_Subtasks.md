@@ -1,7 +1,7 @@
 # PRD 08: Project-Based Tasks (Parent To Subtasks)
 
-Last Updated: 2026-02-10
-Status: Draft For Clarification
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: Task Hierarchy
 
 ## Purpose
@@ -45,32 +45,40 @@ All tasks are currently individual items with no internal step structure, making
 4. Feature solves inability to model multi-step work in a flat list.
 5. Project-based tasks UI visibility is controlled by `Enable Experimental Features`.
 
+## Decisions Locked (2026-02-11)
+
+- v1 hierarchy depth is one level only: parent -> subtasks.
+- Nested subtasks are out of scope in v1.
+- Parent completion is auto-complete when all subtasks are complete, with manual reopen override.
+- Parent deletion behavior prompts:
+- delete parent + subtasks,
+- detach subtasks to standalone tasks,
+- cancel.
+- Subtask detach/re-parent is allowed through edit controls.
+- Category behavior:
+- parent and subtasks can each have categories,
+- subtasks inherit parent categories by default at creation.
+- Count semantics in task totals:
+- count parents + standalone tasks,
+- do not count subtasks in top-level totals.
+- Default list behavior: parent rows collapsed with subtask count chip.
+- Reminders/calendar in v1 apply to both parent and subtasks independently.
+
 ## Dependencies
 
 - May require migration strategy from flat tasks to optional hierarchical tasks.
 - Could intersect with share ingestion (`PRD_07`) and voice capture output (`PRD_04`/`PRD_05`) in future phases.
 - UI visibility for this feature is gated by `PRD_01`.
 
-## Risks And Unknowns
+## Risks
 
 - Hierarchy semantics can become confusing if completion rules are unclear.
 - Existing task views may become cluttered without clear display rules.
 - Migration from flat-only model can create edge cases for existing users.
 
-## High-Level Clarification Questions
+## Open Questions
 
-1. Should v1 hierarchy depth be exactly one level (parent -> subtasks only)?
-2. Can a subtask itself have subtasks, or is that explicitly out of scope?
-3. How should parent completion work: manual only, auto when all subtasks done, or both?
-4. Can subtasks exist without a parent after creation (detach behavior)?
-5. Should existing standalone tasks be convertible into parent tasks?
-6. How should categories apply: on parent only, subtasks only, or independently on both?
-7. What reordering behavior is expected within and across parent groups?
-8. How should counts in current task views treat parent and subtasks to avoid double counting?
-9. What is the expected behavior when parent is deleted: cascade delete, orphan subtasks, or prompt?
-10. Should reminders/calendar integrations apply at parent, subtask, or both levels in v1?
-11. What default expanded/collapsed behavior should hierarchy use in task lists?
-12. What is the minimum viable UX that proves hierarchy solves the flat-model pain point?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

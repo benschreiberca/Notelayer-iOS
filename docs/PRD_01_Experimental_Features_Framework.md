@@ -1,7 +1,7 @@
 # PRD 01: Experimental Features Framework (Feature Flags)
 
-Last Updated: 2026-02-10
-Status: Mostly Clarified
+Last Updated: 2026-02-11
+Status: Locked
 Feature Area: Platform Foundation
 
 ## Purpose
@@ -67,11 +67,12 @@ You want experimental capabilities available to any user, but only when the user
 5. Disabling while viewing an experimental screen returns user to list view.
 6. State supports local persistence and account sync.
 
-## Recommended Sync Conflict Policy (Needs Signoff)
+## Sync Conflict Policy (Locked)
 
 - Immediate UX behavior: apply local value at app launch for fast, deterministic rendering.
 - Reconciliation behavior: apply last-write-wins by timestamp once synced value arrives.
 - If resolved value differs from currently displayed state, update UI and show compact state-change hint.
+- If sync cannot complete (offline/error), keep current local value and retry in background.
 
 ## Risks
 
@@ -80,7 +81,7 @@ You want experimental capabilities available to any user, but only when the user
 
 ## Open Questions
 
-1. Approve recommended conflict policy above, or choose a different precedence model?
+None.
 
 ## Acceptance Signals (Requirement Clarity Only)
 

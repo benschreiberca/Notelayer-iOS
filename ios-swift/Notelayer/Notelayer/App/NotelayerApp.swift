@@ -3,6 +3,7 @@ import Firebase
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
+import Foundation
 import UIKit
 import UserNotifications
 
@@ -23,40 +24,58 @@ extension Notification.Name {
     static let apnsTokenUpdated = Notification.Name("Notelayer.APNS.TokenUpdated")
 }
 
-private func configureFirebaseIfNeeded() {
-    if FirebaseApp.app() == nil {
-        #if DEBUG
-        print("🔥 [AppDelegate] Configuring Firebase...")
-        #endif
-        FirebaseApp.configure()
-        if let app = FirebaseApp.app() {
+private enum FirebaseBootstrapper {
+    private static let lock = NSLock()
+    private static var hasConfigured = false
+
+    static func configureIfNeeded(source: String) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard !hasConfigured else { return }
+
+        // Avoid probing `FirebaseApp.app()` pre-config because that emits
+        // a noisy "default app has not yet been configured" log line.
+        if let allApps = FirebaseApp.allApps, !allApps.isEmpty {
+            hasConfigured = true
             #if DEBUG
-            print("🔥 [AppDelegate] Firebase configured - App: \(app.name)")
+            print("🔥 [FirebaseBootstrapper] Firebase already configured (\(source))")
             #endif
-        } else {
-            #if DEBUG
-            print("❌ [AppDelegate] Firebase configuration failed")
-            #endif
+            return
         }
+
+        FirebaseApp.configure()
+        hasConfigured = true
+
+        #if DEBUG
+        if hasConfigured {
+            print("🔥 [FirebaseBootstrapper] Firebase configured (\(source))")
+        } else {
+            print("❌ [FirebaseBootstrapper] Firebase configuration failed (\(source))")
+        }
+        #endif
     }
+}
+
+private func configureFirebaseIfNeeded(source: String) {
+    FirebaseBootstrapper.configureIfNeeded(source: source)
 }
 
 @objc(AppDelegate)
 final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     override init() {
         super.init()
-        configureFirebaseIfNeeded()
+        configureFirebaseIfNeeded(source: "AppDelegate.init")
     }
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        configureFirebaseIfNeeded(source: "AppDelegate.didFinishLaunching")
+
         #if DEBUG
         print("🚀 [AppDelegate] Application did finish launching")
-        let sharedDelegate = UIApplication.shared.delegate
-        print("🔧 [AppDelegate] UIApplication.shared.delegate: \(String(describing: sharedDelegate))")
-        print("🔧 [AppDelegate] Delegate is non-nil: \(sharedDelegate != nil)")
         #endif
         
         // Set notification center delegate
@@ -64,40 +83,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         
         // Register notification categories and actions
         registerNotificationActions()
-        registerForRemoteNotificationsIfNeeded()
+        // Avoid spending launch watchdog budget on APNS registration in the first frame.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.registerForRemoteNotificationsIfNeeded()
+        }
         
         // NOTE: processSharedItems() is now called in TodosView.onAppear
         // with a delay to ensure backend sync completes first
-        NSLog("========================================")
-        NSLog("🚀 NOTELAYER APP LAUNCHED - DEBUG MODE")
-        NSLog("========================================")
-        
-        // Verify URL schemes are configured
-        #if DEBUG
-        if let urlTypes = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] {
-            print("📋 [AppDelegate] URL Types configured: \(urlTypes.count)")
-            for (index, urlType) in urlTypes.enumerated() {
-                if let schemes = urlType["CFBundleURLSchemes"] as? [String] {
-                    print("   URL Type \(index): \(schemes)")
-                    // Verify REVERSED_CLIENT_ID is properly set
-                    if let reversedClientID = schemes.first, reversedClientID.contains("$(REVERSED_CLIENT_ID)") {
-                        print("   ⚠️ WARNING: REVERSED_CLIENT_ID variable not expanded! Value: \(reversedClientID)")
-                    } else if let reversedClientID = schemes.first, reversedClientID.hasPrefix("com.googleusercontent.apps") {
-                        print("   ✅ REVERSED_CLIENT_ID properly configured: \(reversedClientID)")
-                    }
-                }
-            }
-        } else {
-            print("⚠️ [AppDelegate] WARNING: No URL types found in Info.plist!")
-        }
-
-        let firebaseProxy = Bundle.main.object(forInfoDictionaryKey: "FirebaseAppDelegateProxyEnabled") as? Bool
-        let googleUtilitiesProxy = Bundle.main.object(forInfoDictionaryKey: "GoogleUtilitiesAppDelegateProxyEnabled") as? Bool
-        print("🔧 [AppDelegate] FirebaseAppDelegateProxyEnabled: \(firebaseProxy?.description ?? "nil")")
-        print("🔧 [AppDelegate] GoogleUtilitiesAppDelegateProxyEnabled: \(googleUtilitiesProxy?.description ?? "nil")")
-        #endif
-        
-        configureFirebaseIfNeeded()
         return true
     }
     
@@ -227,7 +219,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         #if DEBUG
         print("📱 [AppDelegate] Received APNS device token: \(deviceToken.count) bytes")
         #endif
-        configureFirebaseIfNeeded()
+        configureFirebaseIfNeeded(source: "didRegisterForRemoteNotifications")
         
         // CRITICAL: Skip setting APNS token on simulator
         // Firebase Auth's setAPNSToken has an internal assertion that crashes on simulator
@@ -290,7 +282,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         #if DEBUG
         print("📬 [AppDelegate] Received remote notification")
         #endif
-        configureFirebaseIfNeeded()
+        configureFirebaseIfNeeded(source: "didReceiveRemoteNotification:fetch")
         
         guard FirebaseApp.app() != nil else {
             #if DEBUG
@@ -321,7 +313,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         print("📬 [AppDelegate] Received remote notification (no fetch handler)")
         #endif
 
-        configureFirebaseIfNeeded()
+        configureFirebaseIfNeeded(source: "didReceiveRemoteNotification")
         _ = Auth.auth().canHandleNotification(userInfo)
     }
 }
@@ -333,11 +325,8 @@ struct NotelayerApp: App {
     @StateObject private var authService: AuthService
     @StateObject private var backendService: FirebaseBackendService
     
-    // Track scene phase to process shared items when app becomes active
-    @Environment(\.scenePhase) var scenePhase
-
     init() {
-        configureFirebaseIfNeeded()
+        configureFirebaseIfNeeded(source: "NotelayerApp.init")
         let authService = AuthService()
         _authService = StateObject(wrappedValue: authService)
         _backendService = StateObject(wrappedValue: FirebaseBackendService(authService: authService, store: .shared))
@@ -358,9 +347,6 @@ struct NotelayerApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabsView()
-                .onAppear {
-                    print("⚠️⚠️⚠️ CONSOLE TEST - IF YOU SEE THIS, CONSOLE IS WORKING ⚠️⚠️⚠️")
-                }
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
                 .onOpenURL { url in
@@ -368,13 +354,6 @@ struct NotelayerApp: App {
                         await authService.handleIncomingURL(url)
                     }
                 }
-        }
-        .onChange(of: scenePhase) { newPhase in
-            print("========================================")
-            print("🔄 [NotelayerApp] Scene phase changed to: \(newPhase)")
-            print("========================================")
-            
-            // NOTE: Shared items are processed in TodosView.onAppear with proper timing
         }
     }
 }

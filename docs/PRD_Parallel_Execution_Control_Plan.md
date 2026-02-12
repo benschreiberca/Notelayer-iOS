@@ -1,7 +1,7 @@
 # PRD Parallel Execution Control Plan
 
-Last Updated: 2026-02-10
-Execution Mode: HOLD (No implementation work starts until explicit start command)
+Last Updated: 2026-02-12
+Execution Mode: COMPLETE (Single-chat master execution completed; manual merge/PR handoff pending)
 
 ## Purpose
 
@@ -38,13 +38,13 @@ No lane should execute while global mode is HOLD.
 
 | Lane | Scope | Branch | Plan Docs | Status | Merge Slot |
 | --- | --- | --- | --- | --- | --- |
-| A | Feature gate core + experimental visibility gate set | `codex/prd01-03-gating` | `PRD_01_Experimental_Features_Framework_plan.md`, `PRD_03_Analytics_Insights_Toggle_plan.md` | 🟥 HOLD | 1 |
-| B | Insights plain-language UX and chart readability | `codex/prd02-insights-language` | `PRD_02_Analytics_Natural_Language_Insights_plan.md` | 🟥 HOLD | 2 |
-| C | Voice parser and structured extraction | `codex/prd04-voice-parser` | `PRD_04_Voice_Entry_Structured_Capture_plan.md` | 🟥 HOLD | 3 |
-| D | Voice preview/staging workflow | `codex/prd05-voice-staging` | `PRD_05_Voice_Entry_Preview_Staging_plan.md` | 🟥 HOLD | 4 |
-| E | First-install onboarding flow | `codex/prd06-onboarding` | `PRD_06_First_Time_User_Onboarding_plan.md` | 🟥 HOLD | 5 |
-| F | Share sheet ChatGPT-first ingestion | `codex/prd07-share-chatgpt` | `PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First_plan.md` | 🟥 HOLD | 6 |
-| G | Parent/subtask hierarchy | `codex/prd08-parent-subtasks` | `PRD_08_Project_Based_Tasks_Parent_Subtasks_plan.md` | 🟥 HOLD | 7 |
+| A | Feature gate core + experimental visibility gate set | `codex/prd01-03-gating` | `PRD_01_Experimental_Features_Framework_plan.md`, `PRD_03_Analytics_Insights_Toggle_plan.md` | 🟩 COMPLETE | 1 |
+| B | Insights plain-language UX and chart readability | `codex/prd02-insights-language` | `PRD_02_Analytics_Natural_Language_Insights_plan.md` | 🟩 COMPLETE | 2 |
+| C | Voice parser and structured extraction | `codex/prd04-voice-parser` | `PRD_04_Voice_Entry_Structured_Capture_plan.md` | 🟩 COMPLETE | 3 |
+| D | Voice preview/staging workflow | `codex/prd05-voice-staging` | `PRD_05_Voice_Entry_Preview_Staging_plan.md` | 🟩 COMPLETE | 4 |
+| E | First-install onboarding flow | `codex/prd06-onboarding` | `PRD_06_First_Time_User_Onboarding_plan.md` | 🟩 COMPLETE | 5 |
+| F | Share sheet ChatGPT-first ingestion | `codex/prd07-share-chatgpt` | `PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First_plan.md` | 🟩 COMPLETE | 6 |
+| G | Parent/subtask hierarchy | `codex/prd08-parent-subtasks` | `PRD_08_Project_Based_Tasks_Parent_Subtasks_plan.md` | 🟩 COMPLETE | 7 |
 
 ## Ownership Rules
 
@@ -125,10 +125,16 @@ This separates start-order risk management from final merge order.
 
 ## Current Blockers
 
-- Lane A: final signoff on local-vs-synced conflict behavior.
-- Lane E: final decisions on video skip timing and recommended preset preselection behavior.
-- Lane F: unresolved PRD clarifications around mapping and structure preservation.
-- Lane G: unresolved PRD clarifications around hierarchy semantics.
+None. Wave 0 decisions are locked as of 2026-02-11.
+
+## Wave 4 Verification Snapshot
+
+- Debug simulator build: PASS
+- Release device build (`CODE_SIGNING_ALLOWED=NO`): PASS
+- Full automated tests: PASS
+  - `NotelayerInsightsTests`: 11 passed, 0 failed
+  - `NotelayerScreenshotTests`: 8 executed, 1 skipped, 0 failed
+- Remaining limitation is process-only (manual merge/PR orchestration), not a code/runtime blocker.
 
 ## Execution Notes
 

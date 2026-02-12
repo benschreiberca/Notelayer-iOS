@@ -1,6 +1,6 @@
 # Feature Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `70%`
 
 ## TLDR
 Build a mandatory pre-save staging step for all voice captures with full user edit control, strict save validation, and a <=2s p95 preview target.
@@ -76,3 +76,7 @@ Build a mandatory pre-save staging step for all voice captures with full user ed
   - [ ] 🟥 Manual QA for add/edit/delete/reorder and prompt reliability.
   - [ ] 🟥 Performance QA to confirm <=2s p95 target.
   - [ ] 🟥 Post-change UI consistency review of staging surfaces.
+
+## UI Consistency Evidence (2026-02-11)
+- Pre-check completed against `TodosView.swift` as standard bearer.
+- Post-check completed: staging flow implemented with native `List`, `Section`, toolbar actions, and edit/reorder controls.

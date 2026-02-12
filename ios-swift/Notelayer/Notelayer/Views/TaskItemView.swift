@@ -4,6 +4,11 @@ struct TaskItemView: View {
     @EnvironmentObject private var theme: ThemeManager
     let task: Task
     let categoryLookup: [String: Category]
+    let subtaskCount: Int
+    let isSubtasksExpanded: Bool
+    let isSubtask: Bool
+    let onToggleSubtasks: (() -> Void)?
+    let onAddSubtask: (() -> Void)?
     let onToggleComplete: () -> Void
     let onTap: () -> Void
     
@@ -47,6 +52,29 @@ struct TaskItemView: View {
                                 categoryBadge(category)
                             }
                         }
+
+                        if subtaskCount > 0 {
+                            Button(action: {
+                                onToggleSubtasks?()
+                            }) {
+                                Label(
+                                    "\(subtaskCount) step\(subtaskCount == 1 ? "" : "s")",
+                                    systemImage: isSubtasksExpanded ? "chevron.down" : "chevron.right"
+                                )
+                                .font(.caption)
+                                .foregroundStyle(theme.tokens.components.taskItem.metaText)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        if let onAddSubtask {
+                            Button(action: onAddSubtask) {
+                                Label("Add Subtask", systemImage: "plus.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(theme.tokens.components.taskItem.metaText)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
@@ -61,7 +89,7 @@ struct TaskItemView: View {
             }
         }
         .padding(.vertical, 1)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, isSubtask ? 8 : 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(taskTokens.background)

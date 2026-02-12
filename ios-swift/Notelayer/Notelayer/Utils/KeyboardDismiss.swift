@@ -6,6 +6,32 @@ enum Keyboard {
     static func dismiss() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
+    /// Dismiss only when a text input is currently first responder.
+    /// This avoids redundant resign actions on every tap.
+    static func dismissIfNeeded() {
+        guard let responder = UIResponder.currentFirstResponder,
+              responder is UITextField || responder is UITextView else {
+            return
+        }
+        dismiss()
+    }
+}
+
+private final class FirstResponderTracker {
+    static weak var current: UIResponder?
+}
+
+private extension UIResponder {
+    static var currentFirstResponder: UIResponder? {
+        FirstResponderTracker.current = nil
+        UIApplication.shared.sendAction(#selector(trackFirstResponder), to: nil, from: nil, for: nil)
+        return FirstResponderTracker.current
+    }
+
+    @objc func trackFirstResponder() {
+        FirstResponderTracker.current = self
+    }
 }
 
 /// Adds a non-blocking tap recognizer that dismisses the keyboard when tapping outside text inputs.

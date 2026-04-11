@@ -59,8 +59,8 @@ struct TagChipsView: View {
             .lineLimit(1)
             .padding(.horizontal, hPad)
             .padding(.vertical, vPad)
-            .background(chip.color.opacity(0.12))
-            .foregroundStyle(chip.color.opacity(0.85))
+            .background(chip.color.opacity(0.18))
+            .foregroundStyle(.primary)
             .clipShape(Capsule(style: .continuous))
     }
 

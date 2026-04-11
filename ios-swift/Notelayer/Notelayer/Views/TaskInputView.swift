@@ -170,7 +170,7 @@ struct CategoryChip: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(isSelected ? categoryColor.opacity(0.22) : .clear)
-            .foregroundColor(categoryColor)
+            .foregroundColor(.primary) // Always readable; selection shown by fill + no border
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isSelected ? Color.clear : categoryColor, lineWidth: 1.2)

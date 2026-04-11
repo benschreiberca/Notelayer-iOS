@@ -34,6 +34,7 @@ final class FirebaseBackendService: ObservableObject {
     }
 
     private func handleUserChange(_ user: User?) async {
+        NSLog("🔄 [FirebaseBackendService] handleUserChange: user=%@", user?.uid ?? "nil")
         stopListeners()
         backend = nil
         backendUserId = nil
@@ -56,7 +57,9 @@ final class FirebaseBackendService: ObservableObject {
         backendUserId = user.uid
         store.attachBackend(backend)
 
+        NSLog("🔄 [FirebaseBackendService] Starting initial sync for user: %@", user.uid)
         await syncInitialData(using: backend)
+        NSLog("✅ [FirebaseBackendService] Initial sync complete, attaching listeners")
         startListeners(using: backend)
         startMetadataSync(using: backend)
     }
@@ -112,9 +115,7 @@ final class FirebaseBackendService: ObservableObject {
                 try await backend.upsertInsightsHintMetadata(store.insightsHintState)
             }
         } catch {
-            #if DEBUG
-            print("Firebase backend initial sync failed: \(error)")
-            #endif
+            NSLog("❌ [FirebaseBackendService] Initial sync failed: %@", error.localizedDescription)
         }
     }
 

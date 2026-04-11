@@ -71,7 +71,7 @@ private struct CategoryChipButton: View {
     }
     
     private var foregroundColor: Color {
-        isSelected ? categoryColor : categoryColor
+        .primary // Always readable; selection is communicated by fill + semibold weight + no border
     }
     
     private var borderColor: Color {
@@ -79,7 +79,7 @@ private struct CategoryChipButton: View {
     }
     
     private var categoryColor: Color {
-        Color(hex: category.color) ?? .blue
+        Color(hex: category.color) ?? .accentColor
     }
 }
 

@@ -69,9 +69,11 @@ struct CategoryManagerView: View {
             }
             .sheet(item: $editingCategory) { category in
                 CategoryEditView(category: category)
+                    .withThemeAppearance()
             }
             .sheet(isPresented: $showingAddCategory) {
                 CategoryAddView()
+                    .withThemeAppearance()
             }
             .sheet(isPresented: $showingBulkRenameSheet, onDismiss: clearPendingDelete) {
                 if let category = pendingDeleteCategory {
@@ -80,6 +82,7 @@ struct CategoryManagerView: View {
                         taskCount: pendingDeleteTaskCount,
                         onComplete: clearPendingDelete
                     )
+                    .withThemeAppearance()
                 }
             }
             .confirmationDialog(

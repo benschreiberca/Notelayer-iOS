@@ -22,6 +22,8 @@ struct RootTabsView: View {
     @State private var welcomeViewSession: AnalyticsViewSession? = nil
     @State private var isKeyboardVisible = false
     @State private var showVoiceCaptureSheet = false
+    @State private var isSearchActive = false
+    @State private var voicePulse = false
     @State private var showInsightsHintBanner = false
     @State private var showLockedInsightsMessage = false
     @State private var isGenieTransitionActive = false
@@ -41,6 +43,10 @@ struct RootTabsView: View {
         selectedTab == .todos && insightsEnabled && !isKeyboardVisible
     }
 
+    private var shouldShowSearchButton: Bool {
+        selectedTab == .todos && !isKeyboardVisible
+    }
+
     private var isScreenshotGenerationMode: Bool {
         ProcessInfo.processInfo.environment["SCREENSHOT_MODE"] == "true" ||
         ProcessInfo.processInfo.arguments.contains("--screenshot-generation")
@@ -56,7 +62,7 @@ struct RootTabsView: View {
                 case .notes:
                     NotesView()
                 case .todos:
-                    TodosView()
+                    TodosView(isSearchActive: $isSearchActive)
                 case .insights:
                     InsightsView()
                         .scaleEffect(isGenieTransitionActive ? 0.2 : 1.0, anchor: .topTrailing)
@@ -91,28 +97,80 @@ struct RootTabsView: View {
                 .padding(.bottom, AppBottomClearance.tabBottomPadding)
             }
 
-            if shouldShowVoiceButton {
-                Button {
-                    if selectedTab != .todos {
-                        selectedTab = .todos
+            if shouldShowSearchButton || shouldShowVoiceButton {
+                VStack(spacing: 16) {
+                    if shouldShowSearchButton {
+                        Button {
+                            isSearchActive.toggle()
+                        } label: {
+                            Image(systemName: isSearchActive ? "xmark" : "magnifyingglass")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(isSearchActive ? theme.tokens.accent : .white)
+                                .frame(width: 58, height: 58)
+                                .background(
+                                    Circle()
+                                        .fill(isSearchActive ? Color.white : theme.tokens.accent)
+                                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isSearchActive ? "Close search" : "Search tasks")
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.easeInOut(duration: 0.18), value: isSearchActive)
                     }
-                    showVoiceCaptureSheet = true
-                } label: {
-                    Image(systemName: "waveform.and.mic")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 58, height: 58)
-                        .background(
-                            Circle()
-                                .fill(theme.tokens.accent)
-                                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                        )
+
+                    if shouldShowVoiceButton {
+                        ZStack {
+                            // Pulse rings when recording
+                            if store.isVoiceRecording {
+                                ForEach([0, 1], id: \.self) { ringIndex in
+                                    Circle()
+                                        .stroke(theme.tokens.accent.opacity(voicePulse ? 0 : 0.45), lineWidth: 2)
+                                        .frame(
+                                            width: 58 + (voicePulse ? 32 : 0),
+                                            height: 58 + (voicePulse ? 32 : 0)
+                                        )
+                                        .animation(
+                                            .easeOut(duration: 1.1)
+                                                .repeatForever(autoreverses: false)
+                                                .delay(Double(ringIndex) * 0.55),
+                                            value: voicePulse
+                                        )
+                                }
+                            }
+
+                            Button {
+                                if selectedTab != .todos {
+                                    selectedTab = .todos
+                                }
+                                showVoiceCaptureSheet = true
+                            } label: {
+                                Image(systemName: "waveform.and.mic")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 58, height: 58)
+                                    .background(
+                                        Circle()
+                                            .fill(store.isVoiceRecording ? Color.red : theme.tokens.accent)
+                                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Voice task entry")
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .onChange(of: store.isVoiceRecording) { recording in
+                            voicePulse = false
+                            if recording {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                    voicePulse = true
+                                }
+                            }
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
                 .padding(.trailing, 24)
                 .padding(.bottom, AppBottomClearance.tabRowHeight + AppBottomClearance.tabBottomPadding + 20)
-                .accessibilityLabel("Voice task entry")
-                .transition(.scale.combined(with: .opacity))
             }
         }
         .overlay(alignment: .top) {
@@ -147,6 +205,7 @@ struct RootTabsView: View {
         .animation(.easeInOut(duration: 0.2), value: isKeyboardVisible)
         .animation(.easeInOut(duration: 0.2), value: showInsightsHintBanner)
         .animation(.easeInOut(duration: 0.2), value: shouldShowVoiceButton)
+        .animation(.easeInOut(duration: 0.2), value: shouldShowSearchButton)
         .onAppear {
             updateResolvedScheme()
             handleExperimentalVisibilityChange(triggeredByUser: false)
@@ -185,6 +244,7 @@ struct RootTabsView: View {
             handleExperimentalVisibilityChange(triggeredByUser: false)
         }
         .onChange(of: selectedTab) { newValue in
+            if newValue != .todos { isSearchActive = false }
             AnalyticsService.shared.trackViewDuration(tabViewSession)
             AnalyticsService.shared.trackTabSelected(
                 tabName: tabName(for: newValue),
@@ -206,6 +266,7 @@ struct RootTabsView: View {
             WelcomeView(onDismiss: {
                 welcomeCoordinator.markWelcomeAsSeen()
             })
+            .withThemeAppearance()
             .environmentObject(authService)
             .environmentObject(theme)
             .presentationDetents([.large])
@@ -220,6 +281,7 @@ struct RootTabsView: View {
         }
         .sheet(isPresented: $showVoiceCaptureSheet) {
             VoiceCaptureSheet()
+                .withThemeAppearance()
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .environmentObject(theme)
@@ -235,6 +297,7 @@ struct RootTabsView: View {
             )
         ) {
             VoiceStagingView()
+                .withThemeAppearance()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .environmentObject(theme)

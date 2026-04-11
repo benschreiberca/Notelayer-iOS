@@ -37,6 +37,8 @@ class LocalStore: ObservableObject {
     @Published var voiceStagingDrafts: [VoiceParsedTaskDraft] = []
     @Published var voiceSourceTranscript: String = ""
     @Published var isVoiceStagingPresented: Bool = false
+    /// True while VoiceCaptureSheet is actively recording; used by RootTabsView to animate the floating voice button.
+    @Published var isVoiceRecording: Bool = false
     @Published private(set) var pendingSharedImportCount: Int = 0
     @Published private(set) var lastSharedImportError: String?
     @Published private(set) var lastSharedImportProcessedAt: Date?
@@ -247,6 +249,7 @@ class LocalStore: ObservableObject {
     // MARK: - Load & Save
     
     func load() {
+        NSLog("📦 [LocalStore] load() start — appGroup: %@", appGroupIdentifier)
         if let notesData = userDefaults.data(forKey: notesKey),
            let decodedNotes = try? JSONDecoder().decode([Note].self, from: notesData) {
             notes = decodedNotes
@@ -309,6 +312,7 @@ class LocalStore: ObservableObject {
         }
         voiceSourceTranscript = userDefaults.string(forKey: voiceSourceTranscriptKey) ?? ""
         isVoiceStagingPresented = !voiceStagingDrafts.isEmpty
+        NSLog("📦 [LocalStore] load() complete — tasks: %d, notes: %d, categories: %d", tasks.count, notes.count, categories.count)
         refreshSharedImportQueueStatusAsync()
     }
 

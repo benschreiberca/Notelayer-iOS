@@ -95,6 +95,7 @@ struct ManageAccountView: View {
         }
         .sheet(item: $exportURL) { url in
             ActivityViewWrapper(activityItems: [url])
+                .withThemeAppearance()
         }
         .overlay {
             if isBusy {

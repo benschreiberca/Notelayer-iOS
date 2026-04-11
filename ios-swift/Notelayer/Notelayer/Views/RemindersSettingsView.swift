@@ -99,6 +99,7 @@ struct RemindersSettingsView: View {
                         }
                     }
                 )
+                .withThemeAppearance()
                 .presentationDetents([.medium])
                 .onAppear {
                     reminderPickerSession = AnalyticsService.shared.trackViewOpen(

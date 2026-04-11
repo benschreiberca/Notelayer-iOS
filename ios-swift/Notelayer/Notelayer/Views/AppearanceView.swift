@@ -33,6 +33,7 @@ struct AppearanceView: View {
             }
             .sheet(isPresented: $showingCustomize) {
                 CustomizeThemeView()
+                    .withThemeAppearance()
                     .environmentObject(theme)
                     .presentationDetents([.fraction(0.85)])
                     .presentationDragIndicator(.visible)
@@ -379,6 +380,7 @@ private struct CustomizeThemeView: View {
             }
             .sheet(isPresented: $showingAllWallpapers) {
                 AllWallpapersView(selection: theme.configuration.wallpaper, onSelect: updateWallpaper)
+                    .withThemeAppearance()
                     .environmentObject(theme)
             }
             .alert("Save Theme", isPresented: $showingSavePrompt) {

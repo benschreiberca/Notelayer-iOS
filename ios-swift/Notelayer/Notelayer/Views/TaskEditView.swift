@@ -19,6 +19,9 @@ struct TaskEditView: View {
     @State private var customDate = Date()
     @State private var selectedParentTaskId: String?
     @State private var showingParentDeletionDialog = false
+    @State private var detectedURLs: [URL] = []
+
+    private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
     
     init(task: Task, categories: [Category]) {
         self.task = task
@@ -269,14 +272,14 @@ struct TaskEditView: View {
             } message: {
                 Text("Choose what to do with subtasks before deleting this parent task.")
             }
+            .onAppear { detectURLs() }
+            .onChange(of: taskNotes) { _ in detectURLs() }
         }
     }
     
-    /// Detected URLs in task notes for tappable links
-    private var detectedURLs: [URL] {
-        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-        let matches = detector?.matches(in: taskNotes, range: NSRange(taskNotes.startIndex..., in: taskNotes)) ?? []
-        return matches.compactMap { match in
+    private func detectURLs() {
+        let matches = Self.linkDetector?.matches(in: taskNotes, range: NSRange(taskNotes.startIndex..., in: taskNotes)) ?? []
+        detectedURLs = matches.compactMap { match in
             Range(match.range, in: taskNotes).flatMap { URL(string: String(taskNotes[$0])) }
         }
     }

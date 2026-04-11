@@ -11,6 +11,14 @@ enum TodoViewMode: String, CaseIterable {
     case date = "Date"
 }
 
+/// Defers instantiation of a view until it first appears in the hierarchy.
+/// Prevents SwiftUI's page TabView from eagerly creating all tab pages at launch.
+private struct LazyView<Content: View>: View {
+    let build: () -> Content
+    init(_ build: @autoclosure @escaping () -> Content) { self.build = build }
+    var body: some View { build() }
+}
+
 struct TodosView: View {
     @Binding var isSearchActive: Bool
     @StateObject private var store = LocalStore.shared
@@ -37,12 +45,14 @@ struct TodosView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
 
+    // Cached derived task lists — recomputed only when store.tasks or experimentalFeaturesEnabled changes,
+    // not on every unrelated LocalStore publish.
+    @State private var cachedDoingTasks: [Task] = []
+    @State private var cachedDoneTasks: [Task] = []
+
     var body: some View {
-        let tasks = store.experimentalFeaturesEnabled ? store.topLevelTasks : store.tasks
-        let partitioned = splitTasksByCompletion(tasks)
-        let doingTasks = partitioned.doing
-        let doneTasks = partitioned.done
-        let baseTasks = showingDone ? doneTasks : doingTasks
+        let sortedCategories = store.sortedCategories
+        let baseTasks = showingDone ? cachedDoneTasks : cachedDoingTasks
         let filteredTasks = searchQuery.isEmpty ? baseTasks : baseTasks.filter { task in
             task.title.localizedCaseInsensitiveContains(searchQuery) ||
             (task.taskNotes?.localizedCaseInsensitiveContains(searchQuery) ?? false)
@@ -102,7 +112,7 @@ struct TodosView: View {
                     TodoListModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.sortedCategories,
+                        categories: sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         onExportToCalendar: { task in
@@ -113,10 +123,10 @@ struct TodosView: View {
                     )
                     .tag(TodoViewMode.list)
                     
-                    TodoPriorityModeView(
+                    LazyView(TodoPriorityModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.sortedCategories,
+                        categories: sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         onExportToCalendar: { task in
@@ -124,13 +134,13 @@ struct TodosView: View {
                         },
                         onSetReminder: { setReminder(for: $0) },
                         onRemoveReminder: { removeReminder(for: $0) }
-                    )
+                    ))
                     .tag(TodoViewMode.priority)
-                    
-                    TodoCategoryModeView(
+
+                    LazyView(TodoCategoryModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.sortedCategories,
+                        categories: sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         onExportToCalendar: { task in
@@ -138,13 +148,13 @@ struct TodosView: View {
                         },
                         onSetReminder: { setReminder(for: $0) },
                         onRemoveReminder: { removeReminder(for: $0) }
-                    )
+                    ))
                     .tag(TodoViewMode.category)
-                    
-                    TodoDateModeView(
+
+                    LazyView(TodoDateModeView(
                         tasks: filteredTasks,
                         showingDone: showingDone,
-                        categories: store.sortedCategories,
+                        categories: sortedCategories,
                         editingTask: $editingTask,
                         sharePayload: $sharePayload,
                         onExportToCalendar: { task in
@@ -152,7 +162,7 @@ struct TodosView: View {
                         },
                         onSetReminder: { setReminder(for: $0) },
                         onRemoveReminder: { removeReminder(for: $0) }
-                    )
+                    ))
                     .tag(TodoViewMode.date)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
@@ -173,7 +183,7 @@ struct TodosView: View {
                                     .font(.subheadline)
                                     .fontWeight(showingDone ? .regular : .bold)
                                     .foregroundColor(showingDone ? .secondary : .primary)
-                                Text("\(doingTasks.count)")
+                                Text("\(cachedDoingTasks.count)")
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
@@ -193,7 +203,7 @@ struct TodosView: View {
                                     .font(.subheadline)
                                     .fontWeight(showingDone ? .bold : .regular)
                                     .foregroundColor(showingDone ? .primary : .secondary)
-                                Text("\(doneTasks.count)")
+                                Text("\(cachedDoneTasks.count)")
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
@@ -209,139 +219,6 @@ struct TodosView: View {
                     )
                 }
             }
-            .sheet(item: $editingTask) { task in
-                TaskEditView(task: task, categories: store.sortedCategories)
-                    .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .onAppear {
-                        taskEditViewSession = AnalyticsService.shared.trackViewOpen(
-                            viewName: AnalyticsViewName.taskEdit,
-                            tabName: AnalyticsTabName.todos,
-                            source: viewName(for: viewMode)
-                        )
-                    }
-                    .onDisappear {
-                        AnalyticsService.shared.trackViewDuration(taskEditViewSession)
-                        taskEditViewSession = nil
-                    }
-            }
-            .sheet(isPresented: $showingCategoryManager) {
-                CategoryManagerView()
-                    .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .onAppear {
-                        categoryViewSession = AnalyticsService.shared.trackViewOpen(
-                            viewName: AnalyticsViewName.categoryManager,
-                            tabName: AnalyticsTabName.todos,
-                            source: viewName(for: viewMode)
-                        )
-                    }
-                    .onDisappear {
-                        AnalyticsService.shared.trackViewDuration(categoryViewSession)
-                        categoryViewSession = nil
-                    }
-            }
-            .sheet(isPresented: $showingAppearance) {
-                AppearanceView()
-                    .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .onAppear {
-                        appearanceViewSession = AnalyticsService.shared.trackViewOpen(
-                            viewName: AnalyticsViewName.appearance,
-                            tabName: AnalyticsTabName.todos,
-                            source: viewName(for: viewMode)
-                        )
-                    }
-                    .onDisappear {
-                        AnalyticsService.shared.trackViewDuration(appearanceViewSession)
-                        appearanceViewSession = nil
-                    }
-            }
-            .sheet(isPresented: $showingProfileSettings) {
-                ProfileSettingsView()
-                    .withThemeAppearance()
-                    .environmentObject(authService)
-                    .environmentObject(theme)
-                    .onAppear {
-                        profileViewSession = AnalyticsService.shared.trackViewOpen(
-                            viewName: AnalyticsViewName.profileSettings,
-                            tabName: AnalyticsTabName.todos,
-                            source: viewName(for: viewMode)
-                        )
-                    }
-                    .onDisappear {
-                        AnalyticsService.shared.trackViewDuration(profileViewSession)
-                        profileViewSession = nil
-                    }
-            }
-            .sheet(item: $sharePayload) { payload in
-                ShareSheet(items: payload.items)
-            }
-            .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
-                Button("Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                    calendarExportError = nil
-                }
-                Button("OK") {
-                    calendarExportError = nil
-                }
-            } message: {
-                if let error = calendarExportError {
-                    Text(error.localizedDescription)
-                }
-            }
-            .sheet(item: $calendarEditSession) { session in
-                CalendarEventEditView(
-                    event: session.event,
-                    eventStore: session.store,
-                    onSaved: {
-                        calendarEditSession = nil
-                    },
-                    onCancelled: {
-                        calendarEditSession = nil
-                    }
-                )
-                .withThemeAppearance()
-                .onAppear {
-                    calendarExportSession = AnalyticsService.shared.trackViewOpen(
-                        viewName: AnalyticsViewName.calendarExport,
-                        tabName: AnalyticsTabName.todos,
-                        source: viewName(for: viewMode)
-                    )
-                }
-                .onDisappear {
-                    AnalyticsService.shared.trackViewDuration(calendarExportSession)
-                    calendarExportSession = nil
-                }
-            }
-            .sheet(item: $taskToSetReminder) { task in
-                ReminderPickerSheet(
-                    task: task,
-                    onSave: { date in
-                        _Concurrency.Task {
-                            await store.setReminder(for: task.id, at: date)
-                        }
-                    }
-                )
-                .withThemeAppearance()
-                .environmentObject(theme)
-                .onAppear {
-                    reminderPickerSession = AnalyticsService.shared.trackViewOpen(
-                        viewName: AnalyticsViewName.reminderPicker,
-                        tabName: AnalyticsTabName.todos,
-                        source: viewName(for: viewMode)
-                    )
-                }
-                .onDisappear {
-                    AnalyticsService.shared.trackViewDuration(reminderPickerSession)
-                    reminderPickerSession = nil
-                }
-            }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenTaskFromNotification"))) { notification in
                 if let taskId = notification.userInfo?["taskId"] as? String,
                    let task = store.tasks.first(where: { $0.id == taskId }) {
@@ -351,6 +228,7 @@ struct TodosView: View {
                 }
             }
             .onAppear {
+                recomputeTaskCache()
                 if !hasScheduledSharedImport {
                     hasScheduledSharedImport = true
                     // Kick off shared import processing once per app session after initial sync settles.
@@ -389,7 +267,149 @@ struct TodosView: View {
                     isSearchFieldFocused = false
                 }
             }
+            .onChange(of: store.tasks) { _ in recomputeTaskCache() }
+            .onChange(of: store.experimentalFeaturesPreference) { _ in recomputeTaskCache() }
         }
+        .sheet(item: $editingTask) { task in
+            TaskEditView(task: task, categories: store.sortedCategories)
+                .withThemeAppearance()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .onAppear {
+                    taskEditViewSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.taskEdit,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(taskEditViewSession)
+                    taskEditViewSession = nil
+                }
+        }
+        .sheet(isPresented: $showingCategoryManager) {
+            CategoryManagerView()
+                .withThemeAppearance()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .onAppear {
+                    categoryViewSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.categoryManager,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(categoryViewSession)
+                    categoryViewSession = nil
+                }
+        }
+        .sheet(isPresented: $showingAppearance) {
+            AppearanceView()
+                .withThemeAppearance()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .onAppear {
+                    appearanceViewSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.appearance,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(appearanceViewSession)
+                    appearanceViewSession = nil
+                }
+        }
+        .sheet(isPresented: $showingProfileSettings) {
+            ProfileSettingsView()
+                .withThemeAppearance()
+                .environmentObject(authService)
+                .environmentObject(theme)
+                .onAppear {
+                    profileViewSession = AnalyticsService.shared.trackViewOpen(
+                        viewName: AnalyticsViewName.profileSettings,
+                        tabName: AnalyticsTabName.todos,
+                        source: viewName(for: viewMode)
+                    )
+                }
+                .onDisappear {
+                    AnalyticsService.shared.trackViewDuration(profileViewSession)
+                    profileViewSession = nil
+                }
+        }
+        .sheet(item: $sharePayload) { payload in
+            ShareSheet(items: payload.items)
+        }
+        .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
+            Button("Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+                calendarExportError = nil
+            }
+            Button("OK") {
+                calendarExportError = nil
+            }
+        } message: {
+            if let error = calendarExportError {
+                Text(error.localizedDescription)
+            }
+        }
+        .sheet(item: $calendarEditSession) { session in
+            CalendarEventEditView(
+                event: session.event,
+                eventStore: session.store,
+                onSaved: {
+                    calendarEditSession = nil
+                },
+                onCancelled: {
+                    calendarEditSession = nil
+                }
+            )
+            .withThemeAppearance()
+            .onAppear {
+                calendarExportSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: AnalyticsViewName.calendarExport,
+                    tabName: AnalyticsTabName.todos,
+                    source: viewName(for: viewMode)
+                )
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(calendarExportSession)
+                calendarExportSession = nil
+            }
+        }
+        .sheet(item: $taskToSetReminder) { task in
+            ReminderPickerSheet(
+                task: task,
+                onSave: { date in
+                    _Concurrency.Task {
+                        await store.setReminder(for: task.id, at: date)
+                    }
+                }
+            )
+            .withThemeAppearance()
+            .environmentObject(theme)
+            .onAppear {
+                reminderPickerSession = AnalyticsService.shared.trackViewOpen(
+                    viewName: AnalyticsViewName.reminderPicker,
+                    tabName: AnalyticsTabName.todos,
+                    source: viewName(for: viewMode)
+                )
+            }
+            .onDisappear {
+                AnalyticsService.shared.trackViewDuration(reminderPickerSession)
+                reminderPickerSession = nil
+            }
+        }
+    }
+
+    private func recomputeTaskCache() {
+        let tasks = store.experimentalFeaturesEnabled ? store.topLevelTasks : store.tasks
+        let partitioned = splitTasksByCompletion(tasks)
+        cachedDoingTasks = partitioned.doing
+        cachedDoneTasks = partitioned.done
     }
 
     private func dismissSearch() {
@@ -668,7 +688,7 @@ private struct TodoListModeView: View {
     let onExportToCalendar: (Task) -> Void
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
-    
+
     var body: some View {
         let categoryLookup = makeCategoryLookup(categories)
         TodoModeScrollScaffold {
@@ -712,7 +732,7 @@ private struct TodoListModeView: View {
             }
         }
     }
-    
+
     private func toggleComplete(_ task: Task) {
         if task.completedAt != nil {
             store.restoreTask(id: task.id)
@@ -754,9 +774,8 @@ private struct TodoPriorityModeView: View {
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
-    
+
     var body: some View {
-        // Pre-group once to avoid repeated filtering in each priority lane.
         let tasksByPriority = Dictionary(grouping: tasks, by: { $0.priority })
         let categoryLookup = makeCategoryLookup(categories)
         TodoModeScrollScaffold {
@@ -813,7 +832,7 @@ private struct TodoPriorityModeView: View {
             }
         }
     }
-    
+
     private func toggleComplete(_ task: Task) {
         if task.completedAt != nil {
             store.restoreTask(id: task.id)
@@ -827,7 +846,7 @@ private struct TodoPriorityModeView: View {
         Keyboard.dismissIfNeeded()
         editingTask = task
     }
-    
+
     private func applyPriorityDrop(payload: TodoDragPayload, destination: Priority, beforeTaskId: String?) {
         let draggedId = payload.taskId
         
@@ -868,9 +887,8 @@ private struct TodoCategoryModeView: View {
     @State private var dragCollapsedGroupIds: Set<String> = []
     @State private var targetedGroupKey: String? = nil
     @State private var activeGroupDragKey: String? = nil
-    
+
     var body: some View {
-        // Pre-group to avoid scanning the full task list for each category.
         let grouped = groupTasksByCategory(tasks)
         let categoryLookup = makeCategoryLookup(categories)
         let uncategorizedGroupKey = "uncategorized"
@@ -1207,9 +1225,8 @@ private struct TodoDateModeView: View {
     let onSetReminder: (Task) -> Void
     let onRemoveReminder: (Task) -> Void
     @StateObject private var collapse = GroupCollapseStore.shared
-    
+
     var body: some View {
-        // Pre-group to avoid repeated bucket filtering across each date section.
         let tasksByBucket = groupTasksByDateBucket(tasks)
         let categoryLookup = makeCategoryLookup(categories)
         TodoModeScrollScaffold {
@@ -1267,7 +1284,7 @@ private struct TodoDateModeView: View {
             }
         }
     }
-    
+
     private func toggleComplete(_ task: Task) {
         if task.completedAt != nil {
             store.restoreTask(id: task.id)
@@ -1281,7 +1298,7 @@ private struct TodoDateModeView: View {
         Keyboard.dismissIfNeeded()
         editingTask = task
     }
-    
+
     private func applyDateDrop(payload: TodoDragPayload, destinationBucket: TodoDateBucket, beforeTaskId: String?) {
         let draggedId = payload.taskId
         let newDueDate = dueDateForBucket(destinationBucket)
@@ -1586,11 +1603,19 @@ private struct TodoGroupTaskList: View {
                         return onDropMove(payload, nil)
                     }
             } else {
+                // Pre-build subtask map once (O(n)) so each expanded row lookup is O(1).
+                let subtaskMap: [String: [Task]] = hierarchyEnabled
+                    ? Dictionary(grouping: store.tasks.filter {
+                        $0.parentTaskId != nil &&
+                        (showingDone ? $0.completedAt != nil : $0.completedAt == nil)
+                    }, by: { $0.parentTaskId! })
+                    : [:]
+
                 ForEach(tasks) { task in
                     topLevelRow(for: task)
 
                     if hierarchyEnabled, expandedParentTaskIds.contains(task.id) {
-                        ForEach(store.subtasks(for: task.id, includeCompleted: showingDone)) { subtask in
+                        ForEach(subtaskMap[task.id] ?? []) { subtask in
                             subtaskRow(subtask, parentTaskId: task.id)
                         }
 

@@ -5,6 +5,7 @@ struct VoiceCaptureSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var theme: ThemeManager
     @StateObject private var store = LocalStore.shared
+    @StateObject private var voiceStore = VoiceStateStore.shared
     @StateObject private var controller = VoiceInputController()
 
     @State private var parseErrorMessage: String?
@@ -109,10 +110,10 @@ struct VoiceCaptureSheet: View {
             }
         }
         .onChange(of: controller.isRecording) { recording in
-            store.isVoiceRecording = recording
+            voiceStore.isRecording = recording
         }
         .onDisappear {
-            store.isVoiceRecording = false
+            voiceStore.isRecording = false
             controller.stopRecording()
         }
     }
@@ -127,7 +128,7 @@ struct VoiceCaptureSheet: View {
         }
 
         parseErrorMessage = nil
-        store.stageVoiceDrafts(drafts, transcript: transcript)
+        voiceStore.stageVoiceDrafts(drafts, transcript: transcript)
         dismiss()
     }
 }

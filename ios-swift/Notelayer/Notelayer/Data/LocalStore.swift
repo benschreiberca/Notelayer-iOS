@@ -34,11 +34,6 @@ class LocalStore: ObservableObject {
     @Published private(set) var uncategorizedPosition: Int = 0
     @Published private(set) var experimentalFeaturesPreference: ExperimentalFeaturePreference = .default
     @Published private(set) var insightsHintState: InsightsHintState = .default
-    @Published var voiceStagingDrafts: [VoiceParsedTaskDraft] = []
-    @Published var voiceSourceTranscript: String = ""
-    @Published var isVoiceStagingPresented: Bool = false
-    /// True while VoiceCaptureSheet is actively recording; used by RootTabsView to animate the floating voice button.
-    @Published var isVoiceRecording: Bool = false
     @Published private(set) var pendingSharedImportCount: Int = 0
     @Published private(set) var lastSharedImportError: String?
     @Published private(set) var lastSharedImportProcessedAt: Date?
@@ -53,8 +48,6 @@ class LocalStore: ObservableObject {
     private let experimentalFeaturesEnabledKey = "com.notelayer.app.experimentalFeatures.enabled"
     private let experimentalFeaturesUpdatedAtKey = "com.notelayer.app.experimentalFeatures.updatedAt"
     private let insightsHintStateKey = "com.notelayer.app.insights.hintState"
-    private let voiceStagingDraftsKey = "com.notelayer.app.voice.stagingDrafts"
-    private let voiceSourceTranscriptKey = "com.notelayer.app.voice.sourceTranscript"
     private let backendUserIdKey = "com.notelayer.app.backendUserId"
     private let sharedItemsQueueKey = "com.notelayer.app.sharedItems"
     private var hasStoredExperimentalPreference = false
@@ -126,9 +119,7 @@ class LocalStore: ObservableObject {
             uncategorizedPosition = 0
             experimentalFeaturesPreference = .default
             insightsHintState = .default
-            voiceStagingDrafts = []
-            voiceSourceTranscript = ""
-            isVoiceStagingPresented = false
+            VoiceStateStore.shared.clearVoiceStaging()
             pendingSharedImportCount = 0
             lastSharedImportError = nil
             lastSharedImportProcessedAt = nil
@@ -140,7 +131,6 @@ class LocalStore: ObservableObject {
             saveUncategorizedPosition()
             saveExperimentalFeaturesPreference()
             saveInsightsHintState()
-            saveVoiceStaging()
             migrateIfNeeded()
         }
     }
@@ -304,14 +294,6 @@ class LocalStore: ObservableObject {
             hasStoredInsightsHintState = false
         }
 
-        if let draftsData = userDefaults.data(forKey: voiceStagingDraftsKey),
-           let decodedDrafts = try? JSONDecoder().decode([VoiceParsedTaskDraft].self, from: draftsData) {
-            voiceStagingDrafts = decodedDrafts
-        } else {
-            voiceStagingDrafts = []
-        }
-        voiceSourceTranscript = userDefaults.string(forKey: voiceSourceTranscriptKey) ?? ""
-        isVoiceStagingPresented = !voiceStagingDrafts.isEmpty
         NSLog("📦 [LocalStore] load() complete — tasks: %d, notes: %d, categories: %d", tasks.count, notes.count, categories.count)
         refreshSharedImportQueueStatusAsync()
     }
@@ -437,18 +419,6 @@ class LocalStore: ObservableObject {
         }
     }
 
-    private func saveVoiceStaging() {
-        if voiceStagingDrafts.isEmpty {
-            userDefaults.removeObject(forKey: voiceStagingDraftsKey)
-            userDefaults.removeObject(forKey: voiceSourceTranscriptKey)
-            return
-        }
-        if let data = try? JSONEncoder().encode(voiceStagingDrafts) {
-            userDefaults.set(data, forKey: voiceStagingDraftsKey)
-            userDefaults.set(voiceSourceTranscript, forKey: voiceSourceTranscriptKey)
-        }
-    }
-
     // MARK: - Experimental Features
 
     func beginExperimentalReconciliation() {
@@ -563,28 +533,6 @@ class LocalStore: ObservableObject {
         next.updatedAt = now
         insightsHintState = next
         saveInsightsHintState()
-    }
-
-    // MARK: - Voice Staging
-
-    func stageVoiceDrafts(_ drafts: [VoiceParsedTaskDraft], transcript: String) {
-        voiceStagingDrafts = drafts
-        voiceSourceTranscript = transcript
-        isVoiceStagingPresented = !drafts.isEmpty
-        saveVoiceStaging()
-    }
-
-    func updateVoiceStagingDrafts(_ drafts: [VoiceParsedTaskDraft]) {
-        voiceStagingDrafts = drafts
-        isVoiceStagingPresented = !drafts.isEmpty
-        saveVoiceStaging()
-    }
-
-    func clearVoiceStaging() {
-        voiceStagingDrafts = []
-        voiceSourceTranscript = ""
-        isVoiceStagingPresented = false
-        saveVoiceStaging()
     }
 
     // MARK: - Notes

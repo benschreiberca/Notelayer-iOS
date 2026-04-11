@@ -13,6 +13,7 @@ struct RootTabsView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var welcomeCoordinator = WelcomeCoordinator.shared
     @StateObject private var store = LocalStore.shared
+    @StateObject private var voiceStore = VoiceStateStore.shared
 
     @State private var selectedTab: AppTab = .todos
     @State private var showWelcome = false
@@ -122,7 +123,7 @@ struct RootTabsView: View {
                     if shouldShowVoiceButton {
                         ZStack {
                             // Pulse rings when recording
-                            if store.isVoiceRecording {
+                            if voiceStore.isRecording {
                                 ForEach([0, 1], id: \.self) { ringIndex in
                                     Circle()
                                         .stroke(theme.tokens.accent.opacity(voicePulse ? 0 : 0.45), lineWidth: 2)
@@ -151,7 +152,7 @@ struct RootTabsView: View {
                                     .frame(width: 58, height: 58)
                                     .background(
                                         Circle()
-                                            .fill(store.isVoiceRecording ? Color.red : theme.tokens.accent)
+                                            .fill(voiceStore.isRecording ? Color.red : theme.tokens.accent)
                                             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
                                     )
                             }
@@ -159,7 +160,7 @@ struct RootTabsView: View {
                             .accessibilityLabel("Voice task entry")
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .onChange(of: store.isVoiceRecording) { recording in
+                        .onChange(of: voiceStore.isRecording) { recording in
                             voicePulse = false
                             if recording {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -288,10 +289,10 @@ struct RootTabsView: View {
         }
         .sheet(
             isPresented: Binding(
-                get: { store.isVoiceStagingPresented && insightsEnabled },
+                get: { voiceStore.isVoiceStagingPresented && insightsEnabled },
                 set: { shouldPresent in
                     if !shouldPresent {
-                        store.isVoiceStagingPresented = false
+                        voiceStore.isVoiceStagingPresented = false
                     }
                 }
             )
@@ -414,8 +415,8 @@ struct RootTabsView: View {
         if !insightsEnabled {
             showInsightsHintBanner = false
             showVoiceCaptureSheet = false
-            if store.isVoiceStagingPresented {
-                store.clearVoiceStaging()
+            if voiceStore.isVoiceStagingPresented {
+                voiceStore.clearVoiceStaging()
             }
             if selectedTab == .insights {
                 transitionToDefaultListView(withGenie: triggeredByUser)

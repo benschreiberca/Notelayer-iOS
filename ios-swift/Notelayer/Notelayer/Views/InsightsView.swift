@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Charts
 
@@ -302,8 +303,8 @@ struct InsightsView: View {
             .onReceive(NotificationCenter.default.publisher(for: .insightsTelemetryDidUpdate)) { _ in
                 refreshSnapshot()
             }
-            .onReceive(store.$tasks) { _ in refreshSnapshot() }
-            .onReceive(store.$categories) { _ in refreshSnapshot() }
+            .onReceive(store.$tasks.debounce(for: .milliseconds(300), scheduler: RunLoop.main)) { _ in refreshSnapshot() }
+            .onReceive(store.$categories.debounce(for: .milliseconds(300), scheduler: RunLoop.main)) { _ in refreshSnapshot() }
             .onChange(of: selectedWindow) { _ in refreshSnapshot() }
         }
     }

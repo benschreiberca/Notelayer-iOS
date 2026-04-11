@@ -344,6 +344,9 @@ struct NotelayerApp: App {
             // Seed data for screenshots (uses isolated data store)
             ScreenshotDataSeeder.seedData()
         }
+
+        // Activate WatchConnectivity so the Watch app can receive tasks
+        WatchConnectivityService.shared.activate()
     }
 
     var body: some Scene {

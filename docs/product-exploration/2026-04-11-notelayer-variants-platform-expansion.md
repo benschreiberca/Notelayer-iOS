@@ -7,13 +7,14 @@
 
 ## Problem
 
-Notelayer's capture and review loop currently only works when the user has their iPhone. Three high-value contexts go unserved:
+Notelayer's capture and review loop currently only works when the user has their iPhone. Four high-value contexts go unserved:
 
 1. **At a computer (browser)** — user reads something worth capturing but has to reach for their phone
-2. **On their wrist** — user has a quick thought but their phone isn't in their hand
-3. **At their Mac** — user is doing focused desktop work and wants task management without switching contexts to their phone
+2. **On their wrist (Apple Watch)** — user has a quick thought but their phone isn't in their hand
+3. **On their wrist (Amazfit)** — same wrist use case, different hardware ecosystem
+4. **At their Mac** — user is doing focused desktop work and wants task management without switching contexts to their phone
 
-The ask is to extend Notelayer into all three of these contexts via a Chrome extension, an Apple Watch app, and a desktop app.
+The ask is to extend Notelayer into all four of these contexts via a Chrome extension, an Apple Watch app, an Amazfit app, and a desktop app.
 
 ---
 
@@ -22,7 +23,8 @@ The ask is to extend Notelayer into all three of these contexts via a Chrome ext
 | Context | Pain | Goal |
 |---|---|---|
 | Browser | Capture friction — reading something useful requires switching to phone | Instant capture from the browser, no context switch |
-| Wrist | Voice capture only works when phone is accessible | Quick-add tasks and see what's next from Watch |
+| Wrist (Apple Watch) | Voice capture only works when phone is accessible | Quick-add tasks and see what's next from Watch |
+| Wrist (Amazfit) | Same as Apple Watch, for a large and growing non-Apple wearable user base | Same wrist experience on Zepp OS hardware |
 | Desktop | Phone-first UX doesn't map to keyboard + large screen | Native desktop task management with proper keyboard/mouse UX |
 
 These are all **capture and review** problems. None requires the full iOS feature set on day one.
@@ -157,6 +159,38 @@ Cons: Un-native UX. Heavy binary. No integration with macOS system features (Rem
 
 ---
 
+### Platform 4: Amazfit App (Zepp OS)
+
+**What it is**: A Mini Program for Amazfit watches running Zepp OS (GTR, GTS, T-Rex, Falcon series and others). Functionally similar to the Apple Watch app — glanceable task list, quick-add, complete from wrist.
+
+**Runtime**: Zepp OS runs **JavaScript Mini Programs**, not Swift. This is a completely separate codebase from the Apple Watch target. The SDK is Zepp's own "Zeus" framework, with a React-like component model.
+
+**How data gets to the watch**:
+
+Zepp OS Mini Programs can communicate with the companion iOS app in two ways:
+
+- **Option A — Side service (companion channel)**: A JavaScript "side service" runs on the phone and can make HTTP requests. The Mini Program on the watch sends messages to the side service, which calls Firebase directly. This keeps auth off the watch.
+- **Option B — Cloud API**: Mini Program calls a backend HTTP endpoint (e.g., a Firebase Cloud Function) directly from the watch over Wi-Fi or phone's data connection. Simpler than Option A but requires a thin backend API layer.
+
+**Recommendation for Amazfit**: Option A (side service). The Zepp side service can hold Firebase auth and make Firestore REST API calls on behalf of the watch. The watch itself sends simple message payloads (`{ action: "complete", taskId: "..." }`). This avoids managing auth tokens on the watch OS and mirrors the iOS WCSession pattern used for Apple Watch.
+
+**Feature scope for Amazfit MVP**:
+- Task list view (active tasks, sorted by priority)
+- Tap to complete
+- Quick-add via text input (Zepp OS has an on-device text entry widget for supported models; voice on others)
+- Watch face widget / complication showing active task count
+
+**Key constraints**:
+- Zepp OS Mini Programs are published through the **Zepp App Store** (separate from Apple App Store) — requires a Zepp Developer account
+- Mini Programs have limited local storage — task list must be refreshed from the phone
+- UI is built with Zepp's own component library (`hmUI`) — no HTML/CSS, no SwiftUI
+- Testing requires either physical Amazfit hardware or the Zepp OS Simulator (available in the Zepp Dev Tools)
+- The side service JS runs on the paired iPhone inside the Zepp app sandbox — it cannot access iOS Keychain directly, so Firebase auth tokens must be passed from the Notelayer iOS app to the Zepp side service via a shared mechanism (likely UserDefaults in the same App Group if Zepp supports it, or a local HTTP server pattern)
+
+**Honest complication**: The side service ↔ iOS app auth handoff is the hardest part of this integration. Zepp's companion protocol is less mature than WCSession. This platform has the most unknown implementation risk of the four.
+
+---
+
 ## Recommended Sequencing
 
 The three platforms are independent enough to be built in any order, but sequencing matters for effort and impact.
@@ -164,8 +198,11 @@ The three platforms are independent enough to be built in any order, but sequenc
 | Order | Platform | Rationale |
 |---|---|---|
 | 1 | **macOS** | Highest code sharing with existing iOS codebase. SwiftUI + Firebase Swift SDK — same stack. Immediate value for users who live in both iOS and Mac. Menu bar milestone is achievable quickly. |
-| 2 | **Apple Watch** | Natural iOS companion. Models are already shareable. WCSession provides a simpler first implementation. Watch users are a high-intent subset of existing iOS users. |
-| 3 | **Chrome Extension** | Completely separate codebase (JS). Different auth flow. Most useful for new user acquisition, but requires the iOS app to already be mature. Better as a later-stage growth move. |
+| 2 | **Apple Watch** | Natural iOS companion. Models shareable. WCSession is a known pattern. Watch users are a high-intent subset of existing iOS users. |
+| 3 | **Amazfit** | Same wrist use case as Apple Watch but separate codebase (JS + Zepp OS). Build after Apple Watch so the UX decisions are already made. Auth handoff complexity is the main risk — resolve that after the WCSession pattern is understood. |
+| 4 | **Chrome Extension** | Completely separate codebase (JS). Different auth flow. Most useful for new user acquisition, but requires the iOS + Mac experience to already be solid. Best as a later growth move. |
+
+**Note on wearables**: Apple Watch and Amazfit solve the same user problem. If forced to choose one wrist platform, Apple Watch comes first (same SDK ecosystem as iOS). Amazfit is additive — it expands reach to a large non-Apple wearable audience without competing with Watch users.
 
 ---
 
@@ -176,7 +213,8 @@ This expansion touches or requires new PRD documents in the following ways:
 **New PRDs required (one per platform):**
 - `PRD_09_macOS_App.md` — macOS target: menu bar MVP, full window milestone, shared model layer, auth flow
 - `PRD_10_Apple_Watch_App.md` — watchOS target: WCSession sync, task list complications, quick-add, write queue
-- `PRD_11_Chrome_Extension.md` — MV3 extension: Firebase JS SDK, auth, popup capture, right-click context menu
+- `PRD_11_Amazfit_App.md` — Zepp OS Mini Program: side service auth pattern, task list, complete, quick-add, widget
+- `PRD_12_Chrome_Extension.md` — MV3 extension: Firebase JS SDK, auth, popup capture, right-click context menu
 
 **Existing PRDs affected:**
 - `PRD_01_Experimental_Features_Framework.md` — The experimental features gate is iOS-specific. Does it apply to macOS/Watch? Probably not — macOS and Watch ship their own feature sets independently. Needs a decision.
@@ -201,7 +239,9 @@ This expansion touches or requires new PRD documents in the following ways:
 
 4. **What happens to voice task entry on macOS?** The iOS floating mic button doesn't translate. macOS has `NSSpeechRecognizer` or `SFSpeechRecognizer`. Does voice capture make sense on Mac? Could be a menu bar shortcut that starts a local recording.
 
-5. **Is there a subscription or pricing model change implied by multi-platform?** Adding macOS and Watch typically justifies a recurring subscription model rather than one-time purchase. This is a business decision, not a technical one, but it affects how the PRDs are framed.
+5. **Is there a subscription or pricing model change implied by multi-platform?** Adding macOS, Watch, and Amazfit typically justifies a recurring subscription model rather than one-time purchase. This is a business decision, not a technical one, but it affects how the PRDs are framed.
+
+6. **How does the Notelayer iOS app share auth state with the Zepp side service?** The Zepp side service runs in the Zepp app's sandbox on iPhone — it's not the same process as Notelayer. A local loopback HTTP approach or a shared Firestore custom token endpoint may be needed. This needs a proof-of-concept before committing to the Amazfit platform.
 
 6. **What's the design system strategy?** The iOS app has a custom design system (DesignSystem.swift, ThemeManager, etc.). On macOS and Watch, the system appearance is less customizable. Does the custom theme system apply, or do macOS/Watch use system defaults?
 

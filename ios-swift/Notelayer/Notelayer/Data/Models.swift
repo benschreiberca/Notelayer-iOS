@@ -38,7 +38,7 @@ enum Priority: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct Category: Identifiable, Codable {
+struct Category: Identifiable, Codable, Equatable {
     let id: String
     var name: String
     var icon: String
@@ -58,7 +58,7 @@ struct Category: Identifiable, Codable {
     ]
 }
 
-struct Task: Identifiable, Codable {
+struct Task: Identifiable, Codable, Equatable {
     let id: String
     var title: String
     var categories: [String]

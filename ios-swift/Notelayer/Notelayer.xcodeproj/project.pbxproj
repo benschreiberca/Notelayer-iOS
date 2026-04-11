@@ -13,11 +13,11 @@
 		E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */; };
 		EB36A7DD243F4FC829226FC9 /* Pods_Notelayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */; };
 		F1A0B1C2D3E4F50000000011 /* InsightsAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */; };
-		F1A0B1C2D3E4F50000000012 /* Notelayer/Data/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */; };
-		F1A0B1C2D3E4F50000000013 /* Notelayer/Data/InsightsMetricDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */; };
-		F1A0B1C2D3E4F50000000014 /* Notelayer/Services/InsightsTelemetryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */; };
-		F1A0B1C2D3E4F50000000015 /* Notelayer/Services/InsightsAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */; };
-		F1A0B1C2D3E4F50000000016 /* Notelayer/Data/CategoryColorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */; };
+		F1A0B1C2D3E4F50000000012 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000004 /* Models.swift */; };
+		F1A0B1C2D3E4F50000000013 /* InsightsMetricDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000005 /* InsightsMetricDefinitions.swift */; };
+		F1A0B1C2D3E4F50000000014 /* InsightsTelemetryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000006 /* InsightsTelemetryStore.swift */; };
+		F1A0B1C2D3E4F50000000015 /* InsightsAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000007 /* InsightsAggregator.swift */; };
+		F1A0B1C2D3E4F50000000016 /* CategoryColorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000008 /* CategoryColorDefaults.swift */; };
 		F1A0B1C2D3E4F50000000017 /* InsightsStressFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */; };
 /* End PBXBuildFile section */
 
@@ -61,15 +61,15 @@
 		BC2CCDD62F174A5100406D9A /* Notelayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notelayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotelayerShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		DDB534F696F0460E82304867 /* Notelayer/NotelayerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Notelayer/NotelayerRelease.entitlements; sourceTree = "<group>"; };
+		DDB534F696F0460E82304867 /* NotelayerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Notelayer/NotelayerRelease.entitlements; sourceTree = "<group>"; };
 		F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsAggregatorTests.swift; sourceTree = "<group>"; };
 		F1A0B1C2D3E4F50000000002 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F1A0B1C2D3E4F50000000003 /* NotelayerInsightsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotelayerInsightsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/Models.swift; sourceTree = SOURCE_ROOT; };
-		F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/InsightsMetricDefinitions.swift; sourceTree = SOURCE_ROOT; };
-		F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsTelemetryStore.swift; sourceTree = SOURCE_ROOT; };
-		F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsAggregator.swift; sourceTree = SOURCE_ROOT; };
-		F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/CategoryColorDefaults.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000004 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/Models.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000005 /* InsightsMetricDefinitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/InsightsMetricDefinitions.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000006 /* InsightsTelemetryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsTelemetryStore.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000007 /* InsightsAggregator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Services/InsightsAggregator.swift; sourceTree = SOURCE_ROOT; };
+		F1A0B1C2D3E4F50000000008 /* CategoryColorDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Notelayer/Data/CategoryColorDefaults.swift; sourceTree = SOURCE_ROOT; };
 		F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightsStressFixture.swift; sourceTree = "<group>"; };
 		FB965E1A6487C5856ABC702C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -179,7 +179,7 @@
 			children = (
 				BC2CCDD82F174A5100406D9A /* Notelayer */,
 				BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */,
-				DDB534F696F0460E82304867 /* Notelayer/NotelayerRelease.entitlements */,
+				DDB534F696F0460E82304867 /* NotelayerRelease.entitlements */,
 				BC5D91ED2F29A5BD00C183A4 /* NotelayerShareExtension */,
 				BC2CCDD72F174A5100406D9A /* Products */,
 				F1A0B1C2D3E4F50000000021 /* NotelayerInsightsTests */,
@@ -204,11 +204,11 @@
 			isa = PBXGroup;
 			children = (
 				F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */,
-				F1A0B1C2D3E4F50000000004 /* Notelayer/Data/Models.swift */,
-				F1A0B1C2D3E4F50000000008 /* Notelayer/Data/CategoryColorDefaults.swift */,
-				F1A0B1C2D3E4F50000000005 /* Notelayer/Data/InsightsMetricDefinitions.swift */,
-				F1A0B1C2D3E4F50000000006 /* Notelayer/Services/InsightsTelemetryStore.swift */,
-				F1A0B1C2D3E4F50000000007 /* Notelayer/Services/InsightsAggregator.swift */,
+				F1A0B1C2D3E4F50000000004 /* Models.swift */,
+				F1A0B1C2D3E4F50000000008 /* CategoryColorDefaults.swift */,
+				F1A0B1C2D3E4F50000000005 /* InsightsMetricDefinitions.swift */,
+				F1A0B1C2D3E4F50000000006 /* InsightsTelemetryStore.swift */,
+				F1A0B1C2D3E4F50000000007 /* InsightsAggregator.swift */,
 				F1A0B1C2D3E4F50000000009 /* InsightsStressFixture.swift */,
 				F1A0B1C2D3E4F50000000002 /* Info.plist */,
 			);
@@ -413,13 +413,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Notelayer/Pods-Notelayer-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Notelayer/Pods-Notelayer-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -456,11 +452,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				F1A0B1C2D3E4F50000000011 /* InsightsAggregatorTests.swift in Sources */,
-				F1A0B1C2D3E4F50000000012 /* Notelayer/Data/Models.swift in Sources */,
-				F1A0B1C2D3E4F50000000016 /* Notelayer/Data/CategoryColorDefaults.swift in Sources */,
-				F1A0B1C2D3E4F50000000013 /* Notelayer/Data/InsightsMetricDefinitions.swift in Sources */,
-				F1A0B1C2D3E4F50000000014 /* Notelayer/Services/InsightsTelemetryStore.swift in Sources */,
-				F1A0B1C2D3E4F50000000015 /* Notelayer/Services/InsightsAggregator.swift in Sources */,
+				F1A0B1C2D3E4F50000000012 /* Models.swift in Sources */,
+				F1A0B1C2D3E4F50000000016 /* CategoryColorDefaults.swift in Sources */,
+				F1A0B1C2D3E4F50000000013 /* InsightsMetricDefinitions.swift in Sources */,
+				F1A0B1C2D3E4F50000000014 /* InsightsTelemetryStore.swift in Sources */,
+				F1A0B1C2D3E4F50000000015 /* InsightsAggregator.swift in Sources */,
 				F1A0B1C2D3E4F50000000017 /* InsightsStressFixture.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

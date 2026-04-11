@@ -3,8 +3,9 @@ import SwiftUI
 struct VoiceStagingView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = LocalStore.shared
+    @StateObject private var voiceStore = VoiceStateStore.shared
 
-    @State private var drafts: [VoiceParsedTaskDraft] = LocalStore.shared.voiceStagingDrafts
+    @State private var drafts: [VoiceParsedTaskDraft] = VoiceStateStore.shared.stagingDrafts
     @State private var showDiscardPrompt = false
     @State private var showValidationAlert = false
 
@@ -36,7 +37,7 @@ struct VoiceStagingView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         if drafts.isEmpty {
-                            store.clearVoiceStaging()
+                            voiceStore.clearVoiceStaging()
                             dismiss()
                         } else {
                             showDiscardPrompt = true
@@ -65,7 +66,7 @@ struct VoiceStagingView: View {
         .alert("Discard staged voice tasks?", isPresented: $showDiscardPrompt) {
             Button("Continue Editing", role: .cancel) {}
             Button("Discard", role: .destructive) {
-                store.clearVoiceStaging()
+                voiceStore.clearVoiceStaging()
                 dismiss()
             }
         } message: {
@@ -77,7 +78,7 @@ struct VoiceStagingView: View {
             Text("Each task needs a title before it can be saved.")
         }
         .onAppear {
-            drafts = store.voiceStagingDrafts
+            drafts = voiceStore.stagingDrafts
         }
     }
 
@@ -205,7 +206,7 @@ struct VoiceStagingView: View {
         syncDraftsToStore()
 
         if drafts.isEmpty {
-            store.clearVoiceStaging()
+            voiceStore.clearVoiceStaging()
             dismiss()
         }
     }
@@ -218,7 +219,7 @@ struct VoiceStagingView: View {
 
         drafts.forEach(persistDraft(_:))
         drafts = []
-        store.clearVoiceStaging()
+        voiceStore.clearVoiceStaging()
         dismiss()
     }
 
@@ -239,6 +240,6 @@ struct VoiceStagingView: View {
     }
 
     private func syncDraftsToStore() {
-        store.updateVoiceStagingDrafts(drafts)
+        voiceStore.updateVoiceStagingDrafts(drafts)
     }
 }

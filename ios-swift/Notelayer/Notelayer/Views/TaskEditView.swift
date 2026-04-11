@@ -192,6 +192,7 @@ struct TaskEditView: View {
                     get: { dueDate ?? Date() },
                     set: { dueDate = $0 }
                 ))
+                .withThemeAppearance()
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
@@ -221,6 +222,7 @@ struct TaskEditView: View {
                         calendarEditSession = nil
                     }
                 )
+                .withThemeAppearance()
             }
             .sheet(isPresented: $showReminderPicker) {
                 ReminderPickerSheet(
@@ -231,6 +233,7 @@ struct TaskEditView: View {
                         }
                     }
                 )
+                .withThemeAppearance()
             }
             .sheet(isPresented: $showCustomDatePicker) {
                 CustomDatePickerSheet(
@@ -245,6 +248,7 @@ struct TaskEditView: View {
                         showCustomDatePicker = false
                     }
                 )
+                .withThemeAppearance()
             }
             .confirmationDialog(
                 "Delete Project Task",

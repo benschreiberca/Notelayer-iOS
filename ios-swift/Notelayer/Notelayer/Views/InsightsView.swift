@@ -234,6 +234,7 @@ struct InsightsView: View {
             }
             .sheet(isPresented: $showingProfileSettings) {
                 ProfileSettingsView()
+                    .withThemeAppearance()
                     .environmentObject(authService)
                     .environmentObject(theme)
                     .onAppear {
@@ -250,7 +251,7 @@ struct InsightsView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .preferredColorScheme(theme.preferredColorScheme)
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
@@ -267,6 +268,7 @@ struct InsightsView: View {
             }
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {

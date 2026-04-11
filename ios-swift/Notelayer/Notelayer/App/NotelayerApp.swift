@@ -326,7 +326,9 @@ struct NotelayerApp: App {
     @StateObject private var backendService: FirebaseBackendService
     
     init() {
+        NSLog("🚀 [NotelayerApp] init — configuring Firebase")
         configureFirebaseIfNeeded(source: "NotelayerApp.init")
+        NSLog("🚀 [NotelayerApp] Firebase configured — creating services")
         let authService = AuthService()
         _authService = StateObject(wrappedValue: authService)
         _backendService = StateObject(wrappedValue: FirebaseBackendService(authService: authService, store: .shared))

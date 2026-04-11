@@ -68,9 +68,11 @@ struct NotesView: View {
             }
             .sheet(item: $sharePayload) { payload in
                 ShareSheet(items: payload.items)
+                    .withThemeAppearance()
             }
             .sheet(isPresented: $showingProfileSettings) {
                 ProfileSettingsView()
+                    .withThemeAppearance()
                     .environmentObject(authService)
                     .environmentObject(theme)
                     .onAppear {
@@ -87,7 +89,7 @@ struct NotesView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .preferredColorScheme(theme.preferredColorScheme)
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
@@ -104,6 +106,7 @@ struct NotesView: View {
             }
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {

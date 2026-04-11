@@ -58,6 +58,7 @@ struct ReminderPickerSheet: View {
                         showCustomPicker = false
                     }
                 )
+                .withThemeAppearance()
             }
             .alert("Notifications Required", isPresented: $showPermissionAlert) {
                 Button("Open Settings") {

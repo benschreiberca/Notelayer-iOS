@@ -12,6 +12,7 @@ enum TodoViewMode: String, CaseIterable {
 }
 
 struct TodosView: View {
+    @Binding var isSearchActive: Bool
     @StateObject private var store = LocalStore.shared
     @State private var showingDone = false
     @State private var editingTask: Task? = nil
@@ -31,6 +32,8 @@ struct TodosView: View {
     @State private var profileViewSession: AnalyticsViewSession? = nil
     @State private var reminderPickerSession: AnalyticsViewSession? = nil
     @State private var calendarExportSession: AnalyticsViewSession? = nil
+    @State private var searchQuery = ""
+    @FocusState private var isSearchFieldFocused: Bool
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
 
@@ -39,7 +42,11 @@ struct TodosView: View {
         let partitioned = splitTasksByCompletion(tasks)
         let doingTasks = partitioned.doing
         let doneTasks = partitioned.done
-        let filteredTasks = showingDone ? doneTasks : doingTasks
+        let baseTasks = showingDone ? doneTasks : doingTasks
+        let filteredTasks = searchQuery.isEmpty ? baseTasks : baseTasks.filter { task in
+            task.title.localizedCaseInsensitiveContains(searchQuery) ||
+            (task.taskNotes?.localizedCaseInsensitiveContains(searchQuery) ?? false)
+        }
 
         NavigationStack {
             VStack(spacing: 0) {
@@ -52,7 +59,11 @@ struct TodosView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
-                .padding(.bottom, 12)
+                .padding(.bottom, isSearchActive ? 8 : 12)
+
+                if isSearchActive {
+                    searchBarView
+                }
 
                 Divider()
 
@@ -145,6 +156,9 @@ struct TodosView: View {
                     .tag(TodoViewMode.date)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .simultaneousGesture(TapGesture().onEnded {
+                    if isSearchActive { dismissSearch() }
+                })
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -197,6 +211,7 @@ struct TodosView: View {
             }
             .sheet(item: $editingTask) { task in
                 TaskEditView(task: task, categories: store.sortedCategories)
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
@@ -213,6 +228,7 @@ struct TodosView: View {
             }
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
@@ -229,7 +245,7 @@ struct TodosView: View {
             }
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
-                    .preferredColorScheme(theme.preferredColorScheme)
+                    .withThemeAppearance()
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .onAppear {
@@ -246,6 +262,7 @@ struct TodosView: View {
             }
             .sheet(isPresented: $showingProfileSettings) {
                 ProfileSettingsView()
+                    .withThemeAppearance()
                     .environmentObject(authService)
                     .environmentObject(theme)
                     .onAppear {
@@ -289,6 +306,7 @@ struct TodosView: View {
                         calendarEditSession = nil
                     }
                 )
+                .withThemeAppearance()
                 .onAppear {
                     calendarExportSession = AnalyticsService.shared.trackViewOpen(
                         viewName: AnalyticsViewName.calendarExport,
@@ -310,6 +328,7 @@ struct TodosView: View {
                         }
                     }
                 )
+                .withThemeAppearance()
                 .environmentObject(theme)
                 .onAppear {
                     reminderPickerSession = AnalyticsService.shared.trackViewOpen(
@@ -362,7 +381,64 @@ struct TodosView: View {
                     "view_name": viewName(for: viewMode)
                 ])
             }
+            .onChange(of: isSearchActive) { active in
+                if active {
+                    isSearchFieldFocused = true
+                } else {
+                    searchQuery = ""
+                    isSearchFieldFocused = false
+                }
+            }
         }
+    }
+
+    private func dismissSearch() {
+        isSearchActive = false
+    }
+
+    @ViewBuilder
+    private var searchBarView: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(theme.tokens.accent)
+                    .font(.system(size: 16, weight: .medium))
+                TextField("Search tasks…", text: $searchQuery)
+                    .focused($isSearchFieldFocused)
+                    .submitLabel(.search)
+                    .font(.body)
+                    .onSubmit { dismissSearch() }
+                Button {
+                    searchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 17))
+                }
+                .buttonStyle(.plain)
+                .opacity(searchQuery.isEmpty ? 0 : 1)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(theme.tokens.semantic.backgroundElevated1)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(theme.tokens.accent.opacity(0.45), lineWidth: 1.5)
+                    )
+            )
+
+            Button("Cancel") {
+                dismissSearch()
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(theme.tokens.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+        .animation(.easeInOut(duration: 0.18), value: isSearchActive)
     }
     
     // MARK: - Reminder Handlers
@@ -435,14 +511,20 @@ struct TodosView: View {
     private struct ScreenEdgeGlow: View {
         let accent: Color
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @State private var glowPhase = false
 
         var body: some View {
             RoundedRectangle(cornerRadius: 42, style: .continuous)
                 .strokeBorder(glowGradient, lineWidth: 10)
                 .blur(radius: 18)
-                .opacity(0.55)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: UUID())
+                .opacity(glowPhase ? 0.65 : 0.4)
                 .padding(6)
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                        glowPhase = true
+                    }
+                }
         }
 
         private var glowGradient: LinearGradient {

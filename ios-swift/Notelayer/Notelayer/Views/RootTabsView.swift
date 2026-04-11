@@ -1,5 +1,7 @@
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 
 enum AppBottomClearance {
     static let tabRowHeight: CGFloat = 56
@@ -225,12 +227,14 @@ struct RootTabsView: View {
         .onChange(of: theme.mode) { _ in
             updateResolvedScheme()
         }
+        #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardVisible = true
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
         }
+        #endif
         .onReceive(NotificationCenter.default.publisher(for: .experimentalFeaturesDidChange)) { notification in
             let oldValue = notification.userInfo?["oldValue"] as? Bool ?? store.experimentalFeaturesEnabled
             let newValue = notification.userInfo?["newValue"] as? Bool ?? store.experimentalFeaturesEnabled

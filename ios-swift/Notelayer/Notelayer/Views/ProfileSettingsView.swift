@@ -19,20 +19,22 @@ struct ProfileSettingsView: View {
             List {
                 // 1. Pending Nags (Top)
                 preferencesSection
-                
+
                 // 2. Account (conditional: signed in vs signed out)
                 if authService.user != nil {
                     accountSection
                 } else {
                     signedOutSection
                 }
-                
+
                 // 3. About (Accordion)
                 aboutSection
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Profile & Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
@@ -47,6 +49,17 @@ struct ProfileSettingsView: View {
                     .presentationDragIndicator(.visible)
             }
         }
+        // Give the sheet enough room on Mac / iPad — ignored on compact iPhone
+        .frame(minWidth: macOrPad ? 480 : nil, minHeight: macOrPad ? 620 : nil)
+    }
+
+    private var macOrPad: Bool {
+        #if os(macOS)
+        return true
+        #else
+        return UIDevice.current.userInterfaceIdiom == .pad
+            || ProcessInfo.processInfo.isiOSAppOnMac
+        #endif
     }
     
     // iOS-standard Section for signed-in account

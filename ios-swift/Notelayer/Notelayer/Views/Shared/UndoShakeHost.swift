@@ -1,4 +1,6 @@
 import SwiftUI
+
+#if os(iOS)
 import UIKit
 
 /// Keeps an active responder in the view tree so Shake to Undo can surface the system prompt.
@@ -49,9 +51,24 @@ final class UndoCoordinator {
     }
 
     func activateResponder() {
-        // Reassert the responder so shake routes to the same undo manager after deletes.
         DispatchQueue.main.async { [weak responder] in
             responder?.refreshUndoManager()
         }
     }
 }
+
+#else
+
+/// macOS stub — shake-to-undo is not available; renders nothing.
+struct UndoShakeHost: View {
+    var body: some View { EmptyView() }
+}
+
+/// macOS stub — provides a plain UndoManager for callers that reference it directly.
+final class UndoCoordinator {
+    static let shared = UndoCoordinator()
+    let undoManager = UndoManager()
+    func activateResponder() {}
+}
+
+#endif

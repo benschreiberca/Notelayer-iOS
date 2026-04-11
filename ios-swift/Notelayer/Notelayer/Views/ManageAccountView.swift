@@ -84,7 +84,9 @@ struct ManageAccountView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Manage Data & Account")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .alert("Delete Account?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete Permanently", role: .destructive) {
@@ -195,41 +197,58 @@ extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
 }
 
+#if os(iOS)
+
 struct ActivityViewWrapper: View {
     let activityItems: [Any]
     @State private var isPresented = false
-    
+
     var body: some View {
-        Button {
-            isPresented = true
-        } label: {
-            // This is a dummy view to trigger the UIActivityViewController
-            // from a stable place in the hierarchy.
-            EmptyView()
-        }
-        .background(ActivityViewControllerPresenter(items: activityItems, isPresented: $isPresented))
+        Button { isPresented = true } label: { EmptyView() }
+            .background(ActivityViewControllerPresenter(items: activityItems, isPresented: $isPresented))
     }
 }
 
 private struct ActivityViewControllerPresenter: UIViewControllerRepresentable {
     let items: [Any]
     @Binding var isPresented: Bool
-    
-    func makeUIViewController(context: Context) -> UIViewController {
-        UIViewController()
-    }
-    
+
+    func makeUIViewController(context: Context) -> UIViewController { UIViewController() }
+
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        if isPresented && uiViewController.presentedViewController == nil {
-            let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
-            activityVC.completionWithItemsHandler = { _, _, _, _ in
-                isPresented = false
-            }
-            
-            // Present from the nearest view controller
-            DispatchQueue.main.async {
-                uiViewController.present(activityVC, animated: true)
-            }
-        }
+        guard isPresented, uiViewController.presentedViewController == nil else { return }
+        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        activityVC.completionWithItemsHandler = { _, _, _, _ in isPresented = false }
+        DispatchQueue.main.async { uiViewController.present(activityVC, animated: true) }
     }
 }
+
+#else
+
+/// macOS: reveal the exported file in Finder instead of a share sheet.
+struct ActivityViewWrapper: View {
+    let activityItems: [Any]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.largeTitle)
+                .foregroundColor(.green)
+            Text("Export ready")
+                .font(.headline)
+            if let url = activityItems.compactMap({ $0 as? URL }).first {
+                Text(url.lastPathComponent)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Button("Reveal in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(32)
+        .frame(minWidth: 300)
+    }
+}
+
+#endif

@@ -34,9 +34,11 @@ struct RemindersSettingsView: View {
                             }
                             
                             Button {
+                                #if os(iOS)
                                 if let url = URL(string: UIApplication.openSettingsURLString) {
                                     UIApplication.shared.open(url)
                                 }
+                                #endif
                             } label: {
                                 Text("Open Settings")
                             }

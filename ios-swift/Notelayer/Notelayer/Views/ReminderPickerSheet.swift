@@ -62,9 +62,11 @@ struct ReminderPickerSheet: View {
             }
             .alert("Notifications Required", isPresented: $showPermissionAlert) {
                 Button("Open Settings") {
+                    #if os(iOS)
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
+                    #endif
                     dismiss()
                 }
                 Button("Cancel", role: .cancel) {

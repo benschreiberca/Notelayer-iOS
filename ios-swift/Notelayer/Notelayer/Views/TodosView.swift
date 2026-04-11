@@ -343,9 +343,11 @@ struct TodosView: View {
         }
         .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
             Button("Settings") {
+                #if os(iOS)
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
+                #endif
                 calendarExportError = nil
             }
             Button("OK") {

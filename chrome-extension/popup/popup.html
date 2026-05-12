@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notelayer</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- Animated gradient background -->
+  <div class="bg-gradient"></div>
+
+  <div class="popup-root">
+
+    <!-- ── SIGNED OUT STATE ── -->
+    <div id="view-signedout" class="view active">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="8" fill="url(#brand-grad)"/>
+            <path d="M7 9h14M7 14h10M7 19h12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="brand-grad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00D2FF"/>
+                <stop offset="0.5" stop-color="#7B2FF7"/>
+                <stop offset="1" stop-color="#FF4FD8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="brand-name">Notelayer</span>
+      </div>
+
+      <div class="frosted-card signin-card">
+        <p class="signin-tagline">Capture from the web.<br/>Synced with your iOS app.</p>
+
+        <button class="btn btn-google" id="btn-google-signin">
+          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <button class="btn btn-email" id="btn-email-signin">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2 4l7 6 7-6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          Continue with Email
+        </button>
+      </div>
+    </div>
+
+    <!-- ── EMAIL MAGIC LINK STATE ── -->
+    <div id="view-email" class="view">
+      <div class="view-header">
+        <button class="btn-icon" id="btn-back-from-email">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="view-title">Sign in with Email</span>
+      </div>
+      <div class="frosted-card">
+        <p class="email-hint">We'll send a magic link to your inbox.</p>
+        <div class="field-group">
+          <label class="field-label" for="input-email">Email address</label>
+          <input class="field-input" type="email" id="input-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div id="email-error" class="error-msg hidden"></div>
+        <button class="btn btn-primary" id="btn-send-link">Send Magic Link</button>
+        <div id="email-sent-msg" class="success-msg hidden">
+          Check your inbox — a sign-in link is on its way!
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MAIN APP STATE ── -->
+    <div id="view-main" class="view">
+
+      <!-- Header -->
+      <div class="app-header">
+        <div class="brand-small">
+          <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="8" fill="url(#brand-grad-sm)"/>
+            <path d="M7 9h14M7 14h10M7 19h12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="brand-grad-sm" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00D2FF"/>
+                <stop offset="0.5" stop-color="#7B2FF7"/>
+                <stop offset="1" stop-color="#FF4FD8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span>Notelayer</span>
+        </div>
+        <button class="btn-icon" id="btn-signout" title="Sign out">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 2H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M12 13l4-4-4-4M16 9H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Tab switcher -->
+      <div class="tab-bar">
+        <button class="tab active" data-tab="note" id="tab-note">Note</button>
+        <button class="tab" data-tab="task" id="tab-task">Task</button>
+      </div>
+
+      <!-- ── NOTE TAB ── -->
+      <div id="tab-content-note" class="tab-content active">
+        <div class="frosted-card">
+
+          <!-- Page URL chip -->
+          <div class="source-chip" id="source-chip-note">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.5h5M6.5 4v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span id="source-url-note" class="source-url">Current page</span>
+            <button class="source-clear" id="source-clear-note" title="Remove source">×</button>
+          </div>
+
+          <textarea
+            class="field-textarea"
+            id="note-text"
+            placeholder="Type a note…"
+            rows="5"
+            autofocus
+          ></textarea>
+
+          <div class="card-footer">
+            <span class="char-count" id="note-char-count">0</span>
+            <button class="btn btn-primary btn-save" id="btn-save-note">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 7.5l4 4 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Save Note
+            </button>
+          </div>
+
+          <div id="note-success" class="save-success hidden">Note saved!</div>
+          <div id="note-error" class="error-msg hidden"></div>
+        </div>
+      </div>
+
+      <!-- ── TASK TAB ── -->
+      <div id="tab-content-task" class="tab-content">
+        <div class="frosted-card">
+
+          <!-- Page URL chip -->
+          <div class="source-chip" id="source-chip-task">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.5h5M6.5 4v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span id="source-url-task" class="source-url">Current page</span>
+            <button class="source-clear" id="source-clear-task" title="Remove source">×</button>
+          </div>
+
+          <div class="field-group">
+            <input class="field-input" type="text" id="task-title" placeholder="Task title" />
+          </div>
+
+          <!-- Priority row -->
+          <div class="field-group">
+            <label class="field-label">Priority</label>
+            <div class="priority-row">
+              <button class="priority-btn active" data-priority="high">
+                <span class="priority-dot dot-high"></span>High
+              </button>
+              <button class="priority-btn" data-priority="medium">
+                <span class="priority-dot dot-medium"></span>Medium
+              </button>
+              <button class="priority-btn" data-priority="low">
+                <span class="priority-dot dot-low"></span>Low
+              </button>
+              <button class="priority-btn" data-priority="deferred">
+                <span class="priority-dot dot-deferred"></span>Later
+              </button>
+            </div>
+          </div>
+
+          <!-- Category row -->
+          <div class="field-group">
+            <label class="field-label">Category</label>
+            <div class="category-scroll" id="category-scroll">
+              <!-- Populated dynamically -->
+              <button class="category-chip active" data-category="">None</button>
+            </div>
+          </div>
+
+          <!-- Due date -->
+          <div class="field-group">
+            <label class="field-label">Due date</label>
+            <input class="field-input field-date" type="date" id="task-due-date" />
+          </div>
+
+          <!-- Notes -->
+          <div class="field-group">
+            <textarea class="field-textarea field-textarea-sm" id="task-notes" placeholder="Additional notes (optional)" rows="2"></textarea>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn btn-primary btn-save" id="btn-save-task">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 7.5l4 4 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Save Task
+            </button>
+          </div>
+
+          <div id="task-success" class="save-success hidden">Task saved!</div>
+          <div id="task-error" class="error-msg hidden"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── LOADING STATE ── -->
+    <div id="view-loading" class="view">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+  </div><!-- .popup-root -->
+
+  <script src="popup.js"></script>
+</body>
+</html>

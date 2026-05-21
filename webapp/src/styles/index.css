@@ -1,0 +1,78 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base element resets ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--site-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+h1 { font-size: var(--fs-24); font-weight: var(--fw-bold); line-height: 32px; letter-spacing: -0.3px; }
+h2 { font-size: var(--fs-20); font-weight: var(--fw-semibold); line-height: 28px; letter-spacing: -0.2px; }
+h3 { font-size: var(--fs-16); font-weight: var(--fw-semibold); line-height: 22px; letter-spacing: -0.1px; }
+h4 { font-size: var(--fs-14); font-weight: var(--fw-semibold); line-height: 20px; }
+
+p { font-family: var(--font-body); font-size: var(--fs-16); line-height: 24px; color: var(--text-primary); margin: 0; }
+
+button { cursor: pointer; font-family: var(--font-body); }
+input, textarea { font-family: var(--font-body); }
+
+/* ── Wallpaper: Iridescent Flow (web-adapted, light) ── */
+.wallpaper-iridescent {
+  background:
+    linear-gradient(135deg, #D8E5FF 0%, #E6DAFE 50%, #FDD9EC 100%);
+}
+
+/* ── Animated gradient (popup/shell accent) ── */
+.gradient-animated {
+  background: linear-gradient(135deg, #00D2FF 0%, #7B2FF7 50%, #FF4FD8 100%);
+  background-size: 300% 300%;
+  animation: gradientShift 8s ease infinite;
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Frosted surface ── */
+.surface-frosted {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(var(--blur-strong)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-strong)) saturate(180%);
+  border: 0.5px solid rgba(255,255,255,0.9);
+}
+
+/* ── Utility: hide scrollbar ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Focus ring ── */
+:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* ── Fade-up entrance (matches marketing site pattern) ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.45s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .gradient-animated { animation: none; }
+}

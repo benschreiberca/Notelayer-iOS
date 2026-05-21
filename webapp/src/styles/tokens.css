@@ -1,0 +1,190 @@
+/* ============================================================
+   Notelayer Design System — Colors & Type Tokens
+   Source: notelayer-design-system/project/colors_and_type.css
+   ============================================================ */
+
+:root {
+  /* ── Primitives: neutrals ── */
+  --gray-50:  #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* ── Primitives: brand scales ── */
+  --indigo-50:  #EEF2FF;
+  --indigo-300: #A5B4FC;
+  --indigo-400: #818CF8;
+  --indigo-500: #6366F1;
+  --indigo-600: #4F46E5;
+  --indigo-700: #4338CA;
+  --purple-400: #C084FC;
+  --purple-500: #A855F7;
+  --pink-400:   #F472B6;
+  --pink-500:   #EC4899;
+  --blue-400:   #60A5FA;
+  --blue-600:   #2563EB;
+  --green-50:   #F0FDF4;
+  --green-400:  #4ADE80;
+  --green-600:  #16A34A;
+  --green-900:  #14532D;
+  --amber-50:   #FFFBEB;
+  --amber-400:  #FBBF24;
+  --amber-600:  #D97706;
+  --amber-900:  #78350F;
+  --red-50:     #FEF2F2;
+  --red-400:    #F87171;
+  --red-600:    #DC2626;
+  --red-900:    #7F1D1D;
+
+  /* ── Accent catalog (12 named accents) ── */
+  --accent-cool-blue:  #3B82F6;
+  --accent-graphite:   #334155;
+  --accent-hot-pink:   #FF4FD8;
+  --accent-warm-taupe: #B8926A;
+  --accent-mint:       #20C997;
+  --accent-sunset:     #FB5607;
+  --accent-lavender:   #9B5DE5;
+  --accent-citrus:     #FFBE0B;
+  --accent-ocean:      #0077B6;
+  --accent-forest:     #2F855A;
+  --accent-berry:      #B5179E;
+  --accent-ember:      #E63946;
+
+  /* ── Marketing site palette ── */
+  --site-bg:            #F4F7FC;
+  --site-surface:       #FFFFFF;
+  --site-surface-soft:  #EEF3FF;
+  --site-line:          #D7DFEB;
+  --site-text:          #101928;
+  --site-muted:         #5B6678;
+  --site-accent:        #2F7DF6;
+  --site-accent-strong: #1D63C9;
+
+  /* ── Semantic: light mode ── */
+  --brand-primary:   var(--indigo-500);
+  --brand-secondary: var(--purple-500);
+  --brand-tertiary:  var(--pink-500);
+
+  --interactive-primary:          var(--indigo-500);
+  --interactive-primary-hover:    var(--indigo-600);
+  --interactive-primary-active:   var(--indigo-700);
+  --interactive-primary-disabled: var(--gray-300);
+
+  --bg-base:       var(--gray-50);
+  --bg-elevated-1: #FFFFFF;
+  --bg-elevated-2: var(--gray-50);
+  --bg-elevated-3: #FFFFFF;
+  --bg-subtle:     var(--gray-100);
+  --bg-inverse:    var(--gray-900);
+
+  --border-default: var(--gray-200);
+  --border-subtle:  var(--gray-100);
+  --border-strong:  var(--gray-300);
+  --border-focus:   var(--indigo-500);
+
+  --text-primary:        var(--gray-900);
+  --text-secondary:      var(--gray-600);
+  --text-tertiary:       var(--gray-500);
+  --text-disabled:       var(--gray-400);
+  --text-inverse:        #FFFFFF;
+  --text-on-interactive: #FFFFFF;
+  --text-link:           var(--indigo-500);
+
+  --status-success:        var(--green-600);
+  --status-success-subtle: var(--green-50);
+  --status-warning:        var(--amber-600);
+  --status-warning-subtle: var(--amber-50);
+  --status-error:          var(--red-600);
+  --status-error-subtle:   var(--red-50);
+  --status-info:           var(--blue-600);
+
+  --overlay-light: rgba(0,0,0,0.30);
+  --overlay-dark:  rgba(0,0,0,0.60);
+  --scrim:         rgba(0,0,0,0.60);
+
+  /* ── Spacing ── */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-xxl: 48px;
+
+  /* ── Radii ── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-subtle:   0 1px 2px rgba(0,0,0,0.05);
+  --shadow-moderate: 0 2px 4px rgba(0,0,0,0.08);
+  --shadow-strong:   0 4px 8px rgba(0,0,0,0.12);
+  --shadow-xl:       0 8px 16px rgba(0,0,0,0.14);
+  --shadow-card:     0 4px 14px rgba(16,25,40,0.06);
+  --shadow-btn:      0 6px 16px rgba(47,125,246,0.22);
+
+  /* ── Typography ── */
+  --font-display: "Space Grotesk", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  --font-body:    "Work Sans", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono:    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --fs-10: 10px;  --fs-12: 12px;  --fs-14: 14px;  --fs-16: 16px;
+  --fs-20: 20px;  --fs-24: 24px;  --fs-32: 32px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+}
+
+/* ── Dark mode ── */
+:root.dark, [data-theme="dark"] {
+  --brand-primary:   var(--indigo-400);
+  --brand-secondary: var(--purple-400);
+  --brand-tertiary:  var(--pink-400);
+
+  --interactive-primary:          var(--indigo-400);
+  --interactive-primary-hover:    var(--indigo-300);
+  --interactive-primary-active:   var(--indigo-300);
+  --interactive-primary-disabled: var(--gray-600);
+
+  --bg-base:       var(--gray-900);
+  --bg-elevated-1: var(--gray-800);
+  --bg-elevated-2: var(--gray-700);
+  --bg-elevated-3: var(--gray-600);
+  --bg-subtle:     var(--gray-800);
+  --bg-inverse:    #FFFFFF;
+
+  --border-default: var(--gray-700);
+  --border-subtle:  var(--gray-800);
+  --border-strong:  var(--gray-600);
+  --border-focus:   var(--indigo-400);
+
+  --text-primary:        #FFFFFF;
+  --text-secondary:      var(--gray-300);
+  --text-tertiary:       var(--gray-400);
+  --text-disabled:       var(--gray-600);
+  --text-inverse:        var(--gray-900);
+  --text-on-interactive: var(--gray-900);
+  --text-link:           var(--indigo-400);
+
+  --status-success:        var(--green-400);
+  --status-success-subtle: var(--green-900);
+  --status-warning:        var(--amber-400);
+  --status-warning-subtle: var(--amber-900);
+  --status-error:          var(--red-400);
+  --status-error-subtle:   var(--red-900);
+
+  --shadow-subtle:   0 1px 2px rgba(0,0,0,0.30);
+  --shadow-moderate: 0 2px 4px rgba(0,0,0,0.40);
+  --shadow-strong:   0 4px 8px rgba(0,0,0,0.50);
+}

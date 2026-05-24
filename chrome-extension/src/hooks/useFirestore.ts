@@ -17,6 +17,7 @@ export function useTasks(userId: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!userId) return
     const q = query(
       collection(db, 'users', userId, 'tasks'),
       orderBy('createdAt', 'desc')
@@ -76,6 +77,7 @@ export function useNotes(userId: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!userId) return
     const q = query(
       collection(db, 'users', userId, 'notes'),
       orderBy('createdAt', 'desc')
@@ -112,6 +114,7 @@ export function useCategories(userId: string) {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
+    if (!userId) return
     const q = query(
       collection(db, 'users', userId, 'categories'),
       orderBy('order', 'asc')

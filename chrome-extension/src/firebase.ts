@@ -6,12 +6,13 @@ import { getFirestore } from 'firebase/firestore'
 // Find it in Firebase Console → Project Settings → Your apps → Web app.
 // The other values are shared across platforms.
 const firebaseConfig = {
-  apiKey: 'AIzaSyABWHYGN9dr-m3a0qaUwYHlrJAhNd7PfvA',
+  apiKey: 'AIzaSyBSf-W3F3gWEyGLZL91lE4ZgJkaAB6Xp1g',
   authDomain: 'notelayer-c7bba.firebaseapp.com',
   projectId: 'notelayer-c7bba',
   storageBucket: 'notelayer-c7bba.firebasestorage.app',
   messagingSenderId: '762003542605',
-  appId: 'REPLACE_WITH_WEB_APP_ID',
+  appId: '1:762003542605:web:cd00261c1d041725294204',
+  measurementId: 'G-3W6L1HZ8YP',
 }
 
 export const app = initializeApp(firebaseConfig)

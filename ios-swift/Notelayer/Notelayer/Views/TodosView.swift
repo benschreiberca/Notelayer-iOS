@@ -21,6 +21,7 @@ private struct LazyView<Content: View>: View {
 
 struct TodosView: View {
     @Binding var isSearchActive: Bool
+    @Binding var categoryJump: String?
     @StateObject private var store = LocalStore.shared
     @State private var showingDone = false
     @State private var editingTask: Task? = nil
@@ -49,6 +50,7 @@ struct TodosView: View {
     // not on every unrelated LocalStore publish.
     @State private var cachedDoingTasks: [Task] = []
     @State private var cachedDoneTasks: [Task] = []
+    @State private var categoryScrollTarget: String? = nil
 
     var body: some View {
         let sortedCategories = store.sortedCategories
@@ -268,7 +270,13 @@ struct TodosView: View {
                 }
             }
             .onChange(of: store.tasks) { _ in recomputeTaskCache() }
-            .onChange(of: store.experimentalFeaturesPreference) { _ in recomputeTaskCache() }
+            .onChange(of: categoryJump) { id in
+                if let id {
+                    viewMode = .category
+                    categoryScrollTarget = id
+                    categoryJump = nil
+                }
+            }
         }
         .sheet(item: $editingTask) { task in
             TaskEditView(task: task, categories: store.sortedCategories)

@@ -25,19 +25,14 @@ struct RootTabsView: View {
     @State private var showVoiceCaptureSheet = false
     @State private var isSearchActive = false
     @State private var voicePulse = false
-    @State private var showInsightsHintBanner = false
-    @State private var showLockedInsightsMessage = false
-    @State private var isGenieTransitionActive = false
+    @State private var pendingCategoryJump: String? = nil
 
     private var insightsEnabled: Bool {
         store.experimentalFeaturesEnabled
     }
 
     private var visibleTabs: [AppTab] {
-        if insightsEnabled {
-            return AppTab.allCases
-        }
-        return AppTab.allCases.filter { $0 != .insights }
+        [.todos, .insights]
     }
 
     private var shouldShowVoiceButton: Bool {
@@ -63,15 +58,9 @@ struct RootTabsView: View {
                 case .notes:
                     NotesView()
                 case .todos:
-                    TodosView(isSearchActive: $isSearchActive)
+                    TodosView(isSearchActive: $isSearchActive, categoryJump: $pendingCategoryJump)
                 case .insights:
                     InsightsView()
-                        .scaleEffect(isGenieTransitionActive ? 0.2 : 1.0, anchor: .topTrailing)
-                        .opacity(isGenieTransitionActive ? 0 : 1)
-                        .offset(
-                            x: isGenieTransitionActive ? 180 : 0,
-                            y: isGenieTransitionActive ? -220 : 0
-                        )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -174,42 +163,13 @@ struct RootTabsView: View {
                 .padding(.bottom, AppBottomClearance.tabRowHeight + AppBottomClearance.tabBottomPadding + 20)
             }
         }
-        .overlay(alignment: .top) {
-            VStack(spacing: 8) {
-                if showLockedInsightsMessage {
-                    bannerRow(
-                        text: "Enable this feature in Experimental Features.",
-                        dismissAction: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showLockedInsightsMessage = false
-                            }
-                        }
-                    )
-                }
-
-                if showInsightsHintBanner {
-                    bannerRow(
-                        text: "Insights is available in Experimental Features. Open Insights to view analytics.",
-                        dismissAction: {
-                            store.dismissInsightsHint()
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showInsightsHintBanner = false
-                            }
-                        }
-                    )
-                }
-            }
-            .padding(.top, 10)
-        }
         .tint(theme.tokens.accent)
         .preferredColorScheme(theme.preferredColorScheme)
         .animation(.easeInOut(duration: 0.2), value: isKeyboardVisible)
-        .animation(.easeInOut(duration: 0.2), value: showInsightsHintBanner)
         .animation(.easeInOut(duration: 0.2), value: shouldShowVoiceButton)
         .animation(.easeInOut(duration: 0.2), value: shouldShowSearchButton)
         .onAppear {
             updateResolvedScheme()
-            handleExperimentalVisibilityChange(triggeredByUser: false)
             checkAndShowWelcome()
             tabViewSession = AnalyticsService.shared.trackViewOpen(
                 viewName: viewName(for: selectedTab),
@@ -231,18 +191,18 @@ struct RootTabsView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
         }
-        .onReceive(NotificationCenter.default.publisher(for: .experimentalFeaturesDidChange)) { notification in
-            let oldValue = notification.userInfo?["oldValue"] as? Bool ?? store.experimentalFeaturesEnabled
-            let newValue = notification.userInfo?["newValue"] as? Bool ?? store.experimentalFeaturesEnabled
-            handleExperimentalVisibilityChange(triggeredByUser: oldValue && !newValue)
-        }
         .onReceive(NotificationCenter.default.publisher(for: .openOnboardingRequested)) { _ in
-            guard insightsEnabled else { return }
             hasCheckedWelcome = true
             showWelcome = true
         }
-        .onChange(of: store.experimentalFeaturesPreference) { _ in
-            handleExperimentalVisibilityChange(triggeredByUser: false)
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToCategoryInTodos)) { note in
+            if let categoryId = note.userInfo?["categoryId"] as? String {
+                pendingCategoryJump = categoryId
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selectedTab = .todos }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenTaskFromNotification"))) { _ in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selectedTab = .todos }
         }
         .onChange(of: selectedTab) { newValue in
             if newValue != .todos { isSearchActive = false }
@@ -260,7 +220,6 @@ struct RootTabsView: View {
 
             if newValue == .insights {
                 store.recordInsightsInteraction()
-                showInsightsHintBanner = false
             }
         }
         .sheet(isPresented: $showWelcome) {
@@ -342,33 +301,6 @@ struct RootTabsView: View {
         .accessibilityIdentifier(tab.accessibilityIdentifier)
     }
 
-    private func bannerRow(text: String, dismissAction: @escaping () -> Void) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "info.circle")
-                .foregroundStyle(theme.tokens.accent)
-            Text(text)
-                .font(.footnote)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-            Spacer(minLength: 4)
-            Button(action: dismissAction) {
-                Image(systemName: "xmark")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
-        )
-        .padding(.horizontal, 16)
-    }
-
     @Namespace private var tabNamespace
 
     private func tabName(for tab: AppTab) -> String {
@@ -395,7 +327,6 @@ struct RootTabsView: View {
 
     private func checkAndShowWelcome() {
         guard !hasCheckedWelcome else { return }
-        guard store.experimentalFeaturesEnabled else { return }
 
         hasCheckedWelcome = true
         if isScreenshotGenerationMode {
@@ -411,73 +342,6 @@ struct RootTabsView: View {
         }
     }
 
-    private func handleExperimentalVisibilityChange(triggeredByUser: Bool) {
-        if !insightsEnabled {
-            showInsightsHintBanner = false
-            showVoiceCaptureSheet = false
-            if voiceStore.isVoiceStagingPresented {
-                voiceStore.clearVoiceStaging()
-            }
-            if selectedTab == .insights {
-                transitionToDefaultListView(withGenie: triggeredByUser)
-            }
-            return
-        }
-
-        checkAndShowWelcome()
-        refreshInsightsHintBanner()
-    }
-
-    private func refreshInsightsHintBanner() {
-        guard !isScreenshotGenerationMode else {
-            showInsightsHintBanner = false
-            return
-        }
-        guard insightsEnabled else {
-            showInsightsHintBanner = false
-            return
-        }
-        guard selectedTab != .insights else {
-            showInsightsHintBanner = false
-            return
-        }
-        guard store.shouldShowInsightsHint() else {
-            showInsightsHintBanner = false
-            return
-        }
-
-        store.markInsightsHintShown()
-        withAnimation(.easeInOut(duration: 0.2)) {
-            showInsightsHintBanner = true
-        }
-    }
-
-    private func transitionToDefaultListView(withGenie: Bool) {
-        showLockedInsightsMessage = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                showLockedInsightsMessage = false
-            }
-        }
-
-        if withGenie {
-            withAnimation(.easeInOut(duration: 0.35)) {
-                isGenieTransitionActive = true
-            }
-        }
-
-        if selectedTab != .todos {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                selectedTab = .todos
-            }
-        }
-
-        if withGenie {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) {
-                isGenieTransitionActive = false
-            }
-        }
-    }
 
     private func updateResolvedScheme() {
         switch theme.mode {

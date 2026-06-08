@@ -75,7 +75,7 @@ private struct DataRowsSection: View {
     var body: some View {
         Section(title) {
             if rows.isEmpty {
-                if let emptyMessage {
+                if let emptyMessage = emptyMessage {
                     Text(emptyMessage)
                         .foregroundStyle(.secondary)
                 }
@@ -314,7 +314,7 @@ struct InsightsView: View {
         return InsetCard {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Notelayer Data Insights (Experimental Feature)")
+                    Text("Notelayer Data Insights")
                         .font(.headline)
                     Spacer()
                     Image(systemName: isDataCoverageExpanded ? "chevron.up" : "chevron.down")
@@ -821,18 +821,26 @@ private struct InsightsCategoryDetailView: View {
                 )
             )
 
-            DataRowsSection(
-                title: "Tasks Left per Category",
-                rows: snapshot.categoryStats.map { stat in
-                    DataRowModel(
-                        id: "open-\(stat.id)",
-                        iconText: stat.categoryIcon,
-                        primaryText: stat.categoryName,
-                        secondaryText: nil,
-                        trailingValueText: "\(stat.openCount)"
-                    )
+            Section("Tasks Left per Category") {
+                ForEach(snapshot.categoryStats) { stat in
+                    Button {
+                        NotificationCenter.default.post(
+                            name: .navigateToCategoryInTodos,
+                            object: nil,
+                            userInfo: ["categoryId": stat.categoryId]
+                        )
+                    } label: {
+                        HStack {
+                            Text(stat.categoryIcon)
+                            Text(stat.categoryName).lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text("\(stat.openCount)").monospacedDigit().foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-            )
+            }
             InsightTakeawayView(
                 observation: "Open workload is concentrated in a handful of categories.",
                 suggestion: "Pick one heavy category to reduce this week instead of spreading effort thin."
@@ -1053,18 +1061,30 @@ private struct InsightsOldestOpenTasksDetailView: View {
                 suggestion: "Convert the oldest items into smaller next actions or archive them intentionally."
             )
 
-            DataRowsSection(
-                title: "Oldest Open Tasks",
-                rows: snapshot.oldestOpenTasksDrilldown.map { openTask in
-                    DataRowModel(
-                        id: openTask.id,
-                        primaryText: openTask.title,
-                        secondaryText: nil,
-                        trailingValueText: "\(openTask.ageDays)d"
-                    )
-                },
-                emptyMessage: "All caught up. No open tasks waiting right now."
-            )
+            Section("Oldest Open Tasks") {
+                if snapshot.oldestOpenTasksDrilldown.isEmpty {
+                    Text("All caught up. No open tasks waiting right now.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(snapshot.oldestOpenTasksDrilldown) { openTask in
+                        Button {
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("OpenTaskFromNotification"),
+                                object: nil,
+                                userInfo: ["taskId": openTask.taskId]
+                            )
+                        } label: {
+                            HStack {
+                                Text(openTask.title).lineLimit(1)
+                                Spacer(minLength: 8)
+                                Text("\(openTask.ageDays)d").monospacedDigit().foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
 
             if snapshot.totals.open > snapshot.oldestOpenTasksDrilldown.count {
                 Section {

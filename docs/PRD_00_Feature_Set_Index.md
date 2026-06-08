@@ -1,8 +1,26 @@
 # PRD Feature Set Index
 
-Last Updated: 2026-02-10
-Status: Draft For Clarification
+Last Updated: 2026-06-06
+Status: Updated with v1.5.0 Implementation
 Scope: Notelayer expanded feature set (no new additions)
+
+## Release Status Update (v1.5.0 — June 2026)
+
+**SHIPPED IN v1.5.0:**
+- ✅ PRD_01: Experimental Features Framework — **COMPLETED** (features now always-on, gate removed)
+- ✅ PRD_06: First-Time User Onboarding — **COMPLETED** (4-step redesigned flow shipped)
+
+**PARTIALLY SHIPPED IN v1.5.0:**
+- ✅ PRD_02: Analytics Insights — **COMPLETED** (full analytics now available, category deep-links added)
+- ✅ PRD_03: Insights Toggle — **COMPLETED** (removed, insights always visible)
+
+**IN DEVELOPMENT:**
+- 🟨 PRD_04: Voice Entry Structured Capture — Functional, ongoing optimization
+- 🟨 PRD_05: Voice Entry Preview & Staging — Functional, ongoing optimization
+- 🟨 PRD_08: Project-Based Tasks (Hierarchy) — Functional, ongoing optimization
+
+**FUTURE WORK:**
+- ⬜ PRD_07: Share to Notelayer System
 
 ## Purpose
 
@@ -19,22 +37,23 @@ Provide one index for the PRD set so each feature area can be clarified and exec
 7. [PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First.md](PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First.md)
 8. [PRD_08_Project_Based_Tasks_Parent_Subtasks.md](PRD_08_Project_Based_Tasks_Parent_Subtasks.md)
 
-## Clarification Snapshot (2026-02-10)
+## Implementation Status (2026-06-06 — v1.5.0)
 
-- `PRD_01`: Mostly clarified. Master experimental checkbox in gear, default off, UI-only gating for Insights + Voice Input + First-Time Onboarding + Project-Based Tasks.
-- `PRD_02`: Clarified. Final label selections locked, mandatory chart+data+takeaway on all chart sections, observation-then-suggestion summaries.
-- `PRD_03`: Mostly clarified. Insights tied directly to experimental control, explicit hidden-route copy, recommended hint frequency policy.
-- `PRD_04`: Mostly clarified. English-only, granular multi-item split, existing-category-only guesses, fallback title rule defined, floating voice FAB entry above tab bar.
-- `PRD_05`: Mostly clarified. Recommended save/exit/validation/background/performance settings adopted.
-- `PRD_06`: Mostly clarified. First-install trigger, video-then-cues flow, non-time-based finance-inclusive presets approved, onboarding UI gated by experimental toggle.
-- `PRD_07`: Not yet clarified in this round.
-- `PRD_08`: Not yet clarified in this round.
+- `PRD_01`: ✅ **SHIPPED v1.5.0** — Experimental features gate completely removed. All features (Voice, Insights, Hierarchy, Onboarding) now standard for all users. Master toggle removed from gear menu.
+- `PRD_02`: ✅ **SHIPPED v1.5.0** — Full analytics suite available. Chart+data+takeaway on all sections. Category deep-links added (click category in Insights → jump to To-Dos category view).
+- `PRD_03`: ✅ **SHIPPED v1.5.0** — Insights no longer gated. Always visible and accessible. Hint banners removed.
+- `PRD_04`: 🟨 Functional and in use. Voice entry with structured capture working. Granular multi-item split implemented. Floating FAB above tab bar active.
+- `PRD_05`: 🟨 Functional and in use. Voice staging and preview working. Validation and background processing implemented.
+- `PRD_06`: ✅ **SHIPPED v1.5.0** — Completely redesigned 4-step onboarding. Replaced video-placeholder flow with interactive Duolingo/Noom-inspired experience. Auto-triggers on first install. Replayable from gear menu.
+- `PRD_07`: Not yet implemented.
+- `PRD_08`: 🟨 Partially implemented. Task hierarchy and parent-child relationships working. Ongoing optimization.
 
-## Dependency Notes
+## Dependency Notes (Updated for v1.5.0)
 
-- `PRD_01` is the master visibility gate for experimental UI (Insights, Voice Input, First-Time Onboarding, Project-Based Tasks).
-- `PRD_03` uses `PRD_01` directly for Insights exposure.
-- `PRD_05` depends on parse output from `PRD_04`.
+- `PRD_01` gate has been **REMOVED**. All features now standard. No dependency chains for visibility.
+- `PRD_02` (Insights) and `PRD_03` (Insights visibility) are now fully integrated and always accessible.
+- `PRD_05` (Voice staging) depends on parse output from `PRD_04` (Voice input). Both functional.
+- `PRD_08` (Hierarchy) is independent; `PRD_04` and `PRD_05` can work with or without hierarchy enabled.
 
 ## Suggested Clarification Sequence (Next Pass)
 

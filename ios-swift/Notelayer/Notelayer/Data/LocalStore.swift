@@ -16,8 +16,8 @@ struct Note: Identifiable, Codable {
 }
 
 extension Notification.Name {
-    static let experimentalFeaturesDidChange = Notification.Name("Notelayer.ExperimentalFeatures.DidChange")
     static let openOnboardingRequested = Notification.Name("Notelayer.Onboarding.OpenRequested")
+    static let navigateToCategoryInTodos = Notification.Name("Notelayer.Navigation.CategoryInTodos")
 }
 
 enum ParentTaskDeletionStrategy {
@@ -100,7 +100,7 @@ class LocalStore: ObservableObject {
     }
 
     var experimentalFeaturesEnabled: Bool {
-        experimentalFeaturesPreference.isEnabled
+        true
     }
 
     func attachBackend(_ backend: BackendSyncing?) {
@@ -460,25 +460,8 @@ class LocalStore: ObservableObject {
     }
 
     func setExperimentalFeaturesEnabled(_ enabled: Bool, source: String = "user") {
-        let previousValue = experimentalFeaturesPreference.isEnabled
-        guard previousValue != enabled else { return }
-
-        experimentalFeaturesPreference = ExperimentalFeaturePreference(
-            isEnabled: enabled,
-            updatedAt: Date(),
-            state: enabled ? .on : .off
-        )
-        saveExperimentalFeaturesPreference()
-
-        NotificationCenter.default.post(
-            name: .experimentalFeaturesDidChange,
-            object: nil,
-            userInfo: [
-                "oldValue": previousValue,
-                "newValue": enabled,
-                "source": source
-            ]
-        )
+        // Deprecated: experimental features are now always enabled.
+        // This method is kept for backward compatibility but is a no-op.
     }
 
     // MARK: - Insights Hint State

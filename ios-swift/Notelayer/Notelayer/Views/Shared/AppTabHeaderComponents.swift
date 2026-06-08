@@ -39,27 +39,12 @@ struct AppHeaderGearMenu: View {
                 menuLabel("Manage Categories", systemImage: "tag")
             }
 
-            if store.experimentalFeaturesEnabled {
-                Button {
-                    NotificationCenter.default.post(name: .openOnboardingRequested, object: nil)
-                } label: {
-                    menuLabel("Onboarding Guide", systemImage: "play.rectangle")
-                }
+            Button {
+                NotificationCenter.default.post(name: .openOnboardingRequested, object: nil)
+            } label: {
+                menuLabel("Onboarding Guide", systemImage: "play.rectangle")
             }
 
-            Toggle(
-                isOn: Binding(
-                    get: { store.experimentalFeaturesEnabled },
-                    set: { newValue in
-                        store.setExperimentalFeaturesEnabled(newValue, source: "gear_menu")
-                    }
-                )
-            ) {
-                menuLabel(
-                    store.experimentalFeaturesEnabled ? "Experimental Features (On)" : "Experimental Features",
-                    systemImage: "flask"
-                )
-            }
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "gearshape.fill")

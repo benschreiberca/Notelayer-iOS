@@ -45,6 +45,7 @@ struct TodosView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var backendService: FirebaseBackendService
 
     // Cached derived task lists — recomputed only when store.tasks or experimentalFeaturesEnabled changes,
     // not on every unrelated LocalStore publish.
@@ -334,6 +335,7 @@ struct TodosView: View {
                 .withThemeAppearance()
                 .environmentObject(authService)
                 .environmentObject(theme)
+                .environmentObject(backendService)
                 .onAppear {
                     profileViewSession = AnalyticsService.shared.trackViewOpen(
                         viewName: AnalyticsViewName.profileSettings,

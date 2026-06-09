@@ -145,6 +145,7 @@ struct InsightsView: View {
     @StateObject private var store = LocalStore.shared
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var backendService: FirebaseBackendService
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -238,6 +239,7 @@ struct InsightsView: View {
                     .withThemeAppearance()
                     .environmentObject(authService)
                     .environmentObject(theme)
+                    .environmentObject(backendService)
                     .onAppear {
                         profileViewSession = AnalyticsService.shared.trackViewOpen(
                             viewName: AnalyticsViewName.profileSettings,

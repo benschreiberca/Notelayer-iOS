@@ -12,7 +12,8 @@ struct NotesView: View {
     @State private var categoryViewSession: AnalyticsViewSession? = nil
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var authService: AuthService
-    
+    @EnvironmentObject private var backendService: FirebaseBackendService
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -75,6 +76,7 @@ struct NotesView: View {
                     .withThemeAppearance()
                     .environmentObject(authService)
                     .environmentObject(theme)
+                    .environmentObject(backendService)
                     .onAppear {
                         profileViewSession = AnalyticsService.shared.trackViewOpen(
                             viewName: AnalyticsViewName.profileSettings,

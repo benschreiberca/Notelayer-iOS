@@ -351,6 +351,7 @@ struct NotelayerApp: App {
             RootTabsView()
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
+                .environmentObject(backendService)
                 .onOpenURL { url in
                     _Concurrency.Task { @MainActor in
                         await authService.handleIncomingURL(url)

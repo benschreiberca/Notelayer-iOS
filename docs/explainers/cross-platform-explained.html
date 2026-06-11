@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notelayer — Cross-Platform Strategy</title>
+<style>
+  :root {
+    --indigo: #6366F1;
+    --indigo-light: #EEF2FF;
+    --indigo-dark: #4338CA;
+    --blue: #2F7DF6;
+    --green: #16A34A;
+    --green-light: #F0FDF4;
+    --amber: #D97706;
+    --amber-light: #FFFBEB;
+    --red: #DC2626;
+    --red-light: #FEF2F2;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-500: #6B7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--gray-50);
+    color: var(--gray-900);
+    line-height: 1.6;
+    padding: 32px 24px 80px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin: 40px 0 14px; color: var(--gray-900); }
+  h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  p  { font-size: 15px; color: var(--gray-700); margin-bottom: 10px; }
+
+  .subtitle { font-size: 16px; color: var(--gray-500); margin-bottom: 32px; }
+
+  /* ── Section card ── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  /* ── Platform grid ── */
+  .platform-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .platform-tile {
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .platform-tile:hover { border-color: var(--indigo); box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
+  .platform-tile .icon { font-size: 28px; margin-bottom: 8px; }
+  .platform-tile .label { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .platform-tile .sublabel { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+  .platform-tile.done { border-color: var(--green); background: var(--green-light); }
+  .platform-tile.building { border-color: var(--indigo); background: var(--indigo-light); }
+  .platform-tile.future { border-color: var(--gray-300); background: var(--gray-50); opacity: 0.7; }
+
+  /* ── Rewrite diagram ── */
+  .rewrite-diagram {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    margin: 20px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+  }
+  .layer {
+    flex: 1;
+    padding: 16px 14px;
+  }
+  .layer-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    opacity: 0.7;
+  }
+  .layer-ios { background: #F0F4FF; border-right: 1px solid var(--gray-200); }
+  .layer-shared { background: #ECFDF5; border-right: 1px solid var(--gray-200); }
+  .layer-web { background: #EEF2FF; }
+
+  .layer-item {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .item-rewrite { background: rgba(220,38,38,0.08); color: #991B1B; border: 1px solid rgba(220,38,38,0.15); }
+  .item-shared  { background: rgba(22,163,74,0.08);  color: #14532D; border: 1px solid rgba(22,163,74,0.15); }
+  .item-new     { background: rgba(99,102,241,0.08); color: #3730A3; border: 1px solid rgba(99,102,241,0.15); }
+
+  /* ── Option comparison table ── */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 16px 0;
+  }
+  .comparison-table th {
+    background: var(--gray-100);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .comparison-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+    color: var(--gray-700);
+  }
+  .comparison-table tr:last-child td { border-bottom: none; }
+  .comparison-table tr:hover td { background: var(--gray-50); }
+  .comparison-table td:first-child { font-weight: 600; color: var(--gray-900); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-green  { background: var(--green-light);  color: var(--green); }
+  .badge-amber  { background: var(--amber-light);  color: var(--amber); }
+  .badge-red    { background: var(--red-light);    color: var(--red); }
+  .badge-indigo { background: var(--indigo-light); color: var(--indigo-dark); }
+
+  /* ── Flow diagram ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 20px 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .flow-step {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 130px;
+    text-align: center;
+  }
+  .flow-step.active { border-color: var(--indigo); background: var(--indigo-light); }
+  .flow-step .step-icon { font-size: 22px; margin-bottom: 6px; }
+  .flow-step .step-label { font-size: 13px; font-weight: 600; }
+  .flow-step .step-sub { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+  .flow-arrow {
+    font-size: 18px;
+    color: var(--gray-300);
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── Electron comparison ── */
+  .electron-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  @media (max-width: 600px) { .electron-grid { grid-template-columns: 1fr; } }
+
+  .electron-card {
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid transparent;
+  }
+  .electron-card h3 { margin-bottom: 8px; }
+  .electron-card ul { padding-left: 16px; font-size: 13.5px; color: var(--gray-700); }
+  .electron-card ul li { margin-bottom: 5px; }
+  .card-pro  { background: var(--green-light);  border-color: #BBF7D0; }
+  .card-con  { background: var(--red-light);    border-color: #FECACA; }
+  .card-tauri { background: var(--indigo-light); border-color: #C7D2FE; }
+  .card-pwa  { background: var(--amber-light);  border-color: #FDE68A; }
+
+  /* ── Key insight box ── */
+  .insight {
+    background: linear-gradient(135deg, #EEF2FF 0%, #F0FDF4 100%);
+    border: 1.5px solid var(--indigo);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 20px 0;
+    font-size: 15px;
+    color: var(--gray-900);
+    line-height: 1.6;
+  }
+  .insight strong { color: var(--indigo-dark); }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--gray-700);
+    margin: 10px 0 16px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Code-style block ── */
+  .code-block {
+    background: var(--gray-900);
+    color: #E5E7EB;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .code-block .comment { color: #6B7280; }
+  .code-block .string  { color: #86EFAC; }
+  .code-block .key     { color: #93C5FD; }
+
+  /* ── Section divider ── */
+  .divider { border: none; border-top: 1px solid var(--gray-200); margin: 32px 0; }
+
+  /* ── Pill tags ── */
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .tag {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+  }
+</style>
+</head>
+<body>
+
+<h1>Notelayer — Cross-Platform Explained</h1>
+<p class="subtitle">A visual guide to your options: webapp, Electron, Tauri, PWA, and what actually needs to be rewritten.</p>
+
+<!-- ── WHERE NOTELAYER LIVES TODAY ── -->
+<h2>Where Notelayer lives today</h2>
+<div class="platform-grid">
+  <div class="platform-tile done">
+    <div class="icon">📱</div>
+    <div class="label">iOS App</div>
+    <div class="sublabel">✅ Shipped v1.5.0</div>
+  </div>
+  <div class="platform-tile building">
+    <div class="icon">🌐</div>
+    <div class="label">Web App</div>
+    <div class="sublabel">🔨 In progress</div>
+  </div>
+  <div class="platform-tile building">
+    <div class="icon">🧩</div>
+    <div class="label">Chrome Extension</div>
+    <div class="sublabel">🔨 In progress</div>
+  </div>
+  <div class="platform-tile future">
+    <div class="icon">🤖</div>
+    <div class="label">Android</div>
+    <div class="sublabel">⬜ Future (via webapp)</div>
+  </div>
+  <div class="platform-tile future">
+    <div class="icon">🖥️</div>
+    <div class="label">Desktop</div>
+    <div class="sublabel">⬜ Future (Electron/Tauri)</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── THE BIG QUESTION ── -->
+<h2>Do you have to rewrite everything?</h2>
+
+<div class="insight">
+  <strong>Short answer: No — but you do have to rebuild the UI.</strong><br><br>
+  Your app has two layers: <strong>data</strong> (Firestore — already web-compatible) and <strong>UI</strong> (SwiftUI — iOS only). The data layer works on every platform already. Only the visual layer needs to be rebuilt, and you're doing that right now with React.
+</div>
+
+<div class="rewrite-diagram">
+  <div class="layer layer-ios">
+    <div class="layer-label">🍎 iOS Only</div>
+    <div class="layer-item item-rewrite">SwiftUI Views</div>
+    <div class="layer-item item-rewrite">SwiftUI Animations</div>
+    <div class="layer-item item-rewrite">APNS (Push)</div>
+    <div class="layer-item item-rewrite">SF Symbols</div>
+    <div class="layer-item item-rewrite">Share Extension</div>
+    <div class="layer-item item-rewrite">Voice (SFSpeech)</div>
+  </div>
+  <div class="layer layer-shared">
+    <div class="layer-label">✅ Already Shared</div>
+    <div class="layer-item item-shared">Firestore Database</div>
+    <div class="layer-item item-shared">Firebase Auth</div>
+    <div class="layer-item item-shared">All your task data</div>
+    <div class="layer-item item-shared">All your notes</div>
+    <div class="layer-item item-shared">Categories</div>
+    <div class="layer-item item-shared">Real-time sync</div>
+  </div>
+  <div class="layer layer-web">
+    <div class="layer-label">🌐 Web Equivalent</div>
+    <div class="layer-item item-new">React Components</div>
+    <div class="layer-item item-new">Framer Motion</div>
+    <div class="layer-item item-new">Web Push API</div>
+    <div class="layer-item item-new">Lucide Icons</div>
+    <div class="layer-item item-new">Context Menu / Selection</div>
+    <div class="layer-item item-new">Web Speech API</div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div> Must rebuild</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#16A34A"></div> Already works on web</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6366F1"></div> Web native equivalent</div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── WHAT IS ELECTRON ── -->
+<h2>What is Electron?</h2>
+
+<div class="card">
+  <p>Electron packages a <strong>webpage + Node.js</strong> into a desktop app (.exe on Windows, .app on Mac, Linux binary). It's how <strong>VS Code, Slack, Figma, Discord, Notion</strong> and 1Password are built.</p>
+  <p>The key idea: you write your app once in HTML/CSS/JavaScript (or React), and Electron wraps it in a Chromium browser window that looks and behaves like a native desktop app — with access to the filesystem, notifications, menus, etc.</p>
+  <div class="code-block">
+<span class="comment">// Your React webapp is already Electron-ready.</span>
+<span class="comment">// You'd just add one config file and a launcher:</span>
+
+<span class="key">electron-app/</span>
+  <span class="key">main.js</span>     <span class="comment">← opens a window that loads your React app</span>
+  <span class="key">package.json</span> <span class="comment">← "start": "electron ."</span>
+
+<span class="comment">// That's it. No rewrite needed.</span>
+  </div>
+</div>
+
+<!-- ── ELECTRON PROS/CONS ── -->
+<div class="electron-grid">
+  <div class="electron-card card-pro">
+    <h3>✅ Electron pros</h3>
+    <ul>
+      <li>Zero rewrite — your React webapp IS the app</li>
+      <li>One codebase: web + Chrome ext + desktop</li>
+      <li>Full Node.js access (filesystem, notifications, tray icon)</li>
+      <li>Ships on Mac, Windows, Linux from one codebase</li>
+      <li>Huge ecosystem, well-documented</li>
+    </ul>
+  </div>
+  <div class="electron-card card-con">
+    <h3>⚠️ Electron cons</h3>
+    <ul>
+      <li>Large app size (~150–200MB) — ships its own copy of Chrome</li>
+      <li>High RAM usage (50–150MB baseline)</li>
+      <li>Not in the Mac App Store easily</li>
+      <li>Updates require re-downloading the whole app</li>
+      <li>Doesn't feel "native" to power users</li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── ALTERNATIVES ── -->
+<h2>The alternatives to Electron</h2>
+
+<table class="comparison-table">
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>What it is</th>
+      <th>App size</th>
+      <th>Rewrite needed?</th>
+      <th>Notelayer fit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Electron</td>
+      <td>Bundles Chrome + Node + your webapp</td>
+      <td>~150MB</td>
+      <td>None — React works as-is</td>
+      <td><span class="badge badge-green">Good</span></td>
+    </tr>
+    <tr>
+      <td>Tauri</td>
+      <td>Like Electron but uses the OS's built-in browser (WebKit/WebView2) instead of bundling Chrome. Written in Rust.</td>
+      <td>~3–8MB</td>
+      <td>None — same React app</td>
+      <td><span class="badge badge-green">Best for desktop</span></td>
+    </tr>
+    <tr>
+      <td>PWA</td>
+      <td>A webpage that Chrome/Safari can "install" to the home screen or dock. No app store needed.</td>
+      <td>~0MB extra</td>
+      <td>None — add a manifest.json</td>
+      <td><span class="badge badge-green">Easiest</span></td>
+    </tr>
+    <tr>
+      <td>React Native</td>
+      <td>Write once in React, compiles to native iOS + Android components</td>
+      <td>~20–40MB</td>
+      <td>Partial — logic reusable, UI rebuilt</td>
+      <td><span class="badge badge-amber">Complex</span></td>
+    </tr>
+    <tr>
+      <td>Flutter</td>
+      <td>Google's cross-platform framework. Runs on iOS, Android, web, desktop from one Dart codebase</td>
+      <td>~15–30MB</td>
+      <td>Full — new language (Dart)</td>
+      <td><span class="badge badge-red">Full rewrite</span></td>
+    </tr>
+    <tr>
+      <td>Capacitor</td>
+      <td>Ionic's tool — wraps your webapp as a native iOS/Android app. Opposite of Electron (mobile instead of desktop)</td>
+      <td>~5–15MB</td>
+      <td>None — same React app</td>
+      <td><span class="badge badge-green">Good for Android</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ── TAURI DEEP DIVE ── -->
+<h2>Tauri — the recommended desktop path</h2>
+
+<div class="electron-grid">
+  <div class="electron-card card-tauri">
+    <h3>🦀 What makes Tauri different</h3>
+    <ul>
+      <li>Uses the operating system's own browser engine (WebKit on Mac, WebView2 on Windows) — so no bundled Chrome</li>
+      <li>Result: 3–8MB app vs 150MB for Electron</li>
+      <li>The Rust backend is tiny and fast</li>
+      <li>Your React frontend is unchanged</li>
+      <li>Better memory usage — Safari/Edge instead of a second Chrome</li>
+    </ul>
+  </div>
+  <div class="electron-card card-pwa">
+    <h3>📲 PWA — the zero-effort option</h3>
+    <ul>
+      <li>Add a 20-line <code>manifest.json</code> to the React app</li>
+      <li>Chrome shows "Install Notelayer" in the address bar</li>
+      <li>Opens in its own window, no browser chrome</li>
+      <li>Works on Android, Mac, Windows, ChromeOS</li>
+      <li>No app stores, no build step, no distribution</li>
+      <li>Limitation: no deep OS integration (tray icon, file access)</li>
+    </ul>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── YOUR ACTUAL STRATEGY ── -->
+<h2>Your actual strategy — one codebase, 5 platforms</h2>
+
+<div class="flow">
+  <div class="flow-step active">
+    <div class="step-icon">⚛️</div>
+    <div class="step-label">React Webapp</div>
+    <div class="step-sub">notelayer-c7bba.web.app</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step active">
+    <div class="step-icon">🧩</div>
+    <div class="step-label">Chrome Extension</div>
+    <div class="step-sub">Side Panel = webapp URL</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">
+    <div class="step-icon">📲</div>
+    <div class="step-label">PWA / Android</div>
+    <div class="step-sub">Install from Chrome</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">
+    <div class="step-icon">🖥️</div>
+    <div class="step-label">Desktop App</div>
+    <div class="step-sub">Tauri wrapper</div>
+  </div>
+</div>
+
+<div class="insight">
+  <strong>The compounding advantage:</strong> every hour you spend building the React webapp makes all 4 of these platforms better simultaneously. The Chrome extension is just a URL. The PWA is just a manifest.json. The Tauri desktop app is just a window that loads your React app. You are never rewriting the same UI twice.
+</div>
+
+<hr class="divider" />
+
+<!-- ── DECISION GUIDE ── -->
+<h2>Decision guide — what to build when</h2>
+
+<table class="comparison-table">
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>How</th>
+      <th>Effort</th>
+      <th>When</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>🌐 Webapp</td>
+      <td>React + Firebase Hosting</td>
+      <td><span class="badge badge-amber">Medium — in progress</span></td>
+      <td>Now — enables everything else</td>
+    </tr>
+    <tr>
+      <td>🧩 Chrome Extension</td>
+      <td>manifest.json + Side Panel URL</td>
+      <td><span class="badge badge-green">Tiny — ~30 lines</span></td>
+      <td>Right after webapp works</td>
+    </tr>
+    <tr>
+      <td>📲 Android / Chromebook</td>
+      <td>PWA install from Chrome</td>
+      <td><span class="badge badge-green">Trivial — manifest.json</span></td>
+      <td>Same day as webapp launch</td>
+    </tr>
+    <tr>
+      <td>📲 iOS webapp</td>
+      <td>PWA — "Add to Home Screen" in Safari</td>
+      <td><span class="badge badge-green">Trivial</span></td>
+      <td>Free when webapp ships</td>
+    </tr>
+    <tr>
+      <td>🖥️ Mac / Windows desktop</td>
+      <td>Tauri wraps your React app</td>
+      <td><span class="badge badge-amber">Low — 1–2 days config</span></td>
+      <td>After webapp is stable</td>
+    </tr>
+    <tr>
+      <td>📱 Android native</td>
+      <td>Capacitor wraps your React app</td>
+      <td><span class="badge badge-amber">Low-medium</span></td>
+      <td>If PWA isn't enough for Android</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr class="divider" />
+
+<!-- ── GLOSSARY ── -->
+<h2>Glossary</h2>
+
+<div class="card">
+  <p><strong>Firestore</strong> — Google's real-time database. Already in your iOS app. The web SDK is identical in JavaScript — same data, same real-time sync, different language.</p>
+</div>
+<div class="card">
+  <p><strong>Electron</strong> — A framework that bundles a copy of Chrome + Node.js + your webapp into a distributable desktop application. Used by VS Code, Slack, Figma, Discord, Notion.</p>
+</div>
+<div class="card">
+  <p><strong>Tauri</strong> — Like Electron but ~20× smaller. Uses the OS's built-in browser instead of bundling Chrome. Your React app works unchanged. Built with Rust for performance.</p>
+</div>
+<div class="card">
+  <p><strong>PWA (Progressive Web App)</strong> — A webpage with a <code>manifest.json</code> that tells Chrome/Safari "this can be installed as an app." Free Android and desktop app from your webapp with almost zero extra work.</p>
+</div>
+<div class="card">
+  <p><strong>React Native</strong> — React for mobile — components compile to native iOS/Android UI. You share logic but rebuild the UI in React Native primitives. Different from React (web).</p>
+</div>
+<div class="card">
+  <p><strong>Capacitor</strong> — Ionic's tool that wraps your existing React webapp in a native iOS/Android shell. Think of it as Electron for mobile. Gives access to native device APIs.</p>
+</div>
+<div class="card">
+  <p><strong>Flutter</strong> — Google's cross-platform framework using Dart (a different language). Renders its own UI widgets — not web tech. Full rewrite required, but genuinely native performance on all platforms.</p>
+</div>
+<div class="card">
+  <p><strong>Chrome Side Panel</strong> — A persistent panel that opens on the side of Chrome (like the reading list). The Chrome extension API lets you load any URL there. We load our webapp URL.</p>
+</div>
+
+</body>
+</html>

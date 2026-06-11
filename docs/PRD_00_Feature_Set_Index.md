@@ -21,6 +21,7 @@ Scope: Notelayer expanded feature set (no new additions)
 
 **FUTURE WORK:**
 - ⬜ PRD_07: Share to Notelayer System
+- ⬜ PRD_09: Web App & Chrome Extension — In Planning
 
 ## Purpose
 
@@ -36,6 +37,7 @@ Provide one index for the PRD set so each feature area can be clarified and exec
 6. [PRD_06_First_Time_User_Onboarding.md](PRD_06_First_Time_User_Onboarding.md)
 7. [PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First.md](PRD_07_Share_To_Notelayer_System_Share_Sheet_Chatgpt_First.md)
 8. [PRD_08_Project_Based_Tasks_Parent_Subtasks.md](PRD_08_Project_Based_Tasks_Parent_Subtasks.md)
+9. [PRD_09_Web_App_Chrome_Extension.md](PRD_09_Web_App_Chrome_Extension.md)
 
 ## Implementation Status (2026-06-06 — v1.5.0)
 

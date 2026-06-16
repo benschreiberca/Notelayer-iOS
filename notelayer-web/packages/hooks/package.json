@@ -1,0 +1,14 @@
+{
+  "name": "@notelayer/hooks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "dependencies": {
+    "@notelayer/shared": "*",
+    "firebase": "^11.0.0"
+  }
+}

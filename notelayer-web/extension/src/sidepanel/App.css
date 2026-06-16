@@ -1,0 +1,130 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body, 'Work Sans', -apple-system, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shell — iridescent overlay matching iOS wallpaper */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Subtle iridescent gradient overlay — matches Iridescent Flow wallpaper tint */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    160deg,
+    rgba(99, 102, 241, 0.07) 0%,
+    rgba(168, 85, 247, 0.05) 40%,
+    rgba(236, 72, 153, 0.04) 80%,
+    transparent 100%
+  );
+  z-index: 0;
+}
+
+/* Tab bar — frosted glass pill matching iOS tab bar style */
+.tab-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px 14px;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 10;
+}
+
+.tab-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 100px;
+  padding: 3px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.tab-bar__btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tab-bar__btn--active {
+  background: rgba(99, 102, 241, 0.22);
+  color: var(--accent-light, #A5B4FC);
+}
+
+.tab-bar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tab-bar__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* View container */
+.view {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+/* Loading */
+.loading-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

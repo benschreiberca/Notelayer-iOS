@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD 12 — Onboarding & Category Safety Mockup</title>
+  <style>
+    :root {
+      --bg-base:      #0F0F0F;
+      --bg-s1:        #1C1C1E;
+      --bg-s2:        #2C2C2E;
+      --bg-s3:        #3A3A3C;
+      --border:       rgba(255,255,255,0.08);
+      --border-sub:   rgba(255,255,255,0.05);
+      --text-1:       #FFFFFF;
+      --text-2:       rgba(255,255,255,0.55);
+      --text-3:       rgba(255,255,255,0.30);
+      --accent:       #4F8EF7;
+      --accent-dim:   rgba(79,142,247,0.15);
+      --accent-bdr:   rgba(79,142,247,0.40);
+      --green:        #34C759;
+      --green-dim:    rgba(52,199,89,0.12);
+      --green-bdr:    rgba(52,199,89,0.30);
+      --red:          #FF3B30;
+      --red-dim:      rgba(255,59,48,0.10);
+      --red-bdr:      rgba(255,59,48,0.30);
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; }
+
+    body {
+      background:#0A0A0A;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      -webkit-font-smoothing:antialiased;
+      color:var(--text-1);
+      padding:36px 16px 60px;
+    }
+
+    /* ── Page header ── */
+    .page-title {
+      text-align:center; font-size:13px; font-weight:600;
+      color:var(--text-3); text-transform:uppercase; letter-spacing:.08em;
+      margin-bottom:4px;
+    }
+    .page-sub {
+      text-align:center; font-size:12px; color:var(--text-3);
+      margin-bottom:36px;
+    }
+
+    /* ── Section ── */
+    .section { max-width:820px; margin:0 auto 56px; }
+    .section-header { margin-bottom:20px; }
+    .section-header h2 {
+      font-size:14px; font-weight:700; color:var(--text-2); margin-bottom:3px;
+    }
+    .section-header p { font-size:12px; color:var(--text-3); }
+
+    .col-label {
+      font-size:10px; font-weight:700; color:var(--text-3);
+      text-transform:uppercase; letter-spacing:.09em;
+      margin-bottom:12px; text-align:center;
+    }
+
+    .grid-2 {
+      display:grid; grid-template-columns:1fr 1fr; gap:28px;
+    }
+    @media(max-width:640px){ .grid-2{ grid-template-columns:1fr; } }
+
+    /* ── Panel shell ── */
+    .panel {
+      width:100%; max-width:320px; margin:0 auto;
+      background:var(--bg-base);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:16px; overflow:hidden;
+      box-shadow:0 12px 48px rgba(0,0,0,.7);
+      display:flex; flex-direction:column;
+    }
+
+    .panel-bar {
+      background:rgba(28,28,30,.95); border-bottom:1px solid var(--border-sub);
+      padding:9px 12px;
+      display:flex; align-items:center; gap:5px; flex-shrink:0;
+    }
+    .dot { width:8px;height:8px;border-radius:50%; }
+    .panel-bar-label {
+      font-size:10px; color:var(--text-3); margin-left:auto;
+    }
+
+    /* ── Nav bar (iOS-style top bar) ── */
+    .nav-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px 6px; flex-shrink:0;
+      border-bottom:1px solid var(--border-sub);
+      min-height:44px;
+    }
+    .nav-btn {
+      background:none; border:none; color:var(--accent);
+      font-size:13px; font-weight:500; cursor:pointer; padding:2px 0;
+      min-width:40px;
+    }
+    .nav-btn:disabled { color:var(--text-3); cursor:default; }
+    .nav-btn.right { text-align:right; }
+    .nav-title {
+      font-size:13px; font-weight:600; color:var(--text-1);
+      flex:1; text-align:center;
+    }
+
+    /* ── Onboarding body ── */
+    .ob-body {
+      flex:1; display:flex; flex-direction:column;
+      padding:20px 16px 18px; min-height:460px; overflow-y:auto;
+    }
+
+    .step { display:none; flex-direction:column; gap:12px; flex:1; }
+    .step.active { display:flex; }
+
+    .step-title { font-size:17px; font-weight:700; color:var(--text-1); }
+    .step-body  { font-size:13px; color:var(--text-2); line-height:1.6; }
+
+    /* video placeholder */
+    .video-box {
+      background:var(--bg-s1); border:1px solid var(--border);
+      border-radius:14px; height:160px;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:8px;
+    }
+    .video-box-icon { font-size:32px; color:var(--accent); opacity:.8; }
+    .video-box-label { font-size:12px; color:var(--text-3); }
+    .skip-video {
+      font-size:12px; color:var(--accent); background:none; border:none;
+      cursor:pointer; padding:0; text-align:left;
+    }
+
+    /* cue rows */
+    .cue-list { display:flex; flex-direction:column; gap:6px; }
+    .cue {
+      display:flex; align-items:flex-start; gap:10px;
+      padding:9px 11px;
+      background:var(--bg-s1); border:1px solid var(--border);
+      border-radius:10px;
+    }
+    .cue-icon { font-size:14px; flex-shrink:0; margin-top:1px; color:var(--accent); }
+    .cue-text { font-size:12px; color:var(--text-2); line-height:1.45; }
+
+    /* preset cards */
+    .preset-card {
+      background:var(--bg-s1); border:1.5px solid var(--border);
+      border-radius:12px; padding:11px 12px;
+      cursor:pointer; transition:border-color .15s, background .15s;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .preset-card.selected {
+      border-color:var(--accent);
+      background:var(--accent-dim);
+    }
+    .preset-card-top { display:flex; align-items:center; gap:6px; }
+    .preset-card-name { font-size:13px; font-weight:600; color:var(--text-1); flex:1; }
+    .recommended-badge {
+      font-size:10px; font-weight:700; color:var(--accent);
+      background:var(--accent-dim); border:1px solid var(--accent-bdr);
+      padding:2px 7px; border-radius:100px; white-space:nowrap;
+    }
+    .preset-check {
+      font-size:14px; color:var(--text-3); transition:color .15s;
+    }
+    .preset-card.selected .preset-check { color:var(--accent); }
+    .preset-cats {
+      font-size:11px; color:var(--text-3); line-height:1.5;
+    }
+
+    /* existing user banner */
+    .existing-banner {
+      display:flex; align-items:flex-start; gap:9px;
+      padding:11px 12px;
+      background:var(--green-dim); border:1px solid var(--green-bdr);
+      border-radius:10px;
+    }
+    .existing-banner-icon { font-size:15px; flex-shrink:0; margin-top:1px; }
+    .existing-banner-text strong {
+      display:block; font-size:12px; font-weight:700; color:var(--green); margin-bottom:2px;
+    }
+    .existing-banner-text span { font-size:11px; color:rgba(52,199,89,.75); line-height:1.4; }
+
+    .pill-label {
+      font-size:10px; font-weight:700; color:var(--text-3);
+      text-transform:uppercase; letter-spacing:.07em;
+    }
+    .pills { display:flex; flex-wrap:wrap; gap:5px; }
+    .pill {
+      display:inline-flex; align-items:center; gap:3px;
+      padding:3px 8px; border-radius:100px;
+      font-size:11px; color:var(--text-2); white-space:nowrap;
+    }
+
+    /* CTAs */
+    .spacer { flex:1; }
+
+    .btn-primary {
+      width:100%; padding:13px; background:var(--accent); border:none;
+      border-radius:12px; color:#fff; font-size:14px; font-weight:600;
+      cursor:pointer; transition:opacity .15s; margin-top:6px;
+    }
+    .btn-primary:hover { opacity:.88; }
+
+    .btn-secondary {
+      width:100%; padding:12px;
+      background:var(--bg-s1); border:1px solid var(--border);
+      border-radius:12px; color:var(--text-2); font-size:13px; font-weight:500;
+      cursor:pointer; transition:background .15s; margin-top:4px;
+    }
+    .btn-secondary:hover { background:var(--bg-s2); }
+
+    .btn-link {
+      background:none; border:none; color:var(--text-3); font-size:12px;
+      cursor:pointer; text-align:center; padding:4px; margin-top:2px;
+      transition:color .15s;
+    }
+    .btn-link:hover { color:var(--text-2); }
+
+    /* dots */
+    .dots {
+      display:flex; gap:5px; justify-content:center;
+      padding-top:14px; flex-shrink:0;
+    }
+    .dot-ind {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--bg-s3); transition:all .2s;
+    }
+    .dot-ind.on {
+      background:var(--accent); width:16px; border-radius:3px;
+    }
+
+    /* ── Divider ── */
+    hr.div { border:none; border-top:1px solid var(--border); margin:10px 0; }
+
+    /* ── Callout box ── */
+    .callout {
+      margin-top:10px; padding:9px 11px;
+      background:var(--accent-dim); border:1px solid var(--accent-bdr);
+      border-radius:8px; font-size:11px; color:rgba(79,142,247,.85);
+      line-height:1.5;
+    }
+    .callout strong { color:var(--accent); }
+
+    /* ══════════════════════
+       CATEGORY MANAGER
+    ══════════════════════ */
+    .catmgr {
+      background:var(--bg-s1); border:1px solid var(--border);
+      border-radius:16px; overflow:hidden;
+      width:100%; max-width:320px; margin:0 auto;
+      box-shadow:0 12px 48px rgba(0,0,0,.7);
+    }
+
+    .catmgr-header {
+      display:flex; align-items:center; gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--border);
+    }
+    .catmgr-header-close {
+      background:none; border:none; color:var(--text-3);
+      font-size:15px; cursor:pointer; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      width:24px; height:24px;
+    }
+    .catmgr-header-close:hover { color:var(--text-2); }
+    .catmgr-title { font-size:14px; font-weight:600; color:var(--text-1); flex:1; }
+
+    .catmgr-body { padding:10px 12px; display:flex; flex-direction:column; gap:5px; }
+
+    .cat-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 11px;
+      background:var(--bg-s2); border:1px solid var(--border);
+      border-radius:10px;
+    }
+    .cat-row-left { display:flex; align-items:center; gap:7px; }
+    .cat-swatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .cat-icon { font-size:13px; }
+    .cat-name { font-size:12px; color:var(--text-2); }
+    .cat-row-actions { display:flex; gap:2px; }
+
+    .cat-act {
+      background:none; border:none; font-size:11px; cursor:pointer;
+      padding:3px 7px; border-radius:6px; color:var(--text-3);
+      transition:background .12s, color .12s;
+    }
+    .cat-act:hover { background:var(--bg-s3); color:var(--text-2); }
+    .cat-act.del { color:var(--red); }
+    .cat-act.del:hover { background:var(--red-dim); color:var(--red); }
+
+    /* restore / reset */
+    .action-block { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
+
+    .btn-restore {
+      display:flex; align-items:center; gap:8px; width:100%;
+      padding:10px 12px;
+      background:var(--green-dim); border:1px solid var(--green-bdr);
+      border-radius:10px; cursor:pointer; text-align:left;
+      transition:background .15s;
+    }
+    .btn-restore:hover { background:rgba(52,199,89,0.18); }
+    .btn-restore-icon { font-size:15px; flex-shrink:0; }
+    .btn-restore-text strong {
+      display:block; font-size:12px; font-weight:700; color:var(--green);
+    }
+    .btn-restore-text span { font-size:11px; color:rgba(52,199,89,.65); }
+
+    .btn-reset {
+      display:flex; align-items:center; gap:8px; width:100%;
+      padding:10px 12px;
+      background:none; border:1px solid var(--border);
+      border-radius:10px; cursor:pointer; text-align:left;
+      transition:all .15s;
+    }
+    .btn-reset:hover { background:var(--red-dim); border-color:var(--red-bdr); }
+    .btn-reset.primed {
+      background:var(--red-dim); border-color:var(--red);
+    }
+    .btn-reset-icon { font-size:15px; flex-shrink:0; }
+    .btn-reset-text strong {
+      display:block; font-size:12px; font-weight:600; color:var(--red);
+    }
+    .btn-reset-text span { font-size:11px; color:rgba(255,59,48,.60); }
+
+    .snap-note {
+      font-size:11px; color:var(--text-3); text-align:center;
+      padding:4px 0 2px;
+    }
+  </style>
+</head>
+<body>
+
+<p class="page-title">PRD 12 — Category Safety</p>
+<p class="page-sub">Interactive mockup — verified against iOS WelcomeView.swift &amp; PRD_06</p>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 1 — ONBOARDING FLOWS
+══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <h2>Onboarding Flow</h2>
+    <p>New user (left) picks a category preset · Existing user (right) sees their categories are untouched · Both flows have Back</p>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- ── NEW USER ── -->
+    <div>
+      <p class="col-label">New User — preset picker</p>
+      <div class="panel">
+        <div class="panel-bar">
+          <div class="dot" style="background:#FF5F57"></div>
+          <div class="dot" style="background:#FFBD2E"></div>
+          <div class="dot" style="background:#28C840"></div>
+          <span class="panel-bar-label">Notelayer</span>
+        </div>
+
+        <!-- iOS-style top nav bar -->
+        <div class="nav-bar" id="nu-nav">
+          <button class="nav-btn" id="nu-back" onclick="nuNav(-1)" disabled>‹ Back</button>
+          <span class="nav-title" id="nu-nav-title">Get Started</span>
+          <button class="nav-btn right" id="nu-skip" onclick="nuFinish()">Skip</button>
+        </div>
+
+        <div class="ob-body">
+
+          <!-- Step 1: Video / intro -->
+          <div class="step active" id="nu-1">
+            <p class="step-title">Quick Orientation</p>
+            <div class="video-box">
+              <div class="video-box-icon">▶</div>
+              <p class="video-box-label">Intro walkthrough — task entry, views, Insights</p>
+            </div>
+            <button class="skip-video" onclick="nuGo(2)">Skip intro video →</button>
+            <div class="spacer"></div>
+            <button class="btn-primary" onclick="nuGo(2)">Next</button>
+          </div>
+
+          <!-- Step 2: Contextual cues -->
+          <div class="step" id="nu-2">
+            <p class="step-title">How Notelayer Works</p>
+            <div class="cue-list">
+              <div class="cue"><span class="cue-icon">✓</span><span class="cue-text">Tasks can live in multiple categories at once.</span></div>
+              <div class="cue"><span class="cue-icon">⇅</span><span class="cue-text">Switch views to organise by list, priority, category, or date.</span></div>
+              <div class="cue"><span class="cue-icon">⚙</span><span class="cue-text">Experimental features can be enabled later from settings.</span></div>
+            </div>
+            <p class="step-body" style="margin-top:4px;">This flow can be reopened from Settings anytime.</p>
+            <div class="spacer"></div>
+            <button class="btn-primary" onclick="nuGo(3)">Next</button>
+          </div>
+
+          <!-- Step 3: Preset picker -->
+          <div class="step" id="nu-3">
+            <p class="step-title">Choose Starting Categories</p>
+
+            <div class="preset-card selected" id="preset-eb" onclick="selectPreset('eb')">
+              <div class="preset-card-top">
+                <span class="preset-card-name">Everyday Balance</span>
+                <span class="recommended-badge">Recommended</span>
+                <span class="preset-check" id="chk-eb">●</span>
+              </div>
+              <p class="preset-cats">🧠 Personal  •  💼 Work  •  🏠 Home  •  🩺 Health  •  📈 Finance and Investing  •  🗂️ Someday</p>
+            </div>
+
+            <div class="preset-card" id="preset-la" onclick="selectPreset('la')">
+              <div class="preset-card-top">
+                <span class="preset-card-name">Life Admin</span>
+                <span class="preset-check" id="chk-la">○</span>
+              </div>
+              <p class="preset-cats">📋 Personal Admin  •  🛒 Errands  •  👨‍👩‍👧‍👦 Family and Home  •  🧘 Health and Wellness  •  🏦 Banking and Bills  •  🗂️ Someday</p>
+            </div>
+
+            <div class="preset-card" id="preset-gp" onclick="selectPreset('gp')">
+              <div class="preset-card-top">
+                <span class="preset-card-name">Growth and Projects</span>
+                <span class="preset-check" id="chk-gp">○</span>
+              </div>
+              <p class="preset-cats">🧱 Work Projects  •  🛠️ Personal Projects  •  📚 Learning  •  🤝 Relationships  •  📈 Finance and Investing  •  🗂️ Someday</p>
+            </div>
+
+            <button class="btn-primary" id="nu-start-btn" onclick="nuFinish()">Start with Everyday Balance</button>
+            <button class="btn-link" onclick="nuFinish()">Keep Current Categories</button>
+          </div>
+
+        </div>
+
+        <!-- dots -->
+        <div class="dots">
+          <div class="dot-ind on"  id="nu-d1"></div>
+          <div class="dot-ind"     id="nu-d2"></div>
+          <div class="dot-ind"     id="nu-d3"></div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+
+      <div class="callout" style="margin-top:12px;">
+        <strong>Key differences from previous mockup:</strong><br>
+        Step 3 is a <em>preset picker</em> (verified from WelcomeView.swift) — not a static category list. User selects one of 3 presets; "Everyday Balance" is pre-selected and marked Recommended. "Keep Current Categories" is always available as an escape hatch.
+      </div>
+    </div>
+
+    <!-- ── EXISTING USER ── -->
+    <div>
+      <p class="col-label">Existing User — categories preserved</p>
+      <div class="panel">
+        <div class="panel-bar">
+          <div class="dot" style="background:#FF5F57"></div>
+          <div class="dot" style="background:#FFBD2E"></div>
+          <div class="dot" style="background:#28C840"></div>
+          <span class="panel-bar-label">Notelayer</span>
+        </div>
+
+        <div class="nav-bar">
+          <button class="nav-btn" id="eu-back" onclick="euNav(-1)" disabled>‹ Back</button>
+          <span class="nav-title" id="eu-nav-title">Get Started</span>
+          <button class="nav-btn right" onclick="euFinish()">Skip</button>
+        </div>
+
+        <div class="ob-body">
+
+          <!-- Step 1 -->
+          <div class="step active" id="eu-1">
+            <p class="step-title">Welcome Back</p>
+            <p class="step-body">Your tasks, notes, and categories are exactly as you left them — nothing was changed on sign-in.</p>
+            <div class="cue-list">
+              <div class="cue"><span class="cue-icon">✓</span><span class="cue-text">Right-click any page to save as task or note.</span></div>
+              <div class="cue"><span class="cue-icon">📋</span><span class="cue-text">4 task views: List, Priority, Category, Date.</span></div>
+              <div class="cue"><span class="cue-icon">📊</span><span class="cue-text">Insights to track your productivity over time.</span></div>
+              <div class="cue"><span class="cue-icon">⌨</span><span class="cue-text">Shortcut: Cmd+Shift+L (Mac) / Ctrl+Shift+L.</span></div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn-primary" onclick="euGo(2)">Next</button>
+          </div>
+
+          <!-- Step 2: Their categories, untouched -->
+          <div class="step" id="eu-2">
+            <p class="step-title">Your Categories</p>
+
+            <div class="existing-banner">
+              <span class="existing-banner-icon">✓</span>
+              <div class="existing-banner-text">
+                <strong>Your categories are ready</strong>
+                <span>We found your existing setup and kept it exactly as-is. Nothing was overwritten.</span>
+              </div>
+            </div>
+
+            <p class="pill-label">Your current categories</p>
+            <div class="pills">
+              <span class="pill" style="background:rgba(255,59,48,.16);border:.5px solid rgba(255,59,48,.3)">🔥 Work</span>
+              <span class="pill" style="background:rgba(52,199,89,.16);border:.5px solid rgba(52,199,89,.3)">🏃 Health</span>
+              <span class="pill" style="background:rgba(79,142,247,.16);border:.5px solid rgba(79,142,247,.3)">💡 Ideas</span>
+              <span class="pill" style="background:rgba(191,90,242,.16);border:.5px solid rgba(191,90,242,.3)">📚 Learning</span>
+              <span class="pill" style="background:rgba(255,149,0,.16);border:.5px solid rgba(255,149,0,.3)">🛒 Errands</span>
+              <span class="pill" style="background:rgba(100,210,255,.16);border:.5px solid rgba(100,210,255,.3)">💻 Tech</span>
+            </div>
+
+            <p class="step-body" style="font-size:12px;">
+              You can always add, edit, or reorder categories from <strong style="color:var(--text-1)">⋯ → Manage Categories</strong>.
+            </p>
+            <div class="spacer"></div>
+            <!-- Neutral CTA — no action implied -->
+            <button class="btn-primary" onclick="euGo(3)">Continue</button>
+          </div>
+
+          <!-- Step 3: Tips -->
+          <div class="step" id="eu-3">
+            <p class="step-title">Quick Tips</p>
+            <div class="cue-list">
+              <div class="cue"><span class="cue-icon">🖱</span><span class="cue-text">Right-click selected text on any page to save it instantly.</span></div>
+              <div class="cue"><span class="cue-icon">✏</span><span class="cue-text">Tap any task to edit, set priority, or add a due date.</span></div>
+              <div class="cue"><span class="cue-icon">📌</span><span class="cue-text">Pin important notes to keep them at the top.</span></div>
+              <div class="cue"><span class="cue-icon">⟳</span><span class="cue-text">Drag tasks to reorder them in List view.</span></div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn-primary" onclick="euFinish()">Start Using Notelayer</button>
+          </div>
+
+        </div>
+
+        <div class="dots">
+          <div class="dot-ind on" id="eu-d1"></div>
+          <div class="dot-ind"    id="eu-d2"></div>
+          <div class="dot-ind"    id="eu-d3"></div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+
+      <div class="callout" style="margin-top:12px;">
+        <strong>Step 2 differences:</strong><br>
+        Green "Your categories are ready" banner. Shows their <em>actual</em> categories. CTA is "Continue" (neutral — implies no change). No "Looks Good" — that phrase implies approving something that happened.
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SECTION 2 — CATEGORY MANAGER
+══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <h2>Category Manager — Reset &amp; Restore</h2>
+    <p>New buttons at the bottom of the sheet · Left: snapshot exists (most returning users) · Right: no snapshot yet (first time opening manager)</p>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- WITH SNAPSHOT -->
+    <div>
+      <p class="col-label">Snapshot exists — Restore available</p>
+      <div class="catmgr">
+        <div class="catmgr-header">
+          <button class="catmgr-header-close">✕</button>
+          <span class="catmgr-title">Manage Categories</span>
+        </div>
+        <div class="catmgr-body">
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#FF3B30"></div>
+              <span class="cat-icon">🔥</span>
+              <span class="cat-name">Work</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#34C759"></div>
+              <span class="cat-icon">🏃</span>
+              <span class="cat-name">Health</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#4F8EF7"></div>
+              <span class="cat-icon">💡</span>
+              <span class="cat-name">Ideas</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#BF5AF2"></div>
+              <span class="cat-icon">📚</span>
+              <span class="cat-name">Learning</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <hr class="div">
+
+          <div class="action-block">
+            <button class="btn-restore">
+              <span class="btn-restore-icon">↩</span>
+              <div class="btn-restore-text">
+                <strong>Restore My Categories</strong>
+                <span>Bring back your last saved category setup</span>
+              </div>
+            </button>
+
+            <button class="btn-reset" id="rs1" onclick="primeReset('rs1','rt1')">
+              <span class="btn-reset-icon">⚠</span>
+              <div class="btn-reset-text">
+                <strong id="rt1">Reset to Defaults</strong>
+                <span>Replace all categories with the 8 built-in defaults</span>
+              </div>
+            </button>
+          </div>
+
+          <p class="snap-note">Categories auto-snapshotted on each edit</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:12px;">
+        <strong>Restore</strong> appears only when <code>notelayer_cat_snapshot</code> exists in chrome.storage.local. Tap <strong>Reset</strong> once to prime (text changes to "Tap again to confirm") — tap again to execute. Snapshot is saved before reset fires.
+      </div>
+    </div>
+
+    <!-- WITHOUT SNAPSHOT -->
+    <div>
+      <p class="col-label">No snapshot yet — Restore hidden</p>
+      <div class="catmgr">
+        <div class="catmgr-header">
+          <button class="catmgr-header-close">✕</button>
+          <span class="catmgr-title">Manage Categories</span>
+        </div>
+        <div class="catmgr-body">
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#4F8EF7"></div>
+              <span class="cat-icon">🏠</span>
+              <span class="cat-name">House &amp; Repairs</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#FF9500"></div>
+              <span class="cat-icon">🔧</span>
+              <span class="cat-name">Garage &amp; Workshop</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#2D9CDB"></div>
+              <span class="cat-icon">💻</span>
+              <span class="cat-name">Tech &amp; Apps</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <div class="cat-row">
+            <div class="cat-row-left">
+              <div class="cat-swatch" style="background:#2F855A"></div>
+              <span class="cat-icon">💰</span>
+              <span class="cat-name">Finance &amp; Admin</span>
+            </div>
+            <div class="cat-row-actions">
+              <button class="cat-act">Edit</button>
+              <button class="cat-act del">Delete</button>
+            </div>
+          </div>
+
+          <hr class="div">
+
+          <div class="action-block">
+            <!-- No restore button — snapshot doesn't exist yet -->
+            <button class="btn-reset" id="rs2" onclick="primeReset('rs2','rt2')">
+              <span class="btn-reset-icon">⚠</span>
+              <div class="btn-reset-text">
+                <strong id="rt2">Reset to Defaults</strong>
+                <span>Replace all categories with the 8 built-in defaults</span>
+              </div>
+            </button>
+          </div>
+
+          <p class="snap-note">Edit any category to create a restorable snapshot</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:12px;">
+        No "Restore" button until the user has made at least one edit. The note at the bottom explains how snapshots are created — passive, no extra steps for the user.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  /* ── New user flow ── */
+  let nuStep = 1;
+  const nuTitles = ['','Get Started','How It Works','Starting Categories'];
+  const nuPresets = { eb:'Everyday Balance', la:'Life Admin', gp:'Growth and Projects' };
+  let nuSelected = 'eb';
+
+  function nuGo(n) {
+    document.getElementById('nu-'+nuStep).classList.remove('active');
+    document.getElementById('nu-d'+nuStep).classList.remove('on');
+    nuStep = n;
+    document.getElementById('nu-'+nuStep).classList.add('active');
+    document.getElementById('nu-d'+nuStep).classList.add('on');
+    document.getElementById('nu-nav-title').textContent = nuTitles[nuStep];
+    document.getElementById('nu-back').disabled = (nuStep === 1);
+  }
+
+  function nuNav(dir) {
+    const next = nuStep + dir;
+    if (next >= 1 && next <= 3) nuGo(next);
+  }
+
+  function nuFinish() {
+    alert('Onboarding complete — launching app.');
+  }
+
+  function selectPreset(id) {
+    ['eb','la','gp'].forEach(p => {
+      document.getElementById('preset-'+p).classList.remove('selected');
+      document.getElementById('chk-'+p).textContent = '○';
+    });
+    document.getElementById('preset-'+id).classList.add('selected');
+    document.getElementById('chk-'+id).textContent = '●';
+    nuSelected = id;
+    document.getElementById('nu-start-btn').textContent = 'Start with ' + nuPresets[id];
+  }
+
+  /* ── Existing user flow ── */
+  let euStep = 1;
+  const euTitles = ['','Get Started','Your Categories','Quick Tips'];
+
+  function euGo(n) {
+    document.getElementById('eu-'+euStep).classList.remove('active');
+    document.getElementById('eu-d'+euStep).classList.remove('on');
+    euStep = n;
+    document.getElementById('eu-'+euStep).classList.add('active');
+    document.getElementById('eu-d'+euStep).classList.add('on');
+    document.getElementById('eu-nav-title').textContent = euTitles[euStep];
+    document.getElementById('eu-back').disabled = (euStep === 1);
+  }
+
+  function euNav(dir) {
+    const next = euStep + dir;
+    if (next >= 1 && next <= 3) euGo(next);
+  }
+
+  function euFinish() {
+    alert('Onboarding complete — launching app.');
+  }
+
+  /* ── Reset button ── */
+  let resetTimers = {};
+
+  function primeReset(btnId, txtId) {
+    const btn = document.getElementById(btnId);
+    const txt = document.getElementById(txtId);
+    if (!btn.classList.contains('primed')) {
+      btn.classList.add('primed');
+      txt.textContent = 'Tap again to confirm reset';
+      resetTimers[btnId] = setTimeout(() => {
+        btn.classList.remove('primed');
+        txt.textContent = 'Reset to Defaults';
+      }, 3000);
+    } else {
+      clearTimeout(resetTimers[btnId]);
+      btn.classList.remove('primed');
+      txt.textContent = 'Reset to Defaults';
+      alert('Categories reset to defaults.\nYour previous categories were snapshotted and can be restored.');
+    }
+  }
+</script>
+
+</body>
+</html>

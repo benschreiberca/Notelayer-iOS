@@ -1,0 +1,43 @@
+.page { display: flex; flex-direction: column; gap: 10px; }
+
+.addCard {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  transition: border-color 0.15s;
+}
+.addFocused { border-color: rgba(255,255,255,0.15); }
+
+.addInput {
+  width: 100%; background: none; border: none;
+  color: var(--text); padding: 14px 16px;
+  font-size: 15px; line-height: 1.5; resize: none; outline: none;
+}
+.addInput::placeholder { color: var(--text2); }
+
+.addFooter {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--border);
+}
+.cancelBtn {
+  background: none; border: none; color: var(--text2);
+  font-size: 14px; padding: 6px 12px;
+}
+.saveBtn {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+  padding: 6px 16px;
+}
+.saveBtn:disabled { opacity: 0.4; }
+
+.empty { color: var(--text2); text-align: center; padding: 32px 0; font-size: 14px; }
+
+.noteList { display: flex; flex-direction: column; gap: 8px; }
+
+.noteCard {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.noteText { font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: var(--text); }
+.noteDate { font-size: 11px; color: var(--text2); }

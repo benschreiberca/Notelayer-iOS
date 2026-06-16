@@ -1,0 +1,18 @@
+{
+  "name": "notelayer-web",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "packages/ui",
+    "packages/hooks",
+    "extension",
+    "webapp"
+  ],
+  "scripts": {
+    "dev:webapp": "npm run dev --workspace=webapp",
+    "dev:extension": "npm run dev --workspace=extension",
+    "build:webapp": "npm run build --workspace=webapp",
+    "build:extension": "npm run build --workspace=extension",
+    "build": "npm run build:webapp && npm run build:extension"
+  }
+}

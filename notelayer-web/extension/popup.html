@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notelayer</title>
+  <link rel="stylesheet" href="src/popup/popup.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Loading -->
+    <div id="view-loading" class="view active">
+      <div class="loading-center">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+
+    <!-- Signed out -->
+    <div id="view-signedout" class="view">
+      <div class="auth-container">
+        <img src="assets/icon48.png" class="auth-logo" alt="Notelayer" />
+        <h1 class="auth-title">Notelayer</h1>
+        <p class="auth-subtitle">Capture from any page, synced to your iPhone</p>
+        <button id="btn-google-signin" class="btn btn-google">
+          <span class="g-icon">G</span> Continue with Google
+        </button>
+        <div class="divider"><span>or</span></div>
+        <button id="btn-webapp-signin" class="btn btn-secondary">Open web app to sign in</button>
+        <p id="auth-error" class="error hidden"></p>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div id="view-main" class="view">
+      <header class="header">
+        <img src="assets/icon16.png" class="header-icon" alt="" />
+        <span class="header-title">Notelayer</span>
+        <button id="btn-signout" class="btn-signout">Sign out</button>
+      </header>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="task">Task</button>
+        <button class="tab" data-tab="note">Note</button>
+      </div>
+
+      <!-- Task tab -->
+      <div id="tab-content-task" class="tab-content active">
+        <div id="source-chip-task" class="source-chip">
+          <span class="source-icon">🔗</span>
+          <span id="source-url-task" class="source-url"></span>
+          <button id="source-clear-task" class="source-clear">✕</button>
+        </div>
+
+        <input id="task-title" type="text" class="input" placeholder="Task title" />
+
+        <div class="priority-row">
+          <button class="priority-btn active" data-priority="high">High</button>
+          <button class="priority-btn" data-priority="medium">Med</button>
+          <button class="priority-btn" data-priority="low">Low</button>
+        </div>
+
+        <div id="category-scroll" class="category-scroll"></div>
+
+        <input id="task-due-date" type="date" class="input input-date" />
+        <textarea id="task-notes" class="input textarea" placeholder="Notes (optional)" rows="2"></textarea>
+
+        <p id="task-error" class="error hidden"></p>
+        <p id="task-success" class="success hidden">✓ Task saved</p>
+        <button id="btn-save-task" class="btn btn-primary">Save Task</button>
+      </div>
+
+      <!-- Note tab -->
+      <div id="tab-content-note" class="tab-content">
+        <div id="source-chip-note" class="source-chip">
+          <span class="source-icon">🔗</span>
+          <span id="source-url-note" class="source-url"></span>
+          <button id="source-clear-note" class="source-clear">✕</button>
+        </div>
+        <textarea id="note-text" class="input textarea" placeholder="Write a note…" rows="5"></textarea>
+        <div class="char-row"><span id="note-char-count">0</span> / 2000</div>
+        <p id="note-error" class="error hidden"></p>
+        <p id="note-success" class="success hidden">✓ Note saved</p>
+        <button id="btn-save-note" class="btn btn-primary">Save Note</button>
+      </div>
+    </div>
+
+  </div>
+  <script type="module" src="src/popup/popup.ts"></script>
+</body>
+</html>

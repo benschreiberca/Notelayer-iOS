@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD 11: Notelayer Chrome Extension v1.5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        header .meta {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        nav {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            display: block;
+            padding: 16px 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: #f0f0f0;
+            border-bottom-color: #667eea;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        section {
+            margin-bottom: 50px;
+            scroll-margin-top: 100px;
+        }
+
+        section h2 {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        section h3 {
+            font-size: 1.3em;
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        section h4 {
+            font-size: 1.1em;
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .value-prop {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin: 15px 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .mvp {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .mvp h3 {
+            margin-top: 0;
+        }
+
+        .mvp.mvp1 {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .mvp.mvp2 {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.05);
+        }
+
+        .mvp-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .mvp1 .mvp-badge {
+            background: #667eea;
+            color: white;
+        }
+
+        .mvp2 .mvp-badge {
+            background: #764ba2;
+            color: white;
+        }
+
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .metric strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .timeline {
+            margin: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-date {
+            width: 120px;
+            font-weight: 600;
+            color: #667eea;
+            padding-right: 20px;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-left: 20px;
+            border-left: 3px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+
+        .timeline-item:last-child .timeline-content {
+            border-left-color: #667eea;
+            border-left-width: 4px;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.85em;
+        }
+
+        .success-criteria {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .success-criteria h4 {
+            color: #22543d;
+            margin-top: 0;
+        }
+
+        .success-criteria ul {
+            margin-left: 20px;
+        }
+
+        .success-criteria li {
+            margin-bottom: 8px;
+        }
+
+        .risk {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .architecture {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-x: auto;
+        }
+
+        footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            padding: 30px 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                flex-direction: column;
+            }
+
+            nav a {
+                padding: 12px 16px;
+            }
+
+            header {
+                padding: 40px 20px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .container {
+                border-radius: 0;
+            }
+        }
+
+        .highlight {
+            background: #fffacd;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Notelayer Chrome Extension</h1>
+            <p>v1.5.0 — Browser Task Capture</p>
+            <div class="meta">
+                <span>Status: Ready for Implementation</span> •
+                <span>Target Launch: 2026-07-14</span> •
+                <span>2026-06-09</span>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#executive">Executive Summary</a></li>
+                <li><a href="#value">Value Proposition</a></li>
+                <li><a href="#functions">Core Functions</a></li>
+                <li><a href="#features">Features (MVP1 vs MVP2)</a></li>
+                <li><a href="#metrics">Success Metrics</a></li>
+                <li><a href="#technical">Technical</a></li>
+                <li><a href="#timeline">Timeline</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <!-- Executive Summary -->
+            <section id="executive">
+                <h2>Executive Summary</h2>
+
+                <p><strong>What:</strong> A Manifest V3 Chrome extension popup (300×400px) that lets users capture tasks while browsing, without reaching for their phone.</p>
+
+                <p><strong>Why now:</strong></p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>iOS v1.5.0 shipped with simpler, focused UX (two-tab navigation, no experimental gates)</li>
+                    <li>Backend (Firebase/Firestore) is stable and multi-platform ready</li>
+                    <li>Browser capture is the #2 most-requested feature</li>
+                    <li>Chrome extension market is high-growth for productivity tools</li>
+                </ul>
+
+                <p><strong>Success looks like:</strong> 200+ installs in first month, 60%+ return user rate, 5–10 tasks per user per day.</p>
+            </section>
+
+            <!-- Value Proposition -->
+            <section id="value">
+                <h2>Value Proposition</h2>
+
+                <div class="value-prop">
+                    <strong>For Existing Notelayer Users:</strong> Capture tasks from your browser without reaching for your phone. No friction, no context switch.
+                </div>
+
+                <div class="value-prop">
+                    <strong>For New Users:</strong> Try Notelayer on desktop before committing to the iOS app. Same Firebase account, instant sync across devices.
+                </div>
+
+                <div class="value-prop">
+                    <strong>For High-Volume Capturers:</strong> Add 20–30 tasks per day with one-click category and priority tagging.
+                </div>
+
+                <div class="value-prop">
+                    <strong>For the Product:</strong> Expands Notelayer into a high-intent context (web browsing) and enables future desktop (macOS) and wearable (Watch) expansion.
+                </div>
+            </section>
+
+            <!-- Core Functions -->
+            <section id="functions">
+                <h2>Core Functions</h2>
+
+                <h3>Authentication</h3>
+                <p>Allow users to sign in with email/password or Google account. Token stored securely in browser storage. Auto-refresh before expiration.</p>
+
+                <h3>Task Capture</h3>
+                <p>Text field accepts 1–200 character task description. Direct write to Firestore (same database as iOS app). Show success/error feedback.</p>
+
+                <h3>Category Selection</h3>
+                <p>Dropdown loads user's categories from Firestore. "Uncategorized" as fallback. Selector remembers last choice for rapid-fire adding.</p>
+
+                <h3>Priority Assignment</h3>
+                <p>Four-button toggle (Low / Medium / High / Urgent). Default: Medium. Preference persisted for next session.</p>
+
+                <h3>Theme Management</h3>
+                <p>Detect system dark/light preference on open. Allow manual toggle. Use iOS app's accent color from user's theme settings.</p>
+
+                <h3>Session Management</h3>
+                <p>Sign out link clears token and shows auth screen on next open. Account settings managed via iOS app or Firebase console (not in extension).</p>
+            </section>
+
+            <!-- Features: MVP1 vs MVP2 -->
+            <section id="features">
+                <h2>Features: MVP1 vs MVP2</h2>
+
+                <div class="comparison">
+                    <div class="mvp mvp1">
+                        <span class="mvp-badge">MVP1 — v1.5.0</span>
+                        <h3 style="margin-top: 0;">Launch Ready</h3>
+                        <p><strong>Timeline:</strong> July 2026</p>
+
+                        <h4>✓ Included</h4>
+                        <ul class="feature-list">
+                            <li>Popup UI (300×400px)</li>
+                            <li>Email/password auth</li>
+                            <li>Google Sign-In via OAuth</li>
+                            <li>Task text input</li>
+                            <li>Category selector (dropdown)</li>
+                            <li>Priority selector (4 buttons)</li>
+                            <li>Direct Firestore write</li>
+                            <li>Light/dark theme toggle</li>
+                            <li>Success/error toasts</li>
+                            <li>Token refresh logic</li>
+                            <li>Sign out functionality</li>
+                        </ul>
+
+                        <h4>✗ Not Included</h4>
+                        <ul class="feature-list" style="list-style: none; color: #999;">
+                            <li style="text-decoration: line-through;">Right-click context menu</li>
+                            <li style="text-decoration: line-through;">Full task list in popup</li>
+                            <li style="text-decoration: line-through;">Offline queue</li>
+                            <li style="text-decoration: line-through;">Task editing/deletion</li>
+                            <li style="text-decoration: line-through;">Keyboard shortcut</li>
+                            <li style="text-decoration: line-through;">Page title auto-capture</li>
+                        </ul>
+                    </div>
+
+                    <div class="mvp mvp2">
+                        <span class="mvp-badge">MVP2 — v1.6+</span>
+                        <h3 style="margin-top: 0;">Enhanced Power User</h3>
+                        <p><strong>Timeline:</strong> Q3/Q4 2026</p>
+
+                        <h4>✓ New in MVP2</h4>
+                        <ul class="feature-list">
+                            <li>Right-click "Add to Notelayer" menu</li>
+                            <li>Keyboard shortcut (Ctrl/Cmd+Shift+N)</li>
+                            <li>Auto-populate task with page title</li>
+                            <li>Tab URL capture (optional)</li>
+                            <li>Offline task queue</li>
+                            <li>Task editing from popup</li>
+                            <li>Recent tasks quick list</li>
+                            <li>Sync status indicator</li>
+                            <li>Task templates</li>
+                        </ul>
+
+                        <h4>v1.7+ (Chrome Side Panel)</h4>
+                        <ul class="feature-list" style="list-style: none; color: #999;">
+                            <li>Full-height side panel (Chrome Side Panel API)</li>
+                            <li>Complete task list view</li>
+                            <li>Task detail/edit view</li>
+                            <li>Filter by category/priority</li>
+                            <li>Full task CRUD from panel</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Why This Split?</h3>
+                <p><strong>MVP1 (v1.5) Focus:</strong> Single responsibility — capture, nothing else. Popup with text field + category + priority + save. Minimal scope, maximum reliability.</p>
+                <p><strong>MVP2 (v1.6) Expansion:</strong> Power user features. Context menu, keyboard shortcuts, offline support, editing. Builds on stable MVP1 foundation.</p>
+                <p><strong>MVP2+ (v1.7) Vision:</strong> Full-featured desktop task manager via Chrome Side Panel. Separate project, but built on same Firebase backend.</p>
+            </section>
+
+            <!-- Success Metrics & Measurement -->
+            <section id="metrics">
+                <h2>Success Metrics & Measurement</h2>
+
+                <h3>Launch Metrics (First Month)</h3>
+                <table>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Target</th>
+                        <th>Measurement Method</th>
+                    </tr>
+                    <tr>
+                        <td>Extension installs</td>
+                        <td>200+</td>
+                        <td>Chrome Web Store analytics</td>
+                    </tr>
+                    <tr>
+                        <td>Active users (30-day)</td>
+                        <td>80+</td>
+                        <td>Firestore document count with <code>createdFrom: "chrome-extension"</code></td>
+                    </tr>
+                    <tr>
+                        <td>Tasks captured</td>
+                        <td>2,000+</td>
+                        <td>Firestore tasks collection filter</td>
+                    </tr>
+                    <tr>
+                        <td>Return user rate</td>
+                        <td>60%+</td>
+                        <td>% of users with 2+ tasks</td>
+                    </tr>
+                    <tr>
+                        <td>Uninstall rate</td>
+                        <td>&lt; 5%</td>
+                        <td>Chrome Web Store analytics</td>
+                    </tr>
+                </table>
+
+                <h3>Engagement Metrics (Ongoing)</h3>
+                <div class="metric">
+                    <strong>Tasks per Active User per Day</strong>
+                    Target: 5–10 | Measurement: Firestore timestamps + user segmentation
+                </div>
+
+                <div class="metric">
+                    <strong>Time-to-Save</strong>
+                    Target: &lt; 15 seconds | Measurement: Client-side timer (popup open → save complete)
+                </div>
+
+                <div class="metric">
+                    <strong>Auth Completion Rate</strong>
+                    Target: 75%+ | Measurement: Firestore successful auth tokens / popup opens
+                </div>
+
+                <div class="metric">
+                    <strong>Error Rate</strong>
+                    Target: &lt; 2% | Measurement: Failed Firestore writes / total attempts
+                </div>
+
+                <div class="metric">
+                    <strong>Crash Rate</strong>
+                    Target: 0% | Measurement: Chrome error reporting + Sentry logs
+                </div>
+
+                <h3>Qualitative Metrics</h3>
+                <div class="metric">
+                    <strong>Chrome Web Store Rating</strong>
+                    Target: 4.5+ stars | Measurement: CWS review section
+                </div>
+
+                <div class="metric">
+                    <strong>Support Volume</strong>
+                    Target: &lt; 5 tickets/week | Measurement: Email support + GitHub issues
+                </div>
+
+                <h3>Analytics Instrumentation</h3>
+                <p>Add metadata to every task written by extension:</p>
+                <pre>{
+  "taskId": "uuid",
+  "title": "...",
+  "categories": ["cat-id"],
+  "priority": 1,
+  "completed": false,
+  "createdAt": timestamp,
+  "createdFrom": "chrome-extension",
+  "authMethod": "email" | "google",
+  "theme": "light" | "dark"
+}</pre>
+
+                <p><strong>No third-party analytics:</strong> Chrome Web Store policies restrict trackers in privacy-focused products. Use Firestore metadata + Chrome Web Store built-in analytics only.</p>
+            </section>
+
+            <!-- Technical Specifications -->
+            <section id="technical">
+                <h2>Technical Specifications</h2>
+
+                <h3>Architecture</h3>
+                <div class="architecture">manifest.json
+popup/
+  popup.html         (UI skeleton)
+  popup.css          (Styling)
+  popup.js           (UI logic)
+auth/
+  auth.js            (Firebase auth setup)
+  oauth.html         (Google OAuth redirect)
+firebase/
+  config.js          (API keys, setup)
+  firestore.js       (Task CRUD)
+  sync.js            (Token refresh)
+storage/
+  local-storage.js   (chrome.storage wrapper)
+  cache.js           (Category cache)
+icons/
+  icon-16.png
+  icon-48.png
+  icon-128.png
+background.js        (Service worker)</div>
+
+                <h3>Technology Stack</h3>
+                <table>
+                    <tr>
+                        <th>Layer</th>
+                        <th>Technology</th>
+                        <th>Why</th>
+                    </tr>
+                    <tr>
+                        <td>Manifest</td>
+                        <td>Manifest V3</td>
+                        <td>Required by Chrome; V2 deprecated</td>
+                    </tr>
+                    <tr>
+                        <td>UI</td>
+                        <td>HTML/CSS/JS (vanilla)</td>
+                        <td>Lightweight, no build step, small bundle</td>
+                    </tr>
+                    <tr>
+                        <td>Auth</td>
+                        <td>Firebase JS SDK v9</td>
+                        <td>Modular, tree-shakeable, same as iOS</td>
+                    </tr>
+                    <tr>
+                        <td>Database</td>
+                        <td>Firestore (shared with iOS)</td>
+                        <td>No backend work; same data model</td>
+                    </tr>
+                    <tr>
+                        <td>Storage</td>
+                        <td>chrome.storage.local</td>
+                        <td>Persistent, secure, browser-managed</td>
+                    </tr>
+                </table>
+
+                <h3>File Size Target</h3>
+                <p><strong>&lt; 500 KB (zipped)</strong></p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>Firebase JS SDK v9 + auth: ~200 KB</li>
+                    <li>HTML/CSS/JS logic: ~50 KB</li>
+                    <li>Icons + assets: ~20 KB</li>
+                    <li>Overhead: ~30 KB</li>
+                </ul>
+
+                <h3>Security</h3>
+                <h4>Authentication & Authorization</h4>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>Firebase token stored in <code>chrome.storage.local</code> (sandboxed)</li>
+                    <li>Token lifetime: 1 hour; auto-refresh before expiration</li>
+                    <li>Google OAuth via <code>chrome.identity.launchWebAuthFlow()</code> (secure browser-mediated)</li>
+                    <li>All communication over HTTPS</li>
+                </ul>
+
+                <h4>Data Privacy</h4>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>No page content captured (no browsing history)</li>
+                    <li>No keystroke patterns, timing data, or cross-site tracking</li>
+                    <li>All data written to user's own Firestore (not a separate database)</li>
+                    <li>Encryption in transit (HTTPS) and at rest (Firestore)</li>
+                </ul>
+
+                <h4>Permissions</h4>
+                <pre>{
+  "permissions": [
+    "storage",              // chrome.storage.local
+    "identity"              // Google OAuth
+  ],
+  "host_permissions": [
+    "https://firestore.googleapis.com/*"
+  ]
+}</pre>
+
+                <h3>Firestore Collections</h3>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li><code>tasks</code> — new tasks written by extension</li>
+                    <li><code>users/{userId}/categories</code> — load user's categories for dropdown</li>
+                    <li><code>users/{userId}</code> — load theme accent color</li>
+                </ul>
+
+                <p><strong>No new Firestore rules needed.</strong> Existing rules already allow authenticated writes.</p>
+            </section>
+
+            <!-- Timeline & Roadmap -->
+            <section id="timeline">
+                <h2>Timeline & Roadmap</h2>
+
+                <h3>Development Timeline (v1.5.0)</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026-06-09</div>
+                        <div class="timeline-content">
+                            <strong>PRD approved, development begins</strong>
+                            <p>Set up project structure, Firebase config, GitHub branch.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026-06-23</div>
+                        <div class="timeline-content">
+                            <strong>Development complete</strong>
+                            <p>Core UI, auth, Firestore writes, category/priority selection.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026-06-30</div>
+                        <div class="timeline-content">
+                            <strong>QA complete, Chrome Web Store submission</strong>
+                            <p>Test on macOS, Windows, Linux. Verify auth flows, error states. Submit to CWS.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026-07-07</div>
+                        <div class="timeline-content">
+                            <strong>CWS review complete (typical 3–7 days)</strong>
+                            <p>Address any feedback, resubmit if needed.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026-07-14</div>
+                        <div class="timeline-content">
+                            <strong>🚀 Public launch</strong>
+                            <p>Extension available on Chrome Web Store. Announce via social, email, website.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Post-Launch Roadmap</h3>
+
+                <h4>v1.6 (Q3 2026)</h4>
+                <div class="card">
+                    <ul style="margin-left: 20px;">
+                        <li>Right-click context menu: "Add to Notelayer"</li>
+                        <li>Keyboard shortcut (Ctrl/Cmd+Shift+N)</li>
+                        <li>Page title auto-capture as task</li>
+                        <li>Offline task queue (sync when back online)</li>
+                        <li>Recent tasks quick list in popup</li>
+                    </ul>
+                </div>
+
+                <h4>v1.7 (Q4 2026)</h4>
+                <div class="card">
+                    <ul style="margin-left: 20px;">
+                        <li>Chrome Side Panel (full-height panel, not just popup)</li>
+                        <li>Complete task list view in side panel</li>
+                        <li>Task detail/edit from side panel</li>
+                        <li>Filter by category/priority/date</li>
+                        <li>Drag-to-reorder and bulk actions</li>
+                    </ul>
+                </div>
+
+                <h4>v1.8+ (2027)</h4>
+                <div class="card">
+                    <ul style="margin-left: 20px;">
+                        <li>Link/article saving to tasks</li>
+                        <li>Integration with Zapier/IFTTT/Make</li>
+                        <li>Team/shared workspaces (if added to iOS)</li>
+                        <li>Advanced search and filtering</li>
+                        <li>Browser history integration</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Dependencies & Risks -->
+            <section id="dependencies">
+                <h2>Dependencies & Risks</h2>
+
+                <h3>Critical Dependencies</h3>
+                <table>
+                    <tr>
+                        <th>Dependency</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                    </tr>
+                    <tr>
+                        <td>iOS v1.5.0 shipped</td>
+                        <td>✓ Ready</td>
+                        <td>iOS team</td>
+                    </tr>
+                    <tr>
+                        <td>Firebase project (shared with iOS)</td>
+                        <td>✓ Ready</td>
+                        <td>Backend team</td>
+                    </tr>
+                    <tr>
+                        <td>Chrome OAuth credentials</td>
+                        <td>✓ Ready</td>
+                        <td>Ben Schreiber</td>
+                    </tr>
+                    <tr>
+                        <td>Chrome Web Store developer account</td>
+                        <td>✓ Ready</td>
+                        <td>Ben Schreiber</td>
+                    </tr>
+                </table>
+
+                <h3>Known Risks & Mitigations</h3>
+
+                <div class="risk">
+                    <strong>Firebase auth in Chrome MV3 is finicky</strong>
+                    <br>Mitigation: Thorough testing on macOS, Windows, Linux. Test both email/password and Google OAuth. Have fallback flow if one method fails.
+                </div>
+
+                <div class="risk">
+                    <strong>Chrome Web Store review might reject for unclear reason</strong>
+                    <br>Mitigation: Ensure single purpose ("Task capture"), privacy policy linked, no deceptive content, no permissions without justification.
+                </div>
+
+                <div class="risk">
+                    <strong>Users without iOS app don't understand onboarding</strong>
+                    <br>Mitigation: In popup, show clear CTA: "Sign up or log in to get started." Link to Notelayer website in privacy section.
+                </div>
+
+                <div class="risk">
+                    <strong>Category list is stale if user adds categories in iOS app while extension is open</strong>
+                    <br>Mitigation: Refresh category list on every popup open. Document that new categories appear on next extension open.
+                </div>
+            </section>
+
+            <!-- Success Criteria -->
+            <section id="success">
+                <h2>Success Criteria (Ship Blockers)</h2>
+
+                <div class="success-criteria">
+                    <h4>Extension v1.5.0 is ready to ship when ALL of these are true:</h4>
+                    <ul>
+                        <li>☐ Popup UI renders correctly (all components visible, no layout issues)</li>
+                        <li>☐ Email/password auth works on Chrome stable, beta, canary</li>
+                        <li>☐ Google Sign-In works on Chrome stable, beta, canary</li>
+                        <li>☐ Task save writes correctly to Firestore (verified in console)</li>
+                        <li>☐ Categories load and display correctly from user's account</li>
+                        <li>☐ Priority selector saves all 4 options correctly</li>
+                        <li>☐ Error states display correctly (network, auth, quota errors)</li>
+                        <li>☐ Extension works on macOS, Windows, Linux</li>
+                        <li>☐ Privacy policy linked and accurate</li>
+                        <li>☐ Chrome Web Store submission accepted without changes</li>
+                        <li>☐ At least 1 alpha tester reports successful usage + positive feedback</li>
+                        <li>☐ No unresolved P1/P2 bugs</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p><strong>PRD_11: Notelayer Chrome Extension v1.5</strong></p>
+            <p>Prepared by: Claude (Haiku 4.5) | Date: 2026-06-09 | Status: Ready for Implementation</p>
+            <p>Based on platform exploration document (2026-04-11)</p>
+        </footer>
+    </div>
+</body>
+</html>

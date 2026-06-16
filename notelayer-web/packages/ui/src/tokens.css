@@ -1,0 +1,83 @@
+:root {
+  /* Backgrounds */
+  --bg-base: #0F0F0F;
+  --bg-surface-1: #1C1C1E;
+  --bg-surface-2: #2C2C2E;
+  --bg-surface-3: #3A3A3C;
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-tertiary: rgba(255, 255, 255, 0.30);
+
+  /* Border */
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Accent — Indigo, matching iOS ThemeManager default */
+  --accent: #6366F1;
+  --accent-hover: #4F46E5;
+  --accent-active: #4338CA;
+  --accent-dim: rgba(99, 102, 241, 0.18);
+  --accent-light: #A5B4FC;
+
+  /* Priority */
+  --priority-high: #FF3B30;
+  --priority-high-bg: rgba(255, 59, 48, 0.16);
+  --priority-medium: #FF9500;
+  --priority-medium-bg: rgba(255, 149, 0, 0.16);
+  --priority-low: #34C759;
+  --priority-low-bg: rgba(52, 199, 89, 0.16);
+  --priority-deferred: rgba(255, 255, 255, 0.30);
+  --priority-deferred-bg: rgba(255, 255, 255, 0.08);
+
+  /* Status */
+  --success: #34C759;
+  --destructive: #FF3B30;
+
+  /* Typography families — matching iOS DesignSystem.swift */
+  --font-display: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body: 'Work Sans', -apple-system, sans-serif;
+
+  /* Typography sizes */
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-md: 15px;
+  --font-lg: 17px;
+  --font-xl: 20px;
+
+  /* Font weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 100px;
+  --radius-priority: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-md: 200ms ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}

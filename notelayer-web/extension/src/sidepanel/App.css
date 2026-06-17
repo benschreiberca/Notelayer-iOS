@@ -2,11 +2,12 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: var(--font-body, 'Work Sans', -apple-system, sans-serif);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Shell — iridescent overlay matching iOS wallpaper */
+/* ── Shell ── */
 .app {
   display: flex;
   flex-direction: column;
@@ -17,33 +18,33 @@ html, body, #root {
   position: relative;
 }
 
-/* Subtle iridescent gradient overlay — matches Iridescent Flow wallpaper tint */
+/* Iridescent Flow gradient overlay — matches iOS wallpaper tint */
 .app::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
-    160deg,
-    rgba(99, 102, 241, 0.07) 0%,
-    rgba(168, 85, 247, 0.05) 40%,
-    rgba(236, 72, 153, 0.04) 80%,
+    150deg,
+    rgba(129, 140, 248, 0.10) 0%,
+    rgba(168, 85, 247, 0.07) 35%,
+    rgba(236, 72, 153, 0.05) 70%,
     transparent 100%
   );
   z-index: 0;
 }
 
-/* Tab bar — frosted glass pill matching iOS tab bar style */
+/* ── Tab bar — frosted-glass pill, 2-tab layout ── */
 .tab-bar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px 14px;
-  background: rgba(15, 15, 15, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 20px 16px;
+  background: rgba(17, 24, 39, 0.88);   /* bg-base at 88% */
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border-subtle);
   position: relative;
   z-index: 10;
 }
@@ -52,12 +53,12 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-pill);
   padding: 3px;
   width: 100%;
-  max-width: 320px;
+  max-width: 280px;
 }
 
 .tab-bar__btn {
@@ -66,22 +67,23 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 7px 12px;
-  border-radius: 100px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-family: var(--font-body);
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 .tab-bar__btn--active {
-  background: rgba(99, 102, 241, 0.22);
-  color: var(--accent-light, #A5B4FC);
+  background: rgba(129, 140, 248, 0.20);
+  color: var(--accent-light);
 }
 
 .tab-bar__icon {
@@ -98,7 +100,7 @@ html, body, #root {
   height: 16px;
 }
 
-/* View container */
+/* ── View container ── */
 .view {
   flex: 1;
   overflow: hidden;
@@ -108,7 +110,7 @@ html, body, #root {
   z-index: 1;
 }
 
-/* Loading */
+/* ── Loading spinner ── */
 .loading-full {
   display: flex;
   align-items: center;

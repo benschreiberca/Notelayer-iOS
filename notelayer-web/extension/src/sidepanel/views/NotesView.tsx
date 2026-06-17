@@ -7,9 +7,10 @@ import "./NotesView.css";
 
 interface NotesViewProps {
   uid: string;
+  onClose?: () => void;
 }
 
-export function NotesView({ uid }: NotesViewProps) {
+export function NotesView({ uid, onClose }: NotesViewProps) {
   const { pinned, unpinned, loading } = useNotes(uid);
   const [text, setText] = useState("");
   const [inputExpanded, setInputExpanded] = useState(false);
@@ -54,6 +55,13 @@ export function NotesView({ uid }: NotesViewProps) {
     <div className="notes">
       <div className="notes__header">
         <div className="notes__header-top">
+          {onClose && (
+            <button className="notes__back-btn" onClick={onClose}>
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
           <h1 className="notes__title">Notes</h1>
           <span className="notes__count">{total} {total === 1 ? "note" : "notes"}</span>
         </div>

@@ -13,11 +13,24 @@
 
 .notes__header-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
 }
 
+.notes__back-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--accent-light);
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: -4px;
+  border-radius: var(--radius-sm);
+}
+
 .notes__title {
+  font-family: var(--font-display);
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
@@ -25,6 +38,7 @@
 }
 
 .notes__count {
+  margin-left: auto;
   font-size: var(--font-xs);
   color: var(--text-tertiary);
 }

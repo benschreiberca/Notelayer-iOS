@@ -12,6 +12,7 @@ type ViewMode = "list" | "priority" | "category" | "date";
 interface TodosViewProps {
   uid: string;
   onSignOut: () => void;
+  onOpenNotes: () => void;
 }
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2, deferred: 3 };
@@ -41,7 +42,7 @@ function getDateGroup(dueDate: string | null): string {
 
 const DATE_GROUP_ORDER = ["Overdue", "Today", "Tomorrow", "This Week", "Later", "No Due Date"];
 
-export function TodosView({ uid, onSignOut }: TodosViewProps) {
+export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
   const { tasks } = useTasks(uid);
   const { categories } = useCategories(uid);
   const [mode, setMode] = useState<ViewMode>("list");
@@ -57,6 +58,7 @@ export function TodosView({ uid, onSignOut }: TodosViewProps) {
   const [bulkMode, setBulkMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showMenu, setShowMenu] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   // Drag state
   const dragId = useRef<string | null>(null);
@@ -266,19 +268,30 @@ export function TodosView({ uid, onSignOut }: TodosViewProps) {
           </div>
 
           <div className="todos__header-actions">
+            {/* Notes shortcut */}
+            <button className="todos__notes-btn" onClick={onOpenNotes} title="Notes">
+              <svg viewBox="0 0 20 20" fill="none" width="17" height="17">
+                <rect x="3" y="2" width="14" height="16" rx="3" stroke="currentColor" strokeWidth="1.6"/>
+                <path d="M6.5 7h7M6.5 10.5h7M6.5 14h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+
             <div className="todos__menu-wrap">
-              <button className="todos__menu-btn" onClick={() => setShowMenu(!showMenu)}>⋯</button>
+              <button className="todos__menu-btn" onClick={() => setShowMenu(!showMenu)}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                  <circle cx="10" cy="4"  r="1.5"/>
+                  <circle cx="10" cy="10" r="1.5"/>
+                  <circle cx="10" cy="16" r="1.5"/>
+                </svg>
+              </button>
               {showMenu && (
-                <div className="todos__menu" onMouseLeave={() => setShowMenu(false)}>
-                  <button onClick={() => { setShowCatMgr(true); setShowMenu(false); }}>
-                    Manage Categories
+                <div className="todos__menu" onClick={() => setShowMenu(false)}>
+                  <button onClick={() => setShowCatMgr(true)}>Manage Categories</button>
+                  <button onClick={() => { setBulkMode(!bulkMode); setSelected(new Set()); }}>
+                    {bulkMode ? "Cancel Select" : "Select Tasks"}
                   </button>
-                  <button onClick={() => { setBulkMode(!bulkMode); setSelected(new Set()); setShowMenu(false); }}>
-                    {bulkMode ? "Cancel Select" : "Select"}
-                  </button>
-                  <button onClick={() => { onSignOut(); setShowMenu(false); }}>
-                    Sign Out
-                  </button>
+                  <div className="todos__menu-divider" />
+                  <button onClick={onSignOut} className="todos__menu-item--danger">Sign Out</button>
                 </div>
               )}
             </div>
@@ -357,6 +370,37 @@ export function TodosView({ uid, onSignOut }: TodosViewProps) {
         {mode === "category" && renderCategoryMode()}
         {mode === "date" && renderDateMode()}
       </div>
+
+      {/* FAB — shown on priority/category/date views */}
+      {mode !== "list" && !showDone && (
+        <button className="todos__fab" onClick={() => setFabOpen(true)} title="Add task">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      )}
+
+      {/* FAB sheet — quick-add task from non-list views */}
+      {fabOpen && (
+        <div className="todos__fab-sheet" onClick={(e) => { if (e.target === e.currentTarget) setFabOpen(false); }}>
+          <div className="todos__fab-sheet-inner">
+            <TaskInput
+              title={inputTitle}
+              expanded={inputExpanded}
+              priority={inputPriority}
+              cats={inputCats}
+              due={inputDue}
+              categories={categories}
+              onTitleChange={setInputTitle}
+              onExpand={setInputExpanded}
+              onPriorityChange={setInputPriority}
+              onCatsChange={setInputCats}
+              onDueChange={setInputDue}
+              onSubmit={async () => { await handleAddTask(); setFabOpen(false); }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {editTask && (

@@ -1,79 +1,83 @@
 :root {
-  /* Backgrounds */
-  --bg-base: #0F0F0F;
-  --bg-surface-1: #1C1C1E;
-  --bg-surface-2: #2C2C2E;
-  --bg-surface-3: #3A3A3C;
+  /* ── Backgrounds — iOS gray900/800/700 (Tailwind scale, dark mode) ── */
+  --bg-base: #111827;        /* gray900 — backgroundBase */
+  --bg-surface-1: #1F2937;   /* gray800 — backgroundElevated1 / groups */
+  --bg-surface-2: #374151;   /* gray700 — backgroundElevated2 / cards */
+  --bg-surface-3: #4B5563;   /* gray600 — backgroundElevated3 */
 
-  /* Text */
+  /* ── Text — iOS gray scale ── */
   --text-primary: #FFFFFF;
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-tertiary: rgba(255, 255, 255, 0.30);
+  --text-secondary: #D1D5DB;   /* gray300 — textSecondary */
+  --text-tertiary: #9CA3AF;    /* gray400 — textTertiary */
+  --text-disabled: #4B5563;    /* gray600 — textDisabled */
 
-  /* Border */
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.05);
+  /* ── Border ── */
+  --border-default: #374151;   /* gray700 — borderDefault */
+  --border-subtle: #1F2937;    /* gray800 — borderSubtle */
+  --border-strong: #4B5563;    /* gray600 — borderStrong */
 
-  /* Accent — Indigo, matching iOS ThemeManager default */
-  --accent: #6366F1;
-  --accent-hover: #4F46E5;
-  --accent-active: #4338CA;
-  --accent-dim: rgba(99, 102, 241, 0.18);
-  --accent-light: #A5B4FC;
+  /* ── Accent — dark mode uses indigo400, not indigo500 ── */
+  --accent: #818CF8;              /* indigo400 */
+  --accent-hover: #A5B4FC;        /* indigo300 */
+  --accent-active: #A5B4FC;       /* indigo300 */
+  --accent-dim: rgba(129, 140, 248, 0.18);
+  --accent-light: #A5B4FC;        /* indigo300 */
 
-  /* Priority */
-  --priority-high: #FF3B30;
-  --priority-high-bg: rgba(255, 59, 48, 0.16);
-  --priority-medium: #FF9500;
-  --priority-medium-bg: rgba(255, 149, 0, 0.16);
-  --priority-low: #34C759;
-  --priority-low-bg: rgba(52, 199, 89, 0.16);
-  --priority-deferred: rgba(255, 255, 255, 0.30);
-  --priority-deferred-bg: rgba(255, 255, 255, 0.08);
+  /* ── Priority colors — iOS status palette ── */
+  --priority-high: #F87171;       /* red400 */
+  --priority-high-bg: rgba(248, 113, 113, 0.16);
+  --priority-medium: #FBBF24;     /* amber400 */
+  --priority-medium-bg: rgba(251, 191, 36, 0.16);
+  --priority-low: #4ADE80;        /* green400 */
+  --priority-low-bg: rgba(74, 222, 128, 0.16);
+  --priority-deferred: #9CA3AF;   /* gray400 */
+  --priority-deferred-bg: rgba(156, 163, 175, 0.12);
 
-  /* Status */
-  --success: #34C759;
-  --destructive: #FF3B30;
+  /* ── Status ── */
+  --success: #4ADE80;    /* green400 */
+  --destructive: #F87171; /* red400 */
 
-  /* Typography families — matching iOS DesignSystem.swift */
-  --font-display: 'Space Grotesk', -apple-system, sans-serif;
-  --font-body: 'Work Sans', -apple-system, sans-serif;
+  /* ── Typography families ── */
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Typography sizes */
-  --font-xs: 11px;
-  --font-sm: 13px;
-  --font-md: 15px;
-  --font-lg: 17px;
-  --font-xl: 20px;
+  /* ── Typography sizes — iOS scale ── */
+  --font-xs: 10px;   /* labelSmall */
+  --font-sm: 12px;   /* labelMedium / bodySmall */
+  --font-md: 14px;   /* bodyMedium / labelLarge */
+  --font-lg: 16px;   /* bodyLarge / headingMedium */
+  --font-xl: 20px;   /* headingLarge */
+  --font-2xl: 24px;  /* displayMedium */
 
-  /* Font weights */
+  /* ── Font weights ── */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* Spacing */
+  /* ── Spacing — iOS 4/8/12/16/24/32 scale ── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  --space-8: 32px;
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  /* ── Radius — iOS scale ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-pill: 100px;
+  --radius-pill: 9999px;
   --radius-priority: 8px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  /* ── Shadows (dark mode — heavier) ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.50);
 
-  /* Transitions */
+  /* ── Transitions ── */
   --transition-fast: 120ms ease;
   --transition-md: 200ms ease;
 }

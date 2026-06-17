@@ -1,7 +1,7 @@
 # Notelayer Chrome Extension — Project Status
 
-**Branch:** `web/ui-ios-parity`
-**Last Updated:** 2026-06-17 (auth flow added)
+**Branch:** `claude/notelayer-chrome-extension-0pwV8`
+**Last Updated:** 2026-06-17 (branch consolidated; Firebase CLI blocker documented)
 **Maintainer:** ben@benschreiber.ca
 
 > This is the living status document for the Notelayer web/Chrome-extension
@@ -67,7 +67,7 @@ The design must match the iOS app exactly. Active priority.
 
 ## 5. Current Code Status
 
-**Branch:** `web/ui-ios-parity` (pushed to GitHub).
+**Branch:** `claude/notelayer-chrome-extension-0pwV8` (pushed to GitHub).
 **Repo location of web project:** `notelayer-web/`
 
 ### ✅ Done and working
@@ -102,14 +102,23 @@ Calendar sync (Google + Apple) · Settings/theme polish · Light mode.
 ## 6. Where We Are Right Now
 
 The extension **installs and renders** — side panel loads, sign-in screen shows
-with correct indigo branding and fonts. ✅
+with correct indigo branding and fonts, both Google and Apple buttons present. ✅
 
-**Active blocker: authentication.** The old Google-only `chrome.identity` flow
-failed (OAuth client ID didn't match the unpacked extension ID). Replaced with a
-**web auth flow** (offscreen document → Firebase-hosted `signInWithPopup` page)
-that supports **both Google and Apple**. Code is complete and builds; it needs
-**external console config + a hosting deploy** before it functions — see
-`AUTH_SETUP.md`.
+**Active blocker: Firebase CLI not installed.** Deploying the hosted auth page
+requires the Firebase CLI. Running `firebase deploy --only hosting` on the
+Chromebook returned `-bash: firebase: command not found`.
+
+### Fix: install Firebase CLI first
+
+```bash
+npm install -g firebase-tools
+firebase login          # opens browser for Google auth
+cd ~/Notelayer-iOS
+firebase deploy --only hosting
+```
+
+Then verify the page loads (should be blank, no errors):
+`https://notelayer-c7bba.firebaseapp.com/extension-auth.html`
 
 ### Auth — what's done vs. what you must do
 
@@ -121,6 +130,7 @@ that supports **both Google and Apple**. Code is complete and builds; it needs
 | Google + Apple buttons in AuthScreen | ✅ code done |
 | Manifest `offscreen` permission, removed dead oauth2/identity | ✅ done |
 | Build verified (offscreen.html/js in dist) | ✅ |
+| **Install Firebase CLI** (`npm install -g firebase-tools`) | ⬜ **YOU** (one-time) |
 | **Deploy hosted page** (`firebase deploy --only hosting`) | ⬜ **YOU** |
 | **Enable Google provider** in Firebase Console | ⬜ **YOU** (likely already on) |
 | **Enable Apple provider** (Apple Developer + Firebase) | ⬜ **YOU** |
@@ -134,12 +144,16 @@ that supports **both Google and Apple**. Code is complete and builds; it needs
 ```bash
 # 1. Get the latest code
 cd ~/Notelayer-iOS
-git pull origin web/ui-ios-parity
+git pull origin claude/notelayer-chrome-extension-0pwV8
 
-# 2. Deploy the hosted auth page (required for sign-in to function)
+# 2. Install Firebase CLI (one-time; only needed if not already installed)
+npm install -g firebase-tools
+firebase login
+
+# 3. Deploy the hosted auth page (required for sign-in to function)
 firebase deploy --only hosting
 
-# 3. Rebuild + reload the extension
+# 4. Rebuild + reload the extension
 cd notelayer-web/extension
 rm -rf dist && npm run build
 # chrome://extensions → Reload Notelayer
@@ -167,6 +181,7 @@ Plus, in the **Firebase Console**:
 
 ## Suggested Next Steps (running list — updated each session)
 
+- [ ] Install Firebase CLI: `npm install -g firebase-tools && firebase login`
 - [ ] Deploy `firebase-hosting` so the auth page is live
 - [ ] Enable Google + Apple providers in Firebase Console
 - [ ] Confirm Google sign-in works end-to-end in the side panel
@@ -198,7 +213,7 @@ Plus, in the **Firebase Console**:
 
 ## 9. Key Paths & Facts
 
-- **Branch:** `web/ui-ios-parity`
+- **Branch:** `claude/notelayer-chrome-extension-0pwV8`
 - **Web project root:** `notelayer-web/`
 - **Extension source:** `notelayer-web/extension/`
 - **Build output (load this in Chrome):** `notelayer-web/extension/dist/`

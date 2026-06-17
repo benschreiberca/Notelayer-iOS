@@ -65,6 +65,17 @@
   cursor: not-allowed;
 }
 
+.auth-screen__btn--apple {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+  margin-top: var(--space-1);
+}
+
+.auth-screen__btn--apple:hover:not(:disabled) {
+  background: #ececec;
+}
+
 .auth-screen__btn-spinner {
   display: inline-block;
   width: 16px;

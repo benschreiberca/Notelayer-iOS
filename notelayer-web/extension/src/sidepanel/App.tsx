@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GoogleAuthProvider, signInWithCredential, signOut } from "firebase/auth";
+import { OAuthCredential, signInWithCredential, signOut } from "firebase/auth";
 import { auth } from "@notelayer/shared";
 import { useAuth, useCategories } from "@notelayer/hooks";
 import { AuthScreen } from "./components/AuthScreen";
@@ -53,33 +53,20 @@ export function App() {
     });
   }, [user?.uid, catsLoading]);
 
-  const handleSignIn = async () => {
-    try {
-      const token = await new Promise<string>((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, (tok) => {
-          if (chrome.runtime.lastError || !tok) {
-            reject(chrome.runtime.lastError?.message ?? "No token");
-          } else {
-            resolve(tok);
-          }
-        });
-      });
-      const credential = GoogleAuthProvider.credential(null, token);
-      await signInWithCredential(auth, credential);
-    } catch (err) {
-      console.error("[Notelayer] Sign-in failed:", err);
+  // Sign in via the offscreen Firebase popup flow. Works for "google" | "apple".
+  const handleSignIn = async (provider: "google" | "apple" = "google") => {
+    const result = await chrome.runtime.sendMessage({ action: "firebase-auth", provider });
+    if (!result?.ok) {
+      throw new Error(result?.error || "Sign-in failed");
     }
+    const credential = OAuthCredential.fromJSON(result.credential);
+    if (!credential) {
+      throw new Error("Could not parse sign-in credential.");
+    }
+    await signInWithCredential(auth, credential);
   };
 
   const handleSignOut = async () => {
-    if (user) {
-      const token = await new Promise<string | undefined>((resolve) => {
-        chrome.identity.getAuthToken({ interactive: false }, resolve);
-      });
-      if (token) {
-        chrome.identity.removeCachedAuthToken({ token }, () => {});
-      }
-    }
     await signOut(auth);
   };
 

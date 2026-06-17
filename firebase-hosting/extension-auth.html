@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notelayer — Sign in</title>
+</head>
+<body>
+  <!--
+    This page is loaded inside an invisible iframe by the Notelayer Chrome
+    extension's offscreen document. It runs Firebase signInWithPopup for the
+    requested provider (google | apple) and posts the resulting OAuth
+    credential back to the iframe parent. The extension then completes
+    sign-in with signInWithCredential.
+
+    Hosted at: https://notelayer-c7bba.firebaseapp.com/extension-auth.html
+    (firebaseapp.com is an auto-authorized Firebase Auth domain.)
+  -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import {
+      getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup,
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSf-W3F3gWEyGLZL91lE4ZgJkaAB6Xp1g",
+      authDomain: "notelayer-c7bba.firebaseapp.com",
+      projectId: "notelayer-c7bba",
+      storageBucket: "notelayer-c7bba.firebasestorage.app",
+      messagingSenderId: "762003542605",
+      appId: "1:762003542605:web:cd00261c1d041725294204",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    function buildProvider(id) {
+      if (id === "apple") {
+        const p = new OAuthProvider("apple.com");
+        p.addScope("email");
+        p.addScope("name");
+        return p;
+      }
+      const p = new GoogleAuthProvider();
+      p.addScope("email");
+      p.addScope("profile");
+      return p;
+    }
+
+    function credentialFromResult(id, result) {
+      return id === "apple"
+        ? OAuthProvider.credentialFromResult(result)
+        : GoogleAuthProvider.credentialFromResult(result);
+    }
+
+    window.addEventListener("message", async (event) => {
+      const data = event.data;
+      if (!data || data.target !== "notelayer-auth") return;
+
+      const replyTo = event.source;
+      try {
+        const provider = buildProvider(data.provider);
+        const result = await signInWithPopup(auth, provider);
+        const credential = credentialFromResult(data.provider, result);
+        replyTo.postMessage(
+          { target: "notelayer-auth-result", ok: true, credential: credential.toJSON() },
+          "*",
+        );
+      } catch (err) {
+        replyTo.postMessage(
+          { target: "notelayer-auth-result", ok: false, error: err?.message || String(err) },
+          "*",
+        );
+      }
+    });
+
+    // Tell the parent (offscreen doc) we're ready to receive auth requests.
+    if (window.parent) {
+      window.parent.postMessage({ target: "notelayer-auth-ready" }, "*");
+    }
+  </script>
+</body>
+</html>

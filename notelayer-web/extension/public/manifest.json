@@ -36,7 +36,7 @@
     "storage",
     "activeTab",
     "contextMenus",
-    "identity",
+    "offscreen",
     "sidePanel"
   ],
   "host_permissions": [
@@ -52,9 +52,5 @@
       },
       "description": "Open Notelayer panel"
     }
-  },
-  "oauth2": {
-    "client_id": "762003542605-fisqbvctac1bm2huhpbvigjh6o35g74p.apps.googleusercontent.com",
-    "scopes": ["email", "profile", "openid"]
   }
 }

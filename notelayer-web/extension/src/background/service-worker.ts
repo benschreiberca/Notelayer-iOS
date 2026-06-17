@@ -7,6 +7,49 @@ onAuthStateChanged(auth, (user) => {
   currentUser = user;
 });
 
+/* ── Firebase popup auth via offscreen document ──
+ * The side panel asks the service worker to sign in; the SW spins up an
+ * offscreen document (which hosts the Firebase auth iframe), relays the
+ * request, and returns the resulting OAuth credential to the side panel.
+ */
+const OFFSCREEN_PATH = "offscreen.html";
+
+async function hasOffscreenDocument(): Promise<boolean> {
+  // @ts-expect-error - getContexts is available in recent Chrome
+  if (chrome.runtime.getContexts) {
+    // @ts-expect-error - OFFSCREEN_DOCUMENT context type
+    const contexts = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
+    return contexts.length > 0;
+  }
+  return false;
+}
+
+async function ensureOffscreenDocument(): Promise<void> {
+  if (await hasOffscreenDocument()) return;
+  await chrome.offscreen.createDocument({
+    url: OFFSCREEN_PATH,
+    reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
+    justification: "Firebase Authentication popup (Google / Apple sign-in).",
+  });
+}
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.action !== "firebase-auth") return false;
+  (async () => {
+    try {
+      await ensureOffscreenDocument();
+      const result = await chrome.runtime.sendMessage({
+        target: "offscreen-auth",
+        provider: message.provider,
+      });
+      sendResponse(result);
+    } catch (err: any) {
+      sendResponse({ ok: false, error: err?.message || String(err) });
+    }
+  })();
+  return true; // async response
+});
+
 chrome.runtime.onInstalled.addListener(() => {
   // Open side panel by default on action click
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);

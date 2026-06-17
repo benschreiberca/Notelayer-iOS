@@ -1,7 +1,7 @@
 # Notelayer Chrome Extension — Project Status
 
 **Branch:** `web/ui-ios-parity`
-**Last Updated:** 2026-06-17
+**Last Updated:** 2026-06-17 (auth flow added)
 **Maintainer:** ben@benschreiber.ca
 
 > This is the living status document for the Notelayer web/Chrome-extension
@@ -101,42 +101,82 @@ Calendar sync (Google + Apple) · Settings/theme polish · Light mode.
 
 ## 6. Where We Are Right Now
 
-At the **final step of getting the extension to load.** The code is correct and
-builds cleanly. Remaining: pull the icon fix, rebuild, load in Chrome.
+The extension **installs and renders** — side panel loads, sign-in screen shows
+with correct indigo branding and fonts. ✅
+
+**Active blocker: authentication.** The old Google-only `chrome.identity` flow
+failed (OAuth client ID didn't match the unpacked extension ID). Replaced with a
+**web auth flow** (offscreen document → Firebase-hosted `signInWithPopup` page)
+that supports **both Google and Apple**. Code is complete and builds; it needs
+**external console config + a hosting deploy** before it functions — see
+`AUTH_SETUP.md`.
+
+### Auth — what's done vs. what you must do
+
+| | Status |
+|---|---|
+| Offscreen auth bridge (offscreen.html/ts) | ✅ code done |
+| Service-worker offscreen lifecycle + relay | ✅ code done |
+| Hosted popup page (`firebase-hosting/extension-auth.html`) | ✅ code done |
+| Google + Apple buttons in AuthScreen | ✅ code done |
+| Manifest `offscreen` permission, removed dead oauth2/identity | ✅ done |
+| Build verified (offscreen.html/js in dist) | ✅ |
+| **Deploy hosted page** (`firebase deploy --only hosting`) | ⬜ **YOU** |
+| **Enable Google provider** in Firebase Console | ⬜ **YOU** (likely already on) |
+| **Enable Apple provider** (Apple Developer + Firebase) | ⬜ **YOU** |
 
 ---
 
 ## 7. Next Steps
 
-### Immediate — finish the install (Chromebook)
+### Immediate — make sign-in work (see `AUTH_SETUP.md` for detail)
 
 ```bash
+# 1. Get the latest code
 cd ~/Notelayer-iOS
 git pull origin web/ui-ios-parity
 
+# 2. Deploy the hosted auth page (required for sign-in to function)
+firebase deploy --only hosting
+
+# 3. Rebuild + reload the extension
 cd notelayer-web/extension
-rm -rf dist
-npm run build
-ls dist/assets/          # confirm icon16/32/48/128.png present
+rm -rf dist && npm run build
+# chrome://extensions → Reload Notelayer
 ```
 
-Then in Chrome: `chrome://extensions` → **Reload** (or Load unpacked →
-`…/notelayer-web/extension/dist`).
+Plus, in the **Firebase Console**:
+- Enable **Google** sign-in provider (likely already on).
+- Enable **Apple** sign-in provider (needs Apple Developer Services ID + key).
 
 ### Then
 
-1. Click the Notelayer icon → side panel opens → **Sign in with Google**
-   (same account as iOS).
+1. Side panel → **Continue with Google** (same account as iOS) → should sign in.
 2. **Verify sync:** create a task in the panel → confirm it appears on iPhone
    (and vice versa).
 3. **Review the UI** against iOS — especially Doing/Done and colors — note what
    still looks off.
 
-### After UI is approved
+### After auth + UI are approved
 
 4. Next feature phase. Recommended: **web capture** (right-click +
    text-selection → save to Notelayer) — the extension's unique value over iOS.
 5. Eventually: publish to Chrome Web Store ($5 dev account, upload zipped `dist/`).
+
+---
+
+## Suggested Next Steps (running list — updated each session)
+
+- [ ] Deploy `firebase-hosting` so the auth page is live
+- [ ] Enable Google + Apple providers in Firebase Console
+- [ ] Confirm Google sign-in works end-to-end in the side panel
+- [ ] Configure Apple Developer Services ID for Apple sign-in
+- [ ] Verify real-time task/note sync between extension and iOS
+- [ ] UI review pass against iOS (Doing/Done, colors, spacing)
+- [ ] Build web capture (context menu + text selection)
+- [ ] Web Push reminders
+- [ ] Calendar sync (Google + Apple .ics)
+- [ ] Chrome Web Store submission
 
 ---
 

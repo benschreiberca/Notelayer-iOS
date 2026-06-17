@@ -6,6 +6,8 @@ interface GroupHeaderProps {
   color?: string;
   count: number;
   icon?: string;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function hexAlpha(hex: string, alpha: number): string {
@@ -15,28 +17,39 @@ function hexAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export function GroupHeader({ label, color, count, icon }: GroupHeaderProps) {
+export function GroupHeader({ label, color, count, icon, collapsed, onToggleCollapse }: GroupHeaderProps) {
+  const labelColor = color ? hexAlpha(color, 0.90) : undefined;
+  const countBg    = color ? hexAlpha(color, 0.18) : undefined;
+
   return (
-    <div className="group-header" style={color ? { borderLeftColor: color } : undefined}>
-      <span className="group-header__label" style={color ? { color: hexAlpha(color, 0.85) } : undefined}>
+    <button
+      className={`group-header ${onToggleCollapse ? "group-header--clickable" : ""}`}
+      style={color ? { borderLeftColor: color } : undefined}
+      onClick={onToggleCollapse}
+      disabled={!onToggleCollapse}
+    >
+      <span className="group-header__label" style={labelColor ? { color: labelColor } : undefined}>
         {icon && <span className="group-header__icon">{icon}</span>}
         {label}
       </span>
-      {count > 0 && (
-        <span
-          className="group-header__count"
-          style={
-            color
-              ? {
-                  backgroundColor: hexAlpha(color, 0.18),
-                  color: hexAlpha(color, 0.85),
-                }
-              : undefined
-          }
-        >
-          {count}
-        </span>
-      )}
-    </div>
+
+      <span className="group-header__right">
+        {count > 0 && (
+          <span
+            className="group-header__count"
+            style={color ? { backgroundColor: countBg, color: labelColor } : undefined}
+          >
+            {count}
+          </span>
+        )}
+        {onToggleCollapse && (
+          <span className={`group-header__chevron ${collapsed ? "group-header__chevron--collapsed" : ""}`}>
+            <svg viewBox="0 0 12 12" fill="none" width="10" height="10">
+              <path d="M2 4.5l4 3 4-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        )}
+      </span>
+    </button>
   );
 }

@@ -1,6 +1,7 @@
 import {
   collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
   query, orderBy, writeBatch, getDocs, Timestamp, deleteField,
+  type DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Task, Note, Category } from "./types";
@@ -37,6 +38,22 @@ function normalizeTask(data: Record<string, unknown>): Task {
     createdAt: tsToString(data.createdAt) ?? new Date().toISOString(),
     updatedAt: tsToString(data.updatedAt) ?? new Date().toISOString(),
     createdFrom: data.createdFrom as string | undefined,
+  };
+}
+
+// iOS stores category data WITHOUT an "id" field (doc ID is the ID).
+// iOS uses "order" (int) not "orderIndex". Normalize both.
+function normalizeCategory(snap: DocumentSnapshot): Category {
+  const data = (snap.data() ?? {}) as Record<string, unknown>;
+  const orderIndex =
+    typeof data.orderIndex === "number" ? data.orderIndex :
+    typeof data.order === "number" ? data.order : 0;
+  return {
+    id: snap.id,                          // always use Firestore document ID
+    name: (data.name as string) ?? "",
+    icon: (data.icon as string) ?? "",
+    color: (data.color as string) ?? "#818CF8",
+    orderIndex,
   };
 }
 
@@ -139,15 +156,24 @@ export function subscribeNotes(uid: string, onChange: (notes: Note[]) => void) {
 }
 
 export function subscribeCategories(uid: string, onChange: (cats: Category[]) => void) {
-  const q = query(categoriesCol(uid), orderBy("orderIndex", "asc"));
-  return onSnapshot(q, (snap) => {
-    onChange(snap.docs.map((d) => d.data() as Category));
+  // No orderBy — iOS uses "order", web uses "orderIndex"; sort client-side after normalizing.
+  return onSnapshot(query(categoriesCol(uid)), (snap) => {
+    const cats = snap.docs.map(normalizeCategory);
+    cats.sort((a, b) => a.orderIndex - b.orderIndex);
+    onChange(cats);
   });
 }
 
 export async function saveCategory(uid: string, cat: Omit<Category, "id">): Promise<string> {
   const id = crypto.randomUUID();
-  await setDoc(doc(categoriesCol(uid), id), { ...cat, id });
+  // Write both "order" (iOS) and "orderIndex" (web) so both platforms read it correctly.
+  await setDoc(doc(categoriesCol(uid), id), {
+    name: cat.name,
+    icon: cat.icon,
+    color: cat.color,
+    order: cat.orderIndex,
+    orderIndex: cat.orderIndex,
+  });
   return id;
 }
 
@@ -197,6 +223,7 @@ export async function resetToDefaultCategories(uid: string): Promise<void> {
 }
 
 export async function loadCategories(uid: string): Promise<Category[]> {
-  const snap = await getDocs(query(categoriesCol(uid), orderBy("orderIndex", "asc")));
-  return snap.docs.map((d) => d.data() as Category);
+  const snap = await getDocs(query(categoriesCol(uid)));
+  const cats = snap.docs.map(normalizeCategory);
+  return cats.sort((a, b) => a.orderIndex - b.orderIndex);
 }

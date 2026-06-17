@@ -59,6 +59,15 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showMenu, setShowMenu] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleCollapse = (key: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   // Drag state
   const dragId = useRef<string | null>(null);
@@ -184,14 +193,19 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
         {groups.map((p) => {
           const group = filtered.filter((t) => t.priority === p);
           if (group.length === 0) return null;
+          const key = `priority-${String(p)}`;
+          const isCollapsed = collapsed.has(key);
+          const color = p === "high" ? "#F87171" : p === "medium" ? "#FBBF24" : p === "low" ? "#4ADE80" : undefined;
           return (
-            <div key={String(p)} className="todos__group">
+            <div key={key} className="todos__group">
               <GroupHeader
                 label={getPriorityLabel(p)}
-                color={p === "high" ? "#FF3B30" : p === "medium" ? "#FF9500" : p === "low" ? "#34C759" : undefined}
+                color={color}
                 count={group.length}
+                collapsed={isCollapsed}
+                onToggleCollapse={() => toggleCollapse(key)}
               />
-              {group.map((task) => (
+              {!isCollapsed && group.map((task) => (
                 <TaskRow key={task.id} task={task} categories={categories} onToggle={handleToggle} onEdit={setEditTask} />
               ))}
             </div>
@@ -208,10 +222,19 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
         {categories.map((cat) => {
           const group = filtered.filter((t) => t.categories.includes(cat.id));
           if (group.length === 0) return null;
+          const key = `cat-${cat.id}`;
+          const isCollapsed = collapsed.has(key);
           return (
-            <div key={cat.id} className="todos__group">
-              <GroupHeader label={cat.name} color={cat.color} count={group.length} icon={cat.icon} />
-              {group.map((task) => (
+            <div key={key} className="todos__group">
+              <GroupHeader
+                label={cat.name}
+                color={cat.color}
+                count={group.length}
+                icon={cat.icon}
+                collapsed={isCollapsed}
+                onToggleCollapse={() => toggleCollapse(key)}
+              />
+              {!isCollapsed && group.map((task) => (
                 <TaskRow key={task.id} task={task} categories={categories} onToggle={handleToggle} onEdit={setEditTask} />
               ))}
             </div>
@@ -219,8 +242,13 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
         })}
         {uncategorized.length > 0 && (
           <div className="todos__group">
-            <GroupHeader label="Uncategorized" count={uncategorized.length} />
-            {uncategorized.map((task) => (
+            <GroupHeader
+              label="Uncategorized"
+              count={uncategorized.length}
+              collapsed={collapsed.has("cat-uncategorized")}
+              onToggleCollapse={() => toggleCollapse("cat-uncategorized")}
+            />
+            {!collapsed.has("cat-uncategorized") && uncategorized.map((task) => (
               <TaskRow key={task.id} task={task} categories={categories} onToggle={handleToggle} onEdit={setEditTask} />
             ))}
           </div>
@@ -235,14 +263,19 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
         {DATE_GROUP_ORDER.map((group) => {
           const groupTasks = filtered.filter((t) => getDateGroup(t.dueDate) === group);
           if (groupTasks.length === 0) return null;
+          const key = `date-${group}`;
+          const isCollapsed = collapsed.has(key);
+          const color = group === "Overdue" ? "#F87171" : group === "Today" ? "#818CF8" : undefined;
           return (
-            <div key={group} className="todos__group">
+            <div key={key} className="todos__group">
               <GroupHeader
                 label={group}
-                color={group === "Overdue" ? "#FF3B30" : group === "Today" ? "#4F8EF7" : undefined}
+                color={color}
                 count={groupTasks.length}
+                collapsed={isCollapsed}
+                onToggleCollapse={() => toggleCollapse(key)}
               />
-              {groupTasks.map((task) => (
+              {!isCollapsed && groupTasks.map((task) => (
                 <TaskRow key={task.id} task={task} categories={categories} onToggle={handleToggle} onEdit={setEditTask} />
               ))}
             </div>

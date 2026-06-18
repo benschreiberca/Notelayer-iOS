@@ -13,14 +13,26 @@
   background: var(--bg-surface-1);
   border-top: 1px solid var(--border-default);
   border-radius: 20px 20px 0 0;
-  padding: 20px 20px 32px;
+  padding: 0 0 32px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-surface-3);
+  margin: 8px auto 0;
 }
 
 .theme-sheet__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-default);
+  margin-bottom: 4px;
 }
 
 .theme-sheet__title {
@@ -34,18 +46,127 @@
 .theme-sheet__close {
   background: none;
   border: none;
-  color: var(--accent-light);
+  color: var(--accent);
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   cursor: pointer;
   padding: 4px 0;
 }
 
-.theme-sheet__swatches {
+/* Sections */
+.theme-sheet__section {
+  padding: 12px 20px 0;
+}
+
+.theme-sheet__section-label {
+  display: block;
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Mode segment */
+.theme-sheet__seg {
+  display: flex;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+}
+
+.theme-sheet__seg-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.theme-sheet__seg-btn--active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+}
+
+/* Wallpaper grid */
+.theme-sheet__wallpapers {
+  display: flex;
+  gap: 6px;
+}
+
+.theme-sheet__wallpaper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+  position: relative;
+}
+
+.theme-sheet__wallpaper--active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.theme-sheet__wallpaper:hover:not(.theme-sheet__wallpaper--active) {
+  border-color: var(--border-strong);
+}
+
+.theme-sheet__wallpaper-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-sheet__wallpaper-name {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+.theme-sheet__wallpaper--active .theme-sheet__wallpaper-name {
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+}
+
+.theme-sheet__wallpaper-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Accent swatches */
+.theme-sheet__accents {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 3px;
+  margin-bottom: 6px;
 }
 
 .theme-sheet__swatch {
@@ -58,35 +179,37 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .theme-sheet__swatch--active {
   border-color: rgba(255, 255, 255, 0.80);
-  transform: scale(1.12);
+  transform: scale(1.14);
 }
 
 .theme-sheet__swatch:hover:not(.theme-sheet__swatch--active) {
-  transform: scale(1.06);
+  transform: scale(1.07);
 }
 
-.theme-sheet__labels {
+.theme-sheet__accent-labels {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: 3px;
 }
 
-.theme-sheet__label {
+.theme-sheet__accent-label {
   flex: 1;
   text-align: center;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--text-tertiary);
   font-weight: var(--weight-medium);
-  letter-spacing: 0.01em;
-  transition: color 120ms ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.theme-sheet__label--active {
-  color: var(--accent-light);
+.theme-sheet__accent-label--active {
+  color: var(--accent);
   font-weight: var(--weight-semibold);
 }

@@ -3,11 +3,12 @@ html, body, #root {
   margin: 0;
   padding: 0;
   font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 440;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Cascade font-family explicitly to all interactive elements */
 button, input, textarea, select {
   font-family: inherit;
 }
@@ -23,30 +24,24 @@ button, input, textarea, select {
   position: relative;
 }
 
-/* Iridescent Flow gradient overlay — matches iOS wallpaper tint */
+/* Wallpaper overlay — from iOS ThemeWallpaperCatalog */
 .app::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    150deg,
-    rgba(129, 140, 248, 0.10) 0%,
-    rgba(168, 85, 247, 0.07) 35%,
-    rgba(236, 72, 153, 0.05) 70%,
-    transparent 100%
-  );
+  background: var(--wallpaper-overlay);
   z-index: 0;
 }
 
-/* ── Tab bar — frosted-glass pill, 2-tab layout ── */
+/* ── Tab bar — frosted pill ── */
 .tab-bar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 8px 20px 16px;
-  background: rgba(17, 24, 39, 0.88);   /* bg-base at 88% */
+  background: rgba(17, 24, 39, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid var(--border-subtle);
@@ -54,16 +49,26 @@ button, input, textarea, select {
   z-index: 10;
 }
 
+[data-theme="light"] .tab-bar {
+  background: rgba(243, 244, 246, 0.90);
+  border-top-color: var(--border-default);
+}
+
 .tab-bar__inner {
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius-pill);
   padding: 3px;
   width: 100%;
   max-width: 280px;
+}
+
+[data-theme="light"] .tab-bar__inner {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .tab-bar__btn {
@@ -87,8 +92,12 @@ button, input, textarea, select {
 }
 
 .tab-bar__btn--active {
-  background: rgba(129, 140, 248, 0.20);
+  background: var(--accent-dim);
   color: var(--accent-light);
+}
+
+[data-theme="light"] .tab-bar__btn--active {
+  color: var(--accent);
 }
 
 .tab-bar__icon {

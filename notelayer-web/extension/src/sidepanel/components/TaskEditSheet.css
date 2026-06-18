@@ -1,7 +1,7 @@
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.55);
   z-index: 100;
   display: flex;
   align-items: flex-end;
@@ -10,22 +10,24 @@
 
 .sheet {
   width: 100%;
-  max-height: 90vh;
+  max-height: 92vh;
   background: var(--bg-surface-1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   display: flex;
   flex-direction: column;
-  animation: slide-up 0.2s ease;
+  animation: slide-up 0.22s ease;
 }
 
 @keyframes fade-in {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 @keyframes slide-up {
   from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  to   { transform: translateY(0); }
 }
 
 .sheet__handle {
@@ -49,8 +51,9 @@
 .sheet__cancel {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--accent);
   font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   padding: 4px;
 }
@@ -62,20 +65,32 @@
   margin: 0;
 }
 
-.sheet__save {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: var(--font-sm);
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-  padding: 4px;
+.sheet__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.sheet__save:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.sheet__saved {
+  font-size: var(--font-xs);
+  color: var(--success);
+  font-weight: var(--weight-semibold);
+  animation: fade-in 0.15s ease;
 }
+
+.sheet__cal-btn {
+  background: none;
+  border: none;
+  color: var(--accent-light);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.sheet__cal-btn:hover { opacity: 0.75; }
 
 .sheet__body {
   flex: 1;
@@ -107,6 +122,7 @@
   padding: 10px 12px;
   color: var(--text-primary);
   font-size: var(--font-md);
+  font-weight: var(--weight-medium);
   outline: none;
 }
 
@@ -118,6 +134,10 @@
   color-scheme: dark;
 }
 
+[data-theme="light"] .sheet__input--date {
+  color-scheme: light;
+}
+
 .sheet__textarea {
   background: var(--bg-surface-2);
   border: 1px solid var(--border-default);
@@ -125,7 +145,7 @@
   padding: 10px 12px;
   color: var(--text-primary);
   font-size: var(--font-sm);
-  line-height: 1.5;
+  line-height: 1.6;
   outline: none;
   resize: none;
 }
@@ -134,6 +154,7 @@
   border-color: var(--accent);
 }
 
+/* Priority */
 .sheet__priority-row {
   display: flex;
   gap: 6px;
@@ -147,39 +168,22 @@
   background: var(--bg-surface-2);
   color: var(--text-secondary);
   font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.sheet__priority-btn--active.sheet__priority-btn--high {
-  background: var(--priority-high-bg);
-  border-color: var(--priority-high);
-  color: var(--priority-high);
-}
-
-.sheet__priority-btn--active.sheet__priority-btn--medium {
-  background: var(--priority-medium-bg);
-  border-color: var(--priority-medium);
-  color: var(--priority-medium);
-}
-
-.sheet__priority-btn--active.sheet__priority-btn--low {
-  background: var(--priority-low-bg);
-  border-color: var(--priority-low);
-  color: var(--priority-low);
-}
-
-.sheet__priority-btn--active.sheet__priority-btn--deferred {
-  background: var(--priority-deferred-bg);
-  border-color: var(--priority-deferred);
-  color: var(--priority-deferred);
-}
+.sheet__priority-btn--active.sheet__priority-btn--high     { background: var(--priority-high-bg); border-color: var(--priority-high); color: var(--priority-high); }
+.sheet__priority-btn--active.sheet__priority-btn--medium   { background: var(--priority-medium-bg); border-color: var(--priority-medium); color: var(--priority-medium); }
+.sheet__priority-btn--active.sheet__priority-btn--low      { background: var(--priority-low-bg); border-color: var(--priority-low); color: var(--priority-low); }
+.sheet__priority-btn--active.sheet__priority-btn--deferred { background: var(--priority-deferred-bg); border-color: var(--priority-deferred); color: var(--priority-deferred); }
 
 .sheet__priority-btn--active:not([class*="--high"]):not([class*="--medium"]):not([class*="--low"]):not([class*="--deferred"]) {
   background: var(--bg-surface-3);
   color: var(--text-primary);
 }
 
+/* Categories — unselected shows at 75% opacity, not 40% */
 .sheet__cats {
   display: flex;
   flex-wrap: wrap;
@@ -195,27 +199,32 @@
   cursor: pointer;
   padding: 0;
   position: relative;
+  opacity: 0.75;
+  transition: opacity var(--transition-fast);
 }
 
 .sheet__cat-btn--selected {
   opacity: 1;
 }
 
-.sheet__cat-btn:not(.sheet__cat-btn--selected) {
-  opacity: 0.5;
+.sheet__cat-btn:hover {
+  opacity: 0.9;
 }
 
 .sheet__cat-check {
   font-size: 10px;
   color: var(--success);
+  font-weight: var(--weight-bold);
 }
 
+/* Delete */
 .sheet__delete {
   background: none;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   color: var(--destructive);
   font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
   padding: 10px;
   cursor: pointer;
   transition: background var(--transition-fast);
@@ -224,4 +233,5 @@
 .sheet__delete--confirm {
   background: var(--priority-high-bg);
   border-color: var(--destructive);
+  font-weight: var(--weight-semibold);
 }

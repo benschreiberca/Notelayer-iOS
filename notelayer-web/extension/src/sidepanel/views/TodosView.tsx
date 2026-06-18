@@ -79,9 +79,13 @@ export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosVie
     });
   };
 
-  // Drag state
+  // Drag state — top-level tasks
   const dragId = useRef<string | null>(null);
   const dragOverId = useRef<string | null>(null);
+
+  // Drag state — subtasks (within a parent)
+  const subtaskDragId = useRef<string | null>(null);
+  const subtaskDragOverId = useRef<string | null>(null);
 
   const active = tasks.filter((t) => !t.isCompleted);
   const done = tasks.filter((t) => t.isCompleted);
@@ -118,20 +122,30 @@ export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosVie
 
   const handleDrop = async () => {
     if (!dragId.current || !dragOverId.current || dragId.current === dragOverId.current) {
-      dragId.current = null;
-      dragOverId.current = null;
-      return;
+      dragId.current = null; dragOverId.current = null; return;
     }
     const listOrder = [...filtered].sort((a, b) => b.orderIndex - a.orderIndex);
     const fromIdx = listOrder.findIndex((t) => t.id === dragId.current);
-    const toIdx = listOrder.findIndex((t) => t.id === dragOverId.current);
+    const toIdx   = listOrder.findIndex((t) => t.id === dragOverId.current);
     const reordered = [...listOrder];
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
-    const updates = reordered.map((t, i) => ({ id: t.id, orderIndex: reordered.length - i }));
-    await reorderTasks(uid, updates);
-    dragId.current = null;
-    dragOverId.current = null;
+    await reorderTasks(uid, reordered.map((t, i) => ({ id: t.id, orderIndex: reordered.length - i })));
+    dragId.current = null; dragOverId.current = null;
+  };
+
+  const handleSubtaskDrop = async (children: Task[]) => {
+    const from = subtaskDragId.current;
+    const to   = subtaskDragOverId.current;
+    subtaskDragId.current = null; subtaskDragOverId.current = null;
+    if (!from || !to || from === to) return;
+    const fromIdx = children.findIndex((t) => t.id === from);
+    const toIdx   = children.findIndex((t) => t.id === to);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const reordered = [...children];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    await reorderTasks(uid, reordered.map((t, i) => ({ id: t.id, orderIndex: reordered.length - i })));
   };
 
   const toggleSelect = (id: string) => {
@@ -203,17 +217,24 @@ export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosVie
                   dragHandleProps={{ draggable: false, onMouseDown: (e) => e.stopPropagation() }}
                 />
               )}
-              {/* Subtasks */}
+              {/* Subtasks — draggable within parent */}
               {children.length > 0 && isExpanded && (
                 <div className="todos__subtasks">
                   {children.map((sub) => (
-                    <TaskRow
+                    <div
                       key={sub.id}
-                      task={sub}
-                      categories={categories}
-                      onToggle={handleToggle}
-                      onEdit={setEditTask}
-                    />
+                      draggable
+                      onDragStart={() => { subtaskDragId.current = sub.id; }}
+                      onDragOver={(e) => { e.preventDefault(); subtaskDragOverId.current = sub.id; }}
+                      onDrop={() => handleSubtaskDrop(children)}
+                    >
+                      <TaskRow
+                        task={sub}
+                        categories={categories}
+                        onToggle={handleToggle}
+                        onEdit={setEditTask}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -339,14 +360,6 @@ export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosVie
           </div>
 
           <div className="todos__header-actions">
-            {/* Notes shortcut */}
-            <button className="todos__notes-btn" onClick={onOpenNotes} title="Notes">
-              <svg viewBox="0 0 20 20" fill="none" width="17" height="17">
-                <rect x="3" y="2" width="14" height="16" rx="3" stroke="currentColor" strokeWidth="1.6"/>
-                <path d="M6.5 7h7M6.5 10.5h7M6.5 14h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </button>
-
             <div className="todos__menu-wrap">
               <button className="todos__menu-btn" onClick={() => setShowMenu(!showMenu)}>
                 <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -357,7 +370,8 @@ export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosVie
               </button>
               {showMenu && (
                 <div className="todos__menu" onClick={() => setShowMenu(false)}>
-                  <button onClick={onOpenTheme}>Themes</button>
+                  <button onClick={onOpenTheme}>Appearance</button>
+                  <button onClick={onOpenNotes}>Notes</button>
                   <button onClick={() => setShowCatMgr(true)}>Manage Categories</button>
                   <button onClick={() => { setBulkMode(!bulkMode); setSelected(new Set()); }}>
                     {bulkMode ? "Cancel Select" : "Select Tasks"}

@@ -1,53 +1,51 @@
 :root {
-  /* ── Backgrounds — iOS gray900/800/700 (Tailwind scale, dark mode) ── */
-  --bg-base: #111827;        /* gray900 — backgroundBase */
-  --bg-surface-1: #1F2937;   /* gray800 — backgroundElevated1 / groups */
-  --bg-surface-2: #374151;   /* gray700 — backgroundElevated2 / cards */
-  --bg-surface-3: #4B5563;   /* gray600 — backgroundElevated3 */
+  /* ── Backgrounds — iOS gray900/800/700 dark mode ── */
+  --bg-base: #111827;        /* gray900 */
+  --bg-surface-1: rgba(31, 41, 55, 0.88);   /* gray800 + slight transparency */
+  --bg-surface-2: rgba(55, 65, 81, 0.90);   /* gray700 */
+  --bg-surface-3: rgba(75, 85, 99, 0.92);   /* gray600 */
 
-  /* ── Text — iOS gray scale ── */
+  /* ── Text ── */
   --text-primary: #FFFFFF;
-  --text-secondary: #D1D5DB;   /* gray300 — textSecondary */
-  --text-tertiary: #9CA3AF;    /* gray400 — textTertiary */
-  --text-disabled: #4B5563;    /* gray600 — textDisabled */
+  --text-secondary: #D1D5DB;   /* gray300 */
+  --text-tertiary: #9CA3AF;    /* gray400 */
+  --text-disabled: #4B5563;    /* gray600 */
 
   /* ── Border ── */
-  --border-default: #374151;   /* gray700 — borderDefault */
-  --border-subtle: #1F2937;    /* gray800 — borderSubtle */
-  --border-strong: #4B5563;    /* gray600 — borderStrong */
+  --border-default: rgba(55, 65, 81, 0.7);   /* gray700 */
+  --border-subtle: rgba(31, 41, 55, 0.6);    /* gray800 */
+  --border-strong: #4B5563;    /* gray600 */
 
-  /* ── Accent — dark mode uses indigo400, not indigo500 ── */
-  --accent: #818CF8;              /* indigo400 */
-  --accent-hover: #A5B4FC;        /* indigo300 */
-  --accent-active: #A5B4FC;       /* indigo300 */
+  /* ── Accent — dark mode: indigo400 ── */
+  --accent: #818CF8;
+  --accent-hover: #A5B4FC;
+  --accent-active: #A5B4FC;
   --accent-dim: rgba(129, 140, 248, 0.18);
-  --accent-light: #A5B4FC;        /* indigo300 */
+  --accent-light: #A5B4FC;
 
-  /* ── Priority colors — iOS status palette ── */
-  --priority-high: #F87171;       /* red400 */
+  /* ── Priority ── */
+  --priority-high: #F87171;
   --priority-high-bg: rgba(248, 113, 113, 0.16);
-  --priority-medium: #FBBF24;     /* amber400 */
+  --priority-medium: #FBBF24;
   --priority-medium-bg: rgba(251, 191, 36, 0.16);
-  --priority-low: #4ADE80;        /* green400 */
+  --priority-low: #4ADE80;
   --priority-low-bg: rgba(74, 222, 128, 0.16);
-  --priority-deferred: #9CA3AF;   /* gray400 */
+  --priority-deferred: #9CA3AF;
   --priority-deferred-bg: rgba(156, 163, 175, 0.12);
 
   /* ── Status ── */
-  --success: #4ADE80;    /* green400 */
-  --destructive: #F87171; /* red400 */
+  --success: #4ADE80;
+  --destructive: #F87171;
 
-  /* ── Typography families ── */
+  /* ── Typography ── */
   --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  /* ── Typography sizes — iOS scale ── */
-  --font-xs: 10px;   /* labelSmall */
-  --font-sm: 12px;   /* labelMedium / bodySmall */
-  --font-md: 14px;   /* bodyMedium / labelLarge */
-  --font-lg: 16px;   /* bodyLarge / headingMedium */
-  --font-xl: 20px;   /* headingLarge */
-  --font-2xl: 24px;  /* displayMedium */
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-2xl: 24px;
 
   /* ── Font weights ── */
   --weight-regular: 400;
@@ -55,7 +53,7 @@
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* ── Spacing — iOS 4/8/12/16/24/32 scale ── */
+  /* ── Spacing ── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -64,7 +62,7 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  /* ── Radius — iOS scale ── */
+  /* ── Radius ── */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -72,7 +70,7 @@
   --radius-pill: 9999px;
   --radius-priority: 8px;
 
-  /* ── Shadows (dark mode — heavier) ── */
+  /* ── Shadows (dark) ── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.40);
   --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.50);
@@ -80,6 +78,62 @@
   /* ── Transitions ── */
   --transition-fast: 120ms ease;
   --transition-md: 200ms ease;
+
+  /* ── Wallpaper gradient ── */
+  --wallpaper-overlay: linear-gradient(
+    150deg,
+    rgba(129, 140, 248, 0.10) 0%,
+    rgba(168, 85, 247, 0.07) 35%,
+    rgba(236, 72, 153, 0.05) 70%,
+    transparent 100%
+  );
+}
+
+/* ── Light mode — iOS gray100/white/indigo500 ── */
+[data-theme="light"] {
+  --bg-base: #F3F4F6;        /* gray100 */
+  --bg-surface-1: rgba(249, 250, 251, 0.92);  /* gray50 */
+  --bg-surface-2: rgba(255, 255, 255, 0.96);  /* white */
+  --bg-surface-3: rgba(229, 231, 235, 0.95);  /* gray200 */
+
+  --text-primary: #111827;   /* gray900 */
+  --text-secondary: #374151; /* gray700 */
+  --text-tertiary: #6B7280;  /* gray500 */
+  --text-disabled: #9CA3AF;  /* gray400 */
+
+  --border-default: rgba(209, 213, 219, 0.8); /* gray300 */
+  --border-subtle: rgba(229, 231, 235, 0.7);  /* gray200 */
+  --border-strong: #9CA3AF;  /* gray400 */
+
+  --accent: #6366F1;           /* indigo500 — light mode */
+  --accent-hover: #4F46E5;     /* indigo600 */
+  --accent-active: #4F46E5;
+  --accent-dim: rgba(99, 102, 241, 0.12);
+  --accent-light: #818CF8;     /* indigo400 */
+
+  --priority-high: #EF4444;
+  --priority-high-bg: rgba(239, 68, 68, 0.12);
+  --priority-medium: #F59E0B;
+  --priority-medium-bg: rgba(245, 158, 11, 0.12);
+  --priority-low: #22C55E;
+  --priority-low-bg: rgba(34, 197, 94, 0.12);
+  --priority-deferred: #6B7280;
+  --priority-deferred-bg: rgba(107, 114, 128, 0.10);
+
+  --success: #22C55E;
+  --destructive: #EF4444;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.07);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  --wallpaper-overlay: linear-gradient(
+    150deg,
+    rgba(0, 210, 255, 0.18) 0%,
+    rgba(123, 47, 247, 0.13) 40%,
+    rgba(255, 79, 216, 0.10) 75%,
+    transparent 100%
+  );
 }
 
 *, *::before, *::after {

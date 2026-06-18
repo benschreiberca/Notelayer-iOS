@@ -4,10 +4,14 @@ import { auth } from "@notelayer/shared";
 import { useAuth, useCategories } from "@notelayer/hooks";
 import { AuthScreen } from "./components/AuthScreen";
 import { OnboardingFlow } from "./components/OnboardingFlow";
+import { ThemeSheet, loadSavedTheme } from "./components/ThemeSheet";
 import { TodosView } from "./views/TodosView";
 import { NotesView } from "./views/NotesView";
 import { InsightsView } from "./views/InsightsView";
 import "./App.css";
+
+// Apply saved accent colour before first render
+loadSavedTheme();
 
 type Tab = "todos" | "insights";
 
@@ -32,6 +36,7 @@ export function App() {
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("todos");
   const [showNotes, setShowNotes] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { categories, loading: catsLoading } = useCategories(user?.uid ?? null);
 
@@ -106,12 +111,14 @@ export function App() {
 
   return (
     <div className="app">
+      {showTheme && <ThemeSheet onClose={() => setShowTheme(false)} />}
       <div className="view">
         {activeTab === "todos" && (
           <TodosView
             uid={user.uid}
             onSignOut={handleSignOut}
             onOpenNotes={() => setShowNotes(true)}
+            onOpenTheme={() => setShowTheme(true)}
           />
         )}
         {activeTab === "insights" && <InsightsView uid={user.uid} />}

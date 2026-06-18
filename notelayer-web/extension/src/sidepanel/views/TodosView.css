@@ -353,6 +353,14 @@
 
 .todos__empty p { margin: 0; }
 
+/* ── Subtasks ── */
+.todos__subtasks {
+  padding-left: 20px;
+  border-left: 2px solid var(--border-default);
+  margin-left: 20px;
+  margin-bottom: 4px;
+}
+
 /* ── Bulk select ── */
 .todos__bulk-row {
   display: flex;

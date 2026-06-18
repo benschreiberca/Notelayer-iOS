@@ -13,6 +13,7 @@ interface TodosViewProps {
   uid: string;
   onSignOut: () => void;
   onOpenNotes: () => void;
+  onOpenTheme: () => void;
 }
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2, deferred: 3 };
@@ -42,7 +43,7 @@ function getDateGroup(dueDate: string | null): string {
 
 const DATE_GROUP_ORDER = ["Overdue", "Today", "Tomorrow", "This Week", "Later", "No Due Date"];
 
-export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
+export function TodosView({ uid, onSignOut, onOpenNotes, onOpenTheme }: TodosViewProps) {
   const { tasks } = useTasks(uid);
   const { categories } = useCategories(uid);
   const [mode, setMode] = useState<ViewMode>("list");
@@ -60,6 +61,15 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+
+  const toggleParent = (id: string) => {
+    setExpandedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const toggleCollapse = (key: string) => {
     setCollapsed((prev) => {
@@ -134,57 +144,85 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
 
   const listSorted = [...filtered].sort((a, b) => b.orderIndex - a.orderIndex);
 
-  const renderListMode = () => (
-    <div className="todos__list">
-      {!showDone && (
-        <TaskInput
-          title={inputTitle}
-          expanded={inputExpanded}
-          priority={inputPriority}
-          cats={inputCats}
-          due={inputDue}
-          categories={categories}
-          onTitleChange={setInputTitle}
-          onExpand={setInputExpanded}
-          onPriorityChange={setInputPriority}
-          onCatsChange={setInputCats}
-          onDueChange={setInputDue}
-          onSubmit={handleAddTask}
-        />
-      )}
-      {listSorted.length === 0 && (
-        <EmptyState text={showDone ? "No completed tasks" : "No tasks — add one above"} />
-      )}
-      {listSorted.map((task) => (
-        <div
-          key={task.id}
-          draggable={!showDone && !bulkMode}
-          onDragStart={() => handleDragStart(task.id)}
-          onDragOver={(e) => { e.preventDefault(); handleDragOver(task.id); }}
-          onDrop={handleDrop}
-          style={{ cursor: bulkMode ? "default" : undefined }}
-        >
-          {bulkMode ? (
-            <div className="todos__bulk-row" onClick={() => toggleSelect(task.id)}>
-              <div className={`todos__bulk-check ${selected.has(task.id) ? "todos__bulk-check--on" : ""}`} />
-              <TaskRow task={task} categories={categories} onToggle={() => {}} onEdit={() => {}} />
+  const renderListMode = () => {
+    // Separate top-level tasks from subtasks
+    const topLevel = listSorted.filter((t) => !t.parentTaskId);
+    const subtaskMap = new Map<string, Task[]>();
+    listSorted.filter((t) => !!t.parentTaskId).forEach((t) => {
+      const kids = subtaskMap.get(t.parentTaskId!) ?? [];
+      kids.push(t);
+      subtaskMap.set(t.parentTaskId!, kids);
+    });
+
+    return (
+      <div className="todos__list">
+        {!showDone && (
+          <TaskInput
+            title={inputTitle}
+            expanded={inputExpanded}
+            priority={inputPriority}
+            cats={inputCats}
+            due={inputDue}
+            categories={categories}
+            onTitleChange={setInputTitle}
+            onExpand={setInputExpanded}
+            onPriorityChange={setInputPriority}
+            onCatsChange={setInputCats}
+            onDueChange={setInputDue}
+            onSubmit={handleAddTask}
+          />
+        )}
+        {topLevel.length === 0 && (
+          <EmptyState text={showDone ? "No completed tasks" : "No tasks — add one above"} />
+        )}
+        {topLevel.map((task) => {
+          const children = subtaskMap.get(task.id) ?? [];
+          const isExpanded = expandedParents.has(task.id);
+          return (
+            <div
+              key={task.id}
+              draggable={!showDone && !bulkMode}
+              onDragStart={() => handleDragStart(task.id)}
+              onDragOver={(e) => { e.preventDefault(); handleDragOver(task.id); }}
+              onDrop={handleDrop}
+            >
+              {bulkMode ? (
+                <div className="todos__bulk-row" onClick={() => toggleSelect(task.id)}>
+                  <div className={`todos__bulk-check ${selected.has(task.id) ? "todos__bulk-check--on" : ""}`} />
+                  <TaskRow task={task} categories={categories} onToggle={() => {}} onEdit={() => {}} />
+                </div>
+              ) : (
+                <TaskRow
+                  task={task}
+                  categories={categories}
+                  onToggle={handleToggle}
+                  onEdit={setEditTask}
+                  childCount={children.length}
+                  expanded={isExpanded}
+                  onToggleExpand={children.length > 0 ? () => toggleParent(task.id) : undefined}
+                  dragHandleProps={{ draggable: false, onMouseDown: (e) => e.stopPropagation() }}
+                />
+              )}
+              {/* Subtasks */}
+              {children.length > 0 && isExpanded && (
+                <div className="todos__subtasks">
+                  {children.map((sub) => (
+                    <TaskRow
+                      key={sub.id}
+                      task={sub}
+                      categories={categories}
+                      onToggle={handleToggle}
+                      onEdit={setEditTask}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <TaskRow
-              task={task}
-              categories={categories}
-              onToggle={handleToggle}
-              onEdit={setEditTask}
-              dragHandleProps={{
-                draggable: false,
-                onMouseDown: (e) => e.stopPropagation(),
-              }}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderPriorityMode = () => {
     const groups = ["high", "medium", "low", "deferred", null] as Priority[];
@@ -319,6 +357,7 @@ export function TodosView({ uid, onSignOut, onOpenNotes }: TodosViewProps) {
               </button>
               {showMenu && (
                 <div className="todos__menu" onClick={() => setShowMenu(false)}>
+                  <button onClick={onOpenTheme}>Themes</button>
                   <button onClick={() => setShowCatMgr(true)}>Manage Categories</button>
                   <button onClick={() => { setBulkMode(!bulkMode); setSelected(new Set()); }}>
                     {bulkMode ? "Cancel Select" : "Select Tasks"}

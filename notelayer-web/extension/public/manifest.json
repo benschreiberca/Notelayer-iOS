@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Notelayer",
-  "version": "2.0.0",
-  "description": "Capture notes and tasks from the web — synced with your Notelayer app.",
+  "version": "1.1.0",
+  "description": "Your Notelayer tasks and notes, right in your browser. Real-time sync with your iPhone app.",
   "action": {
     "default_title": "Notelayer",
     "default_icon": {
@@ -37,7 +37,8 @@
     "activeTab",
     "contextMenus",
     "offscreen",
-    "sidePanel"
+    "sidePanel",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.firebaseapp.com/*",

@@ -24,7 +24,7 @@ The single hardest requirement: **100% adherence to the existing design system**
 ## 2. Goals & Non-Goals
 
 ### Goals
-- A native Mac app on Apple Silicon with full Notes / To-Dos / Insights parity.
+- A native Mac app on Apple Silicon with full To-Dos / Insights parity, plus a product decision on whether to resurface Notes (hidden since v1.5.0).
 - A focused Apple Watch app: quick capture (incl. voice), today/triage list, complete/snooze.
 - One shared design-token source of truth driving all three platforms.
 - Real-time sync continuity (Firebase) across iOS ↔ Mac ↔ Watch ↔ Share Extension.
@@ -62,7 +62,7 @@ All paths relative to `ios-swift/Notelayer/Notelayer/` unless noted.
 
 ### App shell / navigation
 - `App/NotelayerApp.swift` (363) — `@main`, `@UIApplicationDelegateAdaptor` ⚠️ (UIKit AppDelegate), deep linking, Firebase config, APNS.
-- `Views/RootTabsView.swift` (395) — bottom capsule tab bar (Notes/To-Dos/Insights), voice FAB.
+- `Views/RootTabsView.swift` (395) — floating pill tab bar with **2 visible tabs: To-Dos + Insights** (`visibleTabs = [.todos, .insights]`). Notes tab hidden since v1.5.0 ("F1: Hide Notes tab from bottom navigation") — `NotesView.swift` code preserved but not exposed. Voice FAB above tab bar.
 - Core screens: `TodosView.swift` (1,886), `InsightsView.swift` (1,192), `AppearanceView.swift` (845), `NotesView.swift`, plus task editors/sheets.
 
 ### Targets today
@@ -94,8 +94,8 @@ We keep the tokens identical but adapt the **navigation chrome** to each platfor
 
 | Surface | Shell | Token usage |
 | --- | --- | --- |
-| iOS | Bottom capsule tab bar (existing) | 100% shared tokens |
-| Mac | `NavigationSplitView` (sidebar: Notes/To-Dos/Insights) | Same accent, type ramp, surface tint, wallpaper as window background |
+| iOS | Floating pill tab bar — **2 tabs: To-Dos + Insights** (Notes hidden since v1.5.0) | 100% shared tokens |
+| Mac | `NavigationSplitView` sidebar: To-Dos · Insights · Settings (Notes: see §12 open decision) | Same accent, type ramp, surface tint, wallpaper as window background |
 | Watch | `TabView` page style / `NavigationStack` lists | Same accent + priority colors; type scaled to watch metrics |
 
 The **cards, chips, badges, buttons, colors, and typography ramp are byte-identical** because they come from `NotelayerKit`. Only the container differs.
@@ -120,7 +120,7 @@ This becomes the visual QA gate per the existing `ui-consistency` command.
 
 | Feature | iOS (existing) | Mac | Watch |
 | --- | --- | --- | --- |
-| **Navigation shell** | Floating pill tab bar at bottom (3 tabs: Notes, To-Dos, Insights). Tab bar hides when keyboard is visible. `RootTabsView.swift` | `NavigationSplitView` sidebar: Notes · To-Dos · Insights · Settings. Sidebar can collapse. Full macOS menu bar (⌘N, ⌘⇧N, ⌘F, ⌘,). | `TabView` (page style) or `NavigationStack`. Triage · Capture · Settings. Digital Crown scrolls lists. |
+| **Navigation shell** | Floating pill tab bar — **2 tabs: To-Dos + Insights**. Notes tab hidden from nav since v1.5.0 (`visibleTabs = [.todos, .insights]`). Tab bar hides when keyboard visible. `RootTabsView.swift`. | `NavigationSplitView` sidebar: To-Dos · Insights · Settings. Notes: see §12 open decision. Sidebar collapsible. Full macOS menu bar (⌘N, ⌘F, ⌘,). | `TabView` (page style) or `NavigationStack`. Triage · Capture · Settings. Digital Crown scrolls lists. |
 | **Active tab indicator** | Accent-color tint on active pill. `DesignSystem.swift` → `accent` token. | Sidebar row highlight using `accent` token. | Selected page indicator dot using `accent` token. |
 | **Deep linking** | `NSNotificationCenter` posts open specific tasks from reminders (`NotelayerApp.swift:363`). | Menu commands + `NSUserActivity` for task focus. | Tap notification → opens task on Watch. |
 | **Keyboard hide/show** | Tab bar hides when keyboard is visible. | N/A (physical keyboard; toolbar stays). | N/A (Scribble / dictation, no keyboard). |
@@ -129,24 +129,25 @@ This becomes the visual QA gate per the existing `ui-consistency` command.
 
 ### 5B. Notes
 
-> iOS implementation: `Views/NotesView.swift`, `Views/Shared/InsetCard.swift`. Design: `InsetCard` with `theme.tokens.groupFill` background + `theme.tokens.cardStroke` border.
+> **Current iOS status (v1.5.0):** Notes tab is **hidden from navigation** by design decision ("F1: Hide Notes tab"). `NotesView.swift` code is preserved but `visibleTabs = [.todos, .insights]` excludes it. Notes data model and sync remain intact.
+>
+> **Open product decision for Mac/Watch (§12):** Mac has sidebar space where Notes could be re-surfaced without the iOS nav-crowding concern. This needs an explicit decision before Mac implementation. Until decided, all Notes cells below are marked ⚠️.
+>
+> iOS source files if/when re-surfaced: `Views/NotesView.swift`, `Views/Shared/InsetCard.swift`. Design: `InsetCard` with `theme.tokens.groupFill` background + `theme.tokens.cardStroke` border.
 
-| Feature | iOS | Mac | Watch |
+| Feature | iOS (v1.5.0) | Mac | Watch |
 | --- | --- | --- | --- |
-| **Note list** | Scrollable card layout. Pinned section first, then by `updatedAt` desc. Long-press → context menu. | ✅ List in content column (same sort logic). Click → detail column (no modal sheet). | ❌ Not on Watch — Watch is capture-only; notes are read-only at best (⏳ post-launch). |
-| **Pinned / unpinned sections** | Two sections when pinned notes exist. | ✅ Same section logic. | ❌ |
-| **Create note** | Floating `+` button above tab bar → new note sheet. | ✅ Toolbar `+` button or ⌘⇧N. New note opens in detail column. | ⏳ Post-launch: dictate note as plain text capture. |
-| **Note editor** | Full-screen sheet with title, rich text body (`contentEditable`-equivalent), formatting toolbar above keyboard. Auto-save on existing notes; save-on-back for new notes. | 🟨 Detail column editor. Formatting toolbar in the macOS toolbar strip (not above keyboard). Auto-save same logic. | ❌ |
-| **Rich text formatting** | Bold, italic, underline, headings (H1–H3), bullet + numbered lists, dividers. Stored as HTML in `content` field. | ✅ Same via `TextKit 2` / `NSTextView`-backed SwiftUI editor. Keyboard shortcuts (⌘B, ⌘I, ⌘U). | ❌ |
-| **Auto-formatting** | `"- "` → bullet list, `"N. "` → numbered list. | ✅ Same. | ❌ |
-| **Create task from note** | Long-press text selection → QuickTaskSheet, or `ListPlus` toolbar button. | ✅ Selection → context menu "Create Task" or toolbar button. | ❌ |
-| **Pin / unpin** | Swipe action or long-press context menu. | ✅ Right-click context menu or toolbar button. | ❌ |
-| **Delete note** | Swipe-to-delete or select mode + delete. | ✅ Backspace key or right-click → Delete. | ❌ |
-| **Share note** | Long-press context menu → iOS share sheet (`ShareSheet.swift`). | ✅ Right-click → Share via macOS sharing services. | ❌ |
-| **Copy note** | Long-press context menu → `UIPasteboard`. | ✅ ⌘C or right-click → Copy. | ❌ |
-| **Select mode / bulk delete** | Long-press enters select mode; multi-select + delete. | ✅ ⌘-click multi-select; Delete key or right-click → Delete. | ❌ |
-| **Empty state** | Centered "No notes yet" message with prompt. | ✅ Same centered state in content column. | ❌ |
-| **Design** | `InsetCard` with `groupFill` background, `cardStroke` 0.5px border, `BodyMedium` title, `LabelSmall` date. `ThemeBackground` wallpaper behind list. | Same tokens; card adapts to macOS list row sizing (taller min-height). No wallpaper overlay — window background uses `surfaceFill` token tinted by accent. | N/A |
+| **Note list** | ⚠️ Code exists (`NotesView.swift`), hidden from nav. | ⚠️ Decision pending — sidebar space available. | ❌ |
+| **Pinned / unpinned sections** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Create note** | ⚠️ Not reachable. | ⚠️ Decision pending. | ❌ |
+| **Note editor** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Rich text formatting** | ⚠️ Bold, italic, underline, headings, lists, dividers — implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Auto-formatting** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Create task from note** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Pin / unpin** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Delete note** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Share / copy note** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
+| **Bulk select + delete** | ⚠️ Implemented, not exposed. | ⚠️ Decision pending. | ❌ |
 
 ---
 
@@ -374,7 +375,7 @@ This becomes the visual QA gate per the existing `ui-consistency` command.
 
 | Feature | Description |
 | --- | --- |
-| **Menu bar commands** | New Task (⌘N), New Note (⌘⇧N), Voice Capture (⌘⇧V), Search (⌘F), Preferences (⌘,), full Edit menu with ⌘Z undo. |
+| **Menu bar commands** | New Task (⌘N), Voice Capture (⌘⇧V), Search (⌘F), Preferences (⌘,), full Edit menu with ⌘Z undo. New Note (⌘⇧N) if Notes re-surfaced (§12). |
 | **Multiple windows** | `WindowGroup` supports opening multiple windows (e.g., task detail + note side-by-side). Window restoration on relaunch. |
 | **Keyboard-first navigation** | Full keyboard navigation: arrow keys in lists, Tab between panels, Return to open, Space to complete, ⌘Return to save. |
 | **Drag-and-drop from other apps** | Drop text/URLs from Safari, Notes, ChatGPT into Notelayer window → create task or note. |
@@ -395,12 +396,12 @@ This becomes the visual QA gate per the existing `ui-consistency` command.
 | | Keyboard shortcuts | ❌ | ✅ Full ⌘ menu | ❌ |
 | | Multiple windows | ❌ | ✅ | ❌ |
 | | Hover states | ❌ | ✅ | ❌ |
-| **Notes** | Note list | ✅ | ✅ | ❌ |
-| | Rich text editor | ✅ | ✅ | ❌ |
-| | Pin / unpin | ✅ Swipe | ✅ Right-click | ❌ |
-| | Create task from note | ✅ | ✅ | ❌ |
-| | Share / copy | ✅ Share sheet | ✅ Share services | ❌ |
-| | Bulk select + delete | ✅ | ✅ ⌘-click | ❌ |
+| **Notes** | Note list | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
+| | Rich text editor | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
+| | Pin / unpin | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
+| | Create task from note | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
+| | Share / copy | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
+| | Bulk select + delete | ⚠️ Hidden (v1.5.0) | ⚠️ Decision pending | ❌ |
 | **To-Dos** | All 4 view modes | ✅ | ✅ | ❌ |
 | | Triage view (today+overdue) | ❌ Date view partial | ❌ Date view partial | ✅ Primary screen |
 | | Inline task input | ✅ | ✅ | ❌ |
@@ -480,12 +481,12 @@ This becomes the visual QA gate per the existing `ui-consistency` command.
 - **Recommendation: native SwiftUI multiplatform target.** Catalyst is faster to stand up but inherits iOS idioms (and UIKit AppDelegate baggage) and tends to feel "iPad-in-a-window." Native SwiftUI gives a true Mac feel and forces the clean `NotelayerKit` extraction we want anyway. Trade-off: more `#if os(macOS)` work for menus, window sizing, and Firebase/AppDelegate equivalents (`NSApplicationDelegateAdaptor`).
 
 **Layout**
-- `NavigationSplitView`: sidebar (Notes, To-Dos, Insights, Settings) + content + optional detail (task editor as trailing column instead of sheet).
-- Menu bar commands: New Task (⌘N), New Note (⌘⇧N), Voice Capture, Search (⌘F), Toggle Appearance.
+- `NavigationSplitView`: sidebar (To-Dos, Insights, Settings) + content + optional detail column. Notes: pending §12 open decision — Mac sidebar has space for it unlike the iOS pill tab bar.
+- Menu bar commands: New Task (⌘N), Voice Capture (⌘⇧V), Search (⌘F), Preferences (⌘,). New Note (⌘⇧N) added only if Notes is re-surfaced (§12 decision).
 - Multiple windows / window restoration; keyboard-first navigation; hover states.
 - Settings as a standard macOS Settings scene (⌘,) mapping to existing settings views.
 
-**Parity**: Full Notes/To-Dos/Insights, categories, reminders, appearance/theming, sign-in (Google/Apple), share-equivalent (drag-drop + Services menu instead of share extension).
+**Parity**: To-Dos + Insights (matching current iOS v1.5.0). Notes pending decision — Mac sidebar naturally accommodates it without the crowding concern that drove its removal from the iOS pill tab bar. Categories, reminders, appearance/theming, sign-in (Google/Apple), drag-drop + Services menu capture.
 
 ### 5.2 Notelayer for Apple Watch
 
@@ -506,7 +507,7 @@ Expose an `AppIntents` package (shared) so Siri, Spotlight, Shortcuts, the Actio
 - `AddTaskIntent` ("Add buy filament to Notelayer") — title, optional category, priority, due date.
 - `CompleteTaskIntent` ("Mark X done in Notelayer").
 - `QueryTasksIntent` ("What's due today in Notelayer?").
-- `OpenViewIntent` (Notes / To-Dos / Insights).
+- `OpenViewIntent` (To-Dos / Insights — Notes if re-surfaced, see §12).
 - **App Shortcuts** (`AppShortcutsProvider`) with spoken phrases so they work with zero user setup.
 - **App Entities**: expose `Task`/`Category` as `AppEntity` so Siri can disambiguate and Spotlight can index.
 - Donate intents on task creation/completion to improve Siri suggestions.
@@ -575,9 +576,10 @@ Run the existing `ui-consistency` command before/after every UI wave (per progra
 3. ✅ **Watch sync:** WatchConnectivity bridge via the paired iPhone (no standalone/cellular this phase).
 
 **Still open:**
-4. **Firebase:** migrate to SPM (recommended — needed for clean macOS support) vs keep CocoaPods iOS-only + separate dep path. *Leaning SPM; confirm before Wave 1.*
-5. **Mac distribution:** Mac App Store vs notarized direct download?
-6. **Watch scope:** capture/triage only (recommended) confirmed implicitly by the WatchConnectivity decision; flag if you want a single glanceable Insights metric.
+4. **Notes on Mac:** Notes tab is hidden on iOS (v1.5.0, intentional). Mac sidebar has space — should Notes be re-surfaced there? Options: (a) re-surface on Mac only, (b) re-surface on iOS + Mac together, (c) keep hidden everywhere. This affects the sidebar item count and the `NotelayerKit` extraction scope.
+5. **Firebase:** migrate to SPM (recommended — needed for clean macOS support) vs keep CocoaPods iOS-only + separate dep path. *Leaning SPM; confirm before Wave 1.*
+6. **Mac distribution:** Mac App Store vs notarized direct download?
+7. **Watch scope:** capture/triage only (recommended) confirmed implicitly by the WatchConnectivity decision; flag if you want a single glanceable Insights metric.
 
 ---
 

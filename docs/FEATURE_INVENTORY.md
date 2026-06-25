@@ -1,3 +1,14 @@
+---
+title: Notelayer Feature Inventory
+last_updated: 2026-06-25
+status: active
+scope: all-platforms
+group: product
+tags: [features, ios, mac, watch, ipad, ground-truth]
+related: [MULTIPLATFORM_PRD.md, REPOS.md, DS_COMPONENTS.md]
+source_of_truth_for: [notelayer-ios, notelayer-web, notelayer-marketing]
+---
+
 # Notelayer Feature Inventory
 
 **Last Updated:** 2026-06-25

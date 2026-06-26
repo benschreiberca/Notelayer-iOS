@@ -56,4 +56,75 @@ final class VoiceTaskParserTests: XCTestCase {
 
         XCTAssertTrue(first.needsReview)
     }
+
+    // MARK: - Date parsing
+
+    private func makeNow() -> Date {
+        // Fixed reference: Wednesday, 2026-06-24 10:00 local.
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = 24
+        components.hour = 10
+        return Calendar.current.date(from: components) ?? Date()
+    }
+
+    func testParsesTomorrow() {
+        let now = makeNow()
+        let drafts = VoiceTaskParser.parse(transcript: "call the dentist tomorrow", existingCategories: [], now: now)
+        guard let due = drafts.first?.dueDate else {
+            XCTFail("Expected a due date")
+            return
+        }
+        let expected = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now))
+        XCTAssertEqual(Calendar.current.startOfDay(for: due), expected)
+    }
+
+    func testParsesNextWeekday() {
+        let now = makeNow() // Wednesday
+        let drafts = VoiceTaskParser.parse(transcript: "submit report next Monday", existingCategories: [], now: now)
+        guard let due = drafts.first?.dueDate else {
+            XCTFail("Expected a due date")
+            return
+        }
+        // Next Monday from Wednesday 6/24 is 6/29.
+        XCTAssertEqual(Calendar.current.component(.weekday, from: due), 2)
+        XCTAssertGreaterThan(due, now)
+    }
+
+    func testParsesInNDays() {
+        let now = makeNow()
+        let drafts = VoiceTaskParser.parse(transcript: "renew passport in 3 days", existingCategories: [], now: now)
+        guard let due = drafts.first?.dueDate else {
+            XCTFail("Expected a due date")
+            return
+        }
+        let expected = Calendar.current.date(byAdding: .day, value: 3, to: Calendar.current.startOfDay(for: now))
+        XCTAssertEqual(Calendar.current.startOfDay(for: due), expected)
+    }
+
+    // MARK: - Priority parsing
+
+    func testParsesHighPriority() {
+        let drafts = VoiceTaskParser.parse(transcript: "fix the leak urgent", existingCategories: [])
+        XCTAssertEqual(drafts.first?.priority, .high)
+    }
+
+    func testParsesLowPriority() {
+        let drafts = VoiceTaskParser.parse(transcript: "organize bookshelf low priority", existingCategories: [])
+        XCTAssertEqual(drafts.first?.priority, .low)
+    }
+
+    // MARK: - Title cleaning
+
+    func testTitleStripsDateAndPriorityPhrases() {
+        let drafts = VoiceTaskParser.parse(transcript: "call mom tomorrow urgent", existingCategories: [])
+        guard let title = drafts.first?.title.lowercased() else {
+            XCTFail("Expected a draft")
+            return
+        }
+        XCTAssertTrue(title.contains("call mom"))
+        XCTAssertFalse(title.contains("tomorrow"))
+        XCTAssertFalse(title.contains("urgent"))
+    }
 }

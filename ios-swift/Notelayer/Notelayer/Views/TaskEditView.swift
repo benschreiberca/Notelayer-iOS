@@ -20,6 +20,7 @@ struct TaskEditView: View {
     @State private var selectedParentTaskId: String?
     @State private var showingParentDeletionDialog = false
     @State private var detectedURLs: [URL] = []
+    @FocusState private var isTitleFocused: Bool
 
     private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
     
@@ -36,7 +37,7 @@ struct TaskEditView: View {
     var body: some View {
         NavigationStack {
             List {
-                TaskEditorTitleSection(title: $title)
+                TaskEditorTitleSection(title: $title, focus: $isTitleFocused)
 
                 if !store.sortedCategories.isEmpty {
                     TaskEditorCategorySection(
@@ -272,7 +273,14 @@ struct TaskEditView: View {
             } message: {
                 Text("Choose what to do with subtasks before deleting this parent task.")
             }
-            .onAppear { detectURLs() }
+            .onAppear {
+                detectURLs()
+                // Auto-focus and clear the default title for newly created subtasks.
+                if task.parentTaskId != nil && title == "New subtask" {
+                    title = ""
+                    isTitleFocused = true
+                }
+            }
             .onChange(of: taskNotes) { _ in detectURLs() }
         }
     }

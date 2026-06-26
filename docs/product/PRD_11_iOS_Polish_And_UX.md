@@ -155,10 +155,12 @@ Option A is the lowest-effort iOS-idiomatic choice. Option B keeps the tab bar c
 
 ## Status
 
-| Item | Status |
-|------|--------|
-| Open decisions | ❌ Need resolution |
-| Voice parser improvements | Not started |
-| Share extension enhancements | Not started |
-| Category chip reorder | Not started |
-| Search relocation | Not started |
+| Item | Status | Branch |
+|------|--------|--------|
+| Category chip reorder (main app + share extension) | ✅ Done | `feature/category-chip-recents` |
+| Voice parser improvements (date/priority/title + tests) | ✅ Done | `feature/voice-improvements` |
+| Share extension category recents | ✅ Done | `feature/category-chip-recents` |
+| Voice — re-record button | ⏸ Deferred (audio re-capture plumbing) | — |
+| Voice — side-by-side raw transcript pane | ⏸ Deferred (staging view already shows transcript in notes field) | — |
+| Share — "Save and Open App" deep-link | ⏸ Deferred (app-extension openURL is restricted/fragile) | — |
+| Search relocation | 🧊 On ice (per Ben) | — |

@@ -58,7 +58,17 @@ When adding a new subtask, the cursor is not automatically placed in the text en
 
 ## Fixed
 
-*(none yet)*
+### BUG-001 — "Done" group scroll lag
+**Fixed:** 2026-06-26 — `fix/done-scroll-lag`  
+`TodoGroupTaskList`: `VStack` → `LazyVStack` so Done rows render on demand. Also eliminated O(n²) cost by passing `subtaskMap` into `topLevelRow` instead of calling `store.subtaskCount(for:)` per row.
+
+### BUG-002 — Subtask disappears on check-off
+**Fixed:** 2026-06-26 — `fix/done-scroll-lag` (same commit)  
+Removed the completion-state filter from `subtaskMap` so completed subtasks remain visible under their parent in Doing view.
+
+### BUG-003 — Subtask text field doesn't auto-focus
+**Fixed:** 2026-06-26 — `fix/subtask-focus`  
+`TaskEditView`: added `@FocusState` for title, passed to `TaskEditorTitleSection`. On appear, clears "New subtask" default and focuses field immediately for new subtasks.
 
 ---
 

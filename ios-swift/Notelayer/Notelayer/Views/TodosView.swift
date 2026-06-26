@@ -1597,7 +1597,7 @@ private struct TodoGroupTaskList: View {
     @State private var parentDeleteCandidate: Task?
     
     var body: some View {
-        VStack(spacing: 8) {
+        LazyVStack(spacing: 8) {
             if tasks.isEmpty {
                 Text("Drop here")
                     .font(.caption)
@@ -1614,15 +1614,16 @@ private struct TodoGroupTaskList: View {
                     }
             } else {
                 // Pre-build subtask map once (O(n)) so each expanded row lookup is O(1).
+                // Include all subtasks regardless of completion — completed subtasks remain
+                // visible under their parent in both Doing and Done views.
                 let subtaskMap: [String: [Task]] = hierarchyEnabled
                     ? Dictionary(grouping: store.tasks.filter {
-                        $0.parentTaskId != nil &&
-                        (showingDone ? $0.completedAt != nil : $0.completedAt == nil)
+                        $0.parentTaskId != nil
                     }, by: { $0.parentTaskId! })
                     : [:]
 
                 ForEach(tasks) { task in
-                    topLevelRow(for: task)
+                    topLevelRow(for: task, subtaskMap: subtaskMap)
 
                     if hierarchyEnabled, expandedParentTaskIds.contains(task.id) {
                         ForEach(subtaskMap[task.id] ?? []) { subtask in
@@ -1722,8 +1723,8 @@ private struct TodoGroupTaskList: View {
         }
     }
 
-    private func topLevelRow(for task: Task) -> some View {
-        let subtaskCount = hierarchyEnabled ? store.subtaskCount(for: task.id) : 0
+    private func topLevelRow(for task: Task, subtaskMap: [String: [Task]]) -> some View {
+        let subtaskCount = hierarchyEnabled ? (subtaskMap[task.id]?.count ?? 0) : 0
         return TaskItemView(
             task: task,
             categoryLookup: categoryLookup,

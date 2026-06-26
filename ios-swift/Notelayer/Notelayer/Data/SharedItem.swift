@@ -2,20 +2,36 @@ import Foundation
 
 /// Helper to load categories from App Group for share extension
 struct SharedItemHelpers {
-    /// Load categories from App Group (for use in share extension)
-    static func loadCategoriesFromAppGroup() -> [Category] {
-        let appGroupId = "group.com.notelayer.app"
+    private static let appGroupId = "group.com.notelayer.app"
+    private static let categoryUsageKey = "com.notelayer.app.categories.lastUsed"
+
+    /// Load categories from App Group (for use in share extension), ordered with
+    /// the most recently used categories first (matching the main app's quick-add
+    /// chip ordering), then the remaining categories in default order.
+    static func loadCategoriesFromAppGroup(recentLimit: Int = 5) -> [Category] {
+        let appGroupId = Self.appGroupId
         guard let userDefaults = UserDefaults(suiteName: appGroupId),
               let data = userDefaults.data(forKey: "com.notelayer.app.categories"),
               let categories = try? JSONDecoder().decode([Category].self, from: data) else {
             return []
         }
-        return categories.sorted {
+        let sorted = categories.sorted {
             if $0.order != $1.order {
                 return $0.order < $1.order
             }
             return $0.id < $1.id
         }
+
+        let lastUsed = (userDefaults.dictionary(forKey: categoryUsageKey) as? [String: Double]) ?? [:]
+        guard !lastUsed.isEmpty else { return sorted }
+
+        let used = sorted
+            .filter { lastUsed[$0.id] != nil }
+            .sorted { (lastUsed[$0.id] ?? 0) > (lastUsed[$1.id] ?? 0) }
+            .prefix(recentLimit)
+        let recentIds = Set(used.map { $0.id })
+        let remaining = sorted.filter { !recentIds.contains($0.id) }
+        return Array(used) + remaining
     }
 }
 

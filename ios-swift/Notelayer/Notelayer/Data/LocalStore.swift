@@ -50,6 +50,7 @@ class LocalStore: ObservableObject {
     private let insightsHintStateKey = "com.notelayer.app.insights.hintState"
     private let backendUserIdKey = "com.notelayer.app.backendUserId"
     private let sharedItemsQueueKey = "com.notelayer.app.sharedItems"
+    private let categoryUsageKey = "com.notelayer.app.categories.lastUsed"
     private var hasStoredExperimentalPreference = false
     private var hasStoredInsightsHintState = false
     private let sharedImportProcessingQueue = DispatchQueue(
@@ -93,6 +94,40 @@ class LocalStore: ObservableObject {
 
     var sortedCategories: [Category] {
         categories.sorted(by: Self.categorySort)
+    }
+
+    /// Per-category last-used timestamps (epoch seconds), keyed by category id.
+    /// Persisted in app-group UserDefaults so the share extension stays in sync.
+    @Published private(set) var categoryLastUsed: [String: Double] = [:]
+
+    /// Categories ordered with the most recently used first, then the remaining
+    /// categories in their default sort order. Recents are capped so the row
+    /// stays predictable.
+    func categoriesByRecentUse(recentLimit: Int = 5) -> [Category] {
+        let sorted = sortedCategories
+        let used = sorted
+            .filter { categoryLastUsed[$0.id] != nil }
+            .sorted { (categoryLastUsed[$0.id] ?? 0) > (categoryLastUsed[$1.id] ?? 0) }
+            .prefix(recentLimit)
+        let recentIds = Set(used.map { $0.id })
+        let remaining = sorted.filter { !recentIds.contains($0.id) }
+        return Array(used) + remaining
+    }
+
+    /// Record that the given categories were assigned to a saved task.
+    func recordCategoryUsage(_ categoryIds: [String]) {
+        guard !categoryIds.isEmpty else { return }
+        let now = Date().timeIntervalSince1970
+        for id in categoryIds {
+            categoryLastUsed[id] = now
+        }
+        userDefaults.set(categoryLastUsed, forKey: categoryUsageKey)
+    }
+
+    private func loadCategoryUsage() {
+        if let stored = userDefaults.dictionary(forKey: categoryUsageKey) as? [String: Double] {
+            categoryLastUsed = stored
+        }
     }
 
     var topLevelTasks: [Task] {
@@ -257,6 +292,8 @@ class LocalStore: ObservableObject {
         if categories.isEmpty {
             categories = Category.defaultCategories
         }
+
+        loadCategoryUsage()
 
         if let savedPosition = userDefaults.object(forKey: uncategorizedPositionKey) as? Int {
             uncategorizedPosition = savedPosition
@@ -562,6 +599,7 @@ class LocalStore: ObservableObject {
         if let parentId = newTask.parentTaskId {
             reconcileParentCompletion(parentId: parentId, resetManualOverride: true)
         }
+        recordCategoryUsage(newTask.categories)
         saveTasks()
         logTaskCreatedAnalytics(for: newTask)
         if let backend, !suppressBackendWrites {
@@ -602,6 +640,11 @@ class LocalStore: ObservableObject {
         let priorityChanged = oldTask.priority != task.priority
         let dueDateChanged = oldTask.dueDate != task.dueDate
         let notesChanged = oldTask.taskNotes != task.taskNotes
+        if categoriesChanged {
+            // Record recency for categories newly assigned in this edit.
+            let added = Set(task.categories).subtracting(oldTask.categories)
+            recordCategoryUsage(Array(added))
+        }
         if titleChanged || categoriesChanged || priorityChanged || dueDateChanged || notesChanged {
             AnalyticsService.shared.logEvent(AnalyticsEventName.taskEdited, params: [
                 "title_changed": titleChanged,

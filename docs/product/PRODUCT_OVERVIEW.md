@@ -27,6 +27,8 @@ A task app that feels native everywhere: one data model, one design language, mu
 | iPhone (iOS 16+) | Shipped — v1.5.0 | `main` |
 | Mac (Apple Silicon, macOS 13+) | Planned — PRD 09 | `feature/multiplatform` |
 | Apple Watch (watchOS 9+) | Planned — PRD 09 | `feature/multiplatform` |
+| Siri / App Intents | Planned — PRD 09 Wave 3 | `feature/multiplatform` |
+| Chrome Extension (side panel) | Planned — PRD 10 | TBD |
 | Web (React, Firebase) | Separate repo — `notelayer-web` | — |
 | iPad | iPhone layout runs; not optimized | open decision |
 | visionOS | Explicitly opted out in v1.5.0 | — |
@@ -47,6 +49,8 @@ A task app that feels native everywhere: one data model, one design language, mu
 | PRD 07 | Share to Notelayer (Share Sheet) | 🟨 Extension implemented; ChatGPT parsing status unclear |
 | PRD 08 | Project-Based Tasks (Subtask Hierarchy) | 🟨 Functional, gated |
 | PRD 09 | Mac + Watch Multiplatform | ⬜ Planned — see MULTIPLATFORM_PRD.md |
+| PRD 10 | Chrome Extension Side Panel | ⬜ Draft — see PRD_10_Chrome_Extension_Side_Panel.md |
+| PRD 11 | iOS Polish & UX | ⬜ Draft — voice, share, category chips, search |
 
 For shipped decisions and implementation notes, see `PRD_DECISIONS.md`.
 

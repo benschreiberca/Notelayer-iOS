@@ -21,8 +21,8 @@ This is the front door. Five groups of maintained docs. Everything else is in `_
 | `product/FEATURE_INVENTORY.md` | **Ground truth** — every feature, every platform, comparison table |
 | `product/MULTIPLATFORM_PRD.md` | Mac + Watch + Siri plan (PRD 09) |
 | `product/PRODUCT_OVERVIEW.md` | Product vision, PRD index, open decisions |
-| `product/REPOS.md` | Registry of all Notelayer repos |
 | `product/PRD_DECISIONS.md` | PRDs 01–08 — shipped decisions, implementation status |
+| `product/REPOS.md` | Registry of all Notelayer repos |
 
 ---
 
@@ -64,7 +64,7 @@ This is the front door. Five groups of maintained docs. Everything else is in `_
 | `releases/RELEASES.md` | Release index + four-format content guide |
 | `releases/v1.5.0/` | v1.5.0 release content |
 | `operations/RELEASE_CHECKLIST.md` | Release checklist template |
-| `operations/CI_AND_DISTRIBUTION.md` | TestFlight, GitHub Actions, signing |
+| `operations/CI_AND_DISTRIBUTION.md` | TestFlight, GitHub Actions, code signing |
 | `operations/APP_STORE_ASSETS.md` | Screenshot guide + metadata |
 | `operations/PRIVACY_POLICY.md` | Privacy policy |
 

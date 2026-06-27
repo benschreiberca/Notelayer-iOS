@@ -41,7 +41,7 @@ struct TaskEditView: View {
 
                 if !store.sortedCategories.isEmpty {
                     TaskEditorCategorySection(
-                        categories: store.sortedCategories,
+                        categories: store.categoriesByRecentUse(),
                         selectedIds: $selectedCategories,
                         chipSize: .large
                     )

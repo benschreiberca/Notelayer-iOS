@@ -1445,6 +1445,9 @@ class LocalStore: ObservableObject {
         tasks.append(contentsOf: preparedTasks)
         saveTasks()
 
+        // Shared imports assign categories too, so they count toward recency.
+        recordCategoryUsage(preparedTasks.flatMap { $0.categories })
+
         for task in preparedTasks {
             logTaskCreatedAnalytics(for: task)
         }

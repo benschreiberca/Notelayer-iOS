@@ -148,7 +148,7 @@ struct VoiceStagingView: View {
     private func categoryChips(index: Int) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(store.sortedCategories) { category in
+                ForEach(store.categoriesByRecentUse()) { category in
                     CategoryChip(
                         category: category,
                         isSelected: drafts[index].categories.contains(category.id),

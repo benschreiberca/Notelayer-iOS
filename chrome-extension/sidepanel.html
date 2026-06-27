@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notelayer</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">N</span>
+        <span class="brand-name">Notelayer</span>
+      </div>
+      <button id="account-btn" class="icon-btn" title="Account" hidden>
+        <span id="account-initial">?</span>
+      </button>
+    </header>
+
+    <!-- Signed-out state -->
+    <section id="signed-out" class="centered" hidden>
+      <p class="muted">Sign in with the Google account you use for Notelayer.</p>
+      <button id="signin-btn" class="primary-btn">Sign in with Google</button>
+      <p id="signin-error" class="error" hidden></p>
+    </section>
+
+    <!-- Loading state -->
+    <section id="loading" class="centered">
+      <div class="spinner"></div>
+    </section>
+
+    <!-- Signed-in app -->
+    <main id="app" hidden>
+      <!-- Quick capture -->
+      <section class="capture">
+        <label class="field-label" for="task-title">New task</label>
+        <input
+          id="task-title"
+          class="text-input"
+          type="text"
+          placeholder="Task title…"
+          autocomplete="off"
+        />
+        <div class="capture-meta">
+          <label class="checkbox">
+            <input id="attach-url" type="checkbox" checked />
+            <span>Attach current page link</span>
+          </label>
+        </div>
+        <div id="page-preview" class="page-preview" hidden>
+          <span id="page-title" class="page-title"></span>
+          <span id="page-url" class="page-url"></span>
+        </div>
+
+        <div class="row-label">Priority</div>
+        <div id="priority-row" class="chip-row"></div>
+
+        <div class="row-label">Categories</div>
+        <div id="category-row" class="chip-row"></div>
+
+        <button id="add-btn" class="primary-btn full">Add task</button>
+        <p id="add-status" class="status" hidden></p>
+      </section>
+
+      <!-- Open tasks -->
+      <section class="tasks">
+        <div class="tasks-header">
+          <h2>Open tasks</h2>
+          <button id="refresh-btn" class="text-btn">Refresh</button>
+        </div>
+        <ul id="task-list" class="task-list"></ul>
+        <p id="tasks-empty" class="muted" hidden>No open tasks 🎉</p>
+      </section>
+    </main>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

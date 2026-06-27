@@ -255,8 +255,7 @@ struct InsightsView: View {
             .sheet(isPresented: $showingAppearance) {
                 AppearanceView()
                     .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+                    .adaptiveSheetDetents()
                     .onAppear {
                         appearanceViewSession = AnalyticsService.shared.trackViewOpen(
                             viewName: AnalyticsViewName.appearance,
@@ -272,8 +271,7 @@ struct InsightsView: View {
             .sheet(isPresented: $showingCategoryManager) {
                 CategoryManagerView()
                     .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+                    .adaptiveSheetDetents()
                     .onAppear {
                         categoryViewSession = AnalyticsService.shared.trackViewOpen(
                             viewName: AnalyticsViewName.categoryManager,

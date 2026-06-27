@@ -43,8 +43,7 @@ struct ProfileSettingsView: View {
             .sheet(isPresented: $showingSignIn) {
                 SignInSheet()
                     .withThemeAppearance()
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+                    .adaptiveSheetDetents()
             }
         }
     }

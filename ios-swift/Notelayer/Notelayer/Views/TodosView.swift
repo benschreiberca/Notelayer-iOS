@@ -282,8 +282,7 @@ struct TodosView: View {
         .sheet(item: $editingTask) { task in
             TaskEditView(task: task, categories: store.sortedCategories)
                 .withThemeAppearance()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents()
                 .onAppear {
                     taskEditViewSession = AnalyticsService.shared.trackViewOpen(
                         viewName: AnalyticsViewName.taskEdit,
@@ -299,8 +298,7 @@ struct TodosView: View {
         .sheet(isPresented: $showingCategoryManager) {
             CategoryManagerView()
                 .withThemeAppearance()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents()
                 .onAppear {
                     categoryViewSession = AnalyticsService.shared.trackViewOpen(
                         viewName: AnalyticsViewName.categoryManager,
@@ -316,8 +314,7 @@ struct TodosView: View {
         .sheet(isPresented: $showingAppearance) {
             AppearanceView()
                 .withThemeAppearance()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents()
                 .onAppear {
                     appearanceViewSession = AnalyticsService.shared.trackViewOpen(
                         viewName: AnalyticsViewName.appearance,

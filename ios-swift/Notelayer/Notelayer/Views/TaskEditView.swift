@@ -197,8 +197,7 @@ struct TaskEditView: View {
                     set: { dueDate = $0 }
                 ))
                 .withThemeAppearance()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents()
             }
             .alert("Calendar Export Failed", isPresented: .constant(calendarExportError != nil)) {
                 Button("Settings") {

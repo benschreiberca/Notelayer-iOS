@@ -5,6 +5,8 @@ enum AppBottomClearance {
     static let tabRowHeight: CGFloat = 56
     static let contentBottomSpacerHeight: CGFloat = tabRowHeight * 2
     static let tabBottomPadding: CGFloat = 12
+    /// Max width of the floating tab bar. Keeps it from stretching across an iPad.
+    static let tabBarMaxWidth: CGFloat = 420
 }
 
 struct RootTabsView: View {
@@ -68,21 +70,27 @@ struct RootTabsView: View {
 
             if !isKeyboardVisible {
                 HStack(spacing: 0) {
-                    ForEach(visibleTabs, id: \.self) { tab in
-                        tabButton(tab: tab, icon: tab.iconName, label: tab.title)
+                    HStack(spacing: 0) {
+                        ForEach(visibleTabs, id: \.self) { tab in
+                            tabButton(tab: tab, icon: tab.iconName, label: tab.title)
+                        }
                     }
+                    .padding(4)
+                    .frame(minHeight: AppBottomClearance.tabRowHeight)
+                    // Cap the bar width so it doesn't stretch edge-to-edge on iPad;
+                    // on iPhone the screen is narrower than the cap so it still fills.
+                    .frame(maxWidth: AppBottomClearance.tabBarMaxWidth)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                    )
                 }
-                .padding(4)
-                .frame(minHeight: AppBottomClearance.tabRowHeight)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
-                )
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 26)
                 .padding(.bottom, AppBottomClearance.tabBottomPadding)
             }
@@ -242,8 +250,7 @@ struct RootTabsView: View {
         .sheet(isPresented: $showVoiceCaptureSheet) {
             VoiceCaptureSheet()
                 .withThemeAppearance()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents()
                 .environmentObject(theme)
         }
         .sheet(
@@ -258,8 +265,7 @@ struct RootTabsView: View {
         ) {
             VoiceStagingView()
                 .withThemeAppearance()
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .adaptiveSheetDetents(compact: [.large])
                 .environmentObject(theme)
         }
         .onChange(of: authService.user) { newValue in

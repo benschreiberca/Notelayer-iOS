@@ -70,7 +70,8 @@ docs/
 | Branch | Purpose |
 |--------|---------|
 | `main` | Stable — always shippable |
-| `docs/audit` | Doc consolidation (active) |
+| `test/prd-11-integration` | **Active** — iOS bugs+polish, iPad layout fixes, Chrome extension, Mac Catalyst, Watch scaffold. Testing on device, then PR to main. |
+| `docs/audit` | Doc consolidation — merged to main |
 | `claude/hopeful-rubin-9xouzo` | PRD 09 planning (merge or close) |
 
 *Update this table when new worktrees are added.*

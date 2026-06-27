@@ -25,12 +25,12 @@ A task app that feels native everywhere: one data model, one design language, mu
 | Platform | Status | Branch |
 |----------|--------|--------|
 | iPhone (iOS 16+) | Shipped — v1.5.0 | `main` |
-| Mac (Apple Silicon, macOS 13+) | Planned — PRD 09 | `feature/multiplatform` |
-| Apple Watch (watchOS 9+) | Planned — PRD 09 | `feature/multiplatform` |
-| Siri / App Intents | Planned — PRD 09 Wave 3 | `feature/multiplatform` |
-| Chrome Extension (side panel) | Planned — PRD 10 | TBD |
+| Mac (Apple Silicon, macOS 13+) | Catalyst-ready — enable destination in Xcode (`MAC_APP_SETUP.md`) | `test/prd-11-integration` |
+| Apple Watch (watchOS 9+) | Scaffolded — create target in Xcode (`WATCH_APP_SETUP.md`) | `test/prd-11-integration` |
+| Siri / App Intents | Planned — PRD 09 Wave 3 | TBD |
+| Chrome Extension (side panel) | v0.1 built — `chrome-extension/` (PRD 10) | `test/prd-11-integration` |
 | Web (React, Firebase) | Separate repo — `notelayer-web` | — |
-| iPad | iPhone layout runs; not optimized | open decision |
+| iPad | Layout runs; tab bar + sheet sizing fixed for iPad | `test/prd-11-integration` |
 | visionOS | Explicitly opted out in v1.5.0 | — |
 
 ---
@@ -48,9 +48,9 @@ A task app that feels native everywhere: one data model, one design language, mu
 | PRD 06 | First-Time User Onboarding | ✅ Shipped v1.5.0 — 4-step redesigned flow |
 | PRD 07 | Share to Notelayer (Share Sheet) | 🟨 Extension implemented; ChatGPT parsing status unclear |
 | PRD 08 | Project-Based Tasks (Subtask Hierarchy) | 🟨 Functional, gated |
-| PRD 09 | Mac + Watch Multiplatform | ⬜ Planned — see MULTIPLATFORM_PRD.md |
-| PRD 10 | Chrome Extension Side Panel | ⬜ Draft — see PRD_10_Chrome_Extension_Side_Panel.md |
-| PRD 11 | iOS Polish & UX | ⬜ Draft — voice, share, category chips, search |
+| PRD 09 | Mac + Watch Multiplatform | 🟨 Mac Catalyst-ready + Watch scaffolded — needs Xcode target wiring |
+| PRD 10 | Chrome Extension Side Panel | 🟨 v0.1 built — `chrome-extension/`, pending OAuth setup + Web Store |
+| PRD 11 | iOS Polish & UX | 🟨 Bugs + category recents + voice built; iPad layout fixed; search on ice |
 
 For shipped decisions and implementation notes, see `PRD_DECISIONS.md`.
 

@@ -1,7 +1,7 @@
 ---
 title: PRD 10 — Chrome Extension Side Panel
-last_updated: 2026-06-26
-status: Draft
+last_updated: 2026-06-27
+status: In Progress — v0.1 built
 scope: Chrome
 group: product
 tags: [chrome, extension, web, side-panel, capture]
@@ -10,8 +10,8 @@ related: [REPOS.md, BACKEND_AND_AUTH.md, DS_WEB_GUIDE.md, FEATURE_INVENTORY.md]
 
 # PRD 10: Chrome Extension — Side Panel
 
-**Last Updated:** 2026-06-26  
-**Status:** Draft  
+**Last Updated:** 2026-06-27  
+**Status:** In Progress — v0.1 built (`chrome-extension/`), pending OAuth client setup + Web Store submission  
 **Scope:** Chrome Browser (desktop)  
 **Group:** Product  
 **Tags:** chrome, extension, side-panel, web, capture  
@@ -114,9 +114,29 @@ Give Notelayer a persistent, always-available capture surface inside Chrome. A s
 
 | Item | Status |
 |------|--------|
-| Open decisions | ❌ Need resolution |
-| Design mockup | Not started |
-| Chrome extension scaffold | Not started |
-| Firebase Auth (extension) | Not started |
-| Task list + capture UI | Not started |
+| Open decisions | Resolved — Chrome Web Store (not Safari) |
+| Chrome extension scaffold | ✅ Built — `chrome-extension/` (MV3, side panel) |
+| Firebase Auth (extension) | ✅ Built — `chrome.identity` → Identity Toolkit → Firebase ID token |
+| Task list + capture UI | ✅ Built — capture current tab, list/complete open tasks, recents-first categories |
+| OAuth client setup | ⏳ Manual — create Chrome-Extension OAuth client, set `manifest.json` `oauth2.client_id` |
 | Chrome Web Store listing | Not started |
+
+---
+
+## Implementation notes (v0.1)
+
+Built under `chrome-extension/` as a **zero-build** Manifest V3 project. The
+approach differs from the early technical notes above in two deliberate ways:
+
+- **Firestore via REST, not a bundled SDK.** MV3's CSP forbids remote scripts and
+  bundling the Firebase SDK would add a build step. The Firestore REST API +
+  Identity Toolkit cover all needs and keep the extension plain ES modules. See
+  `lib/firestore.js`.
+- **Auth via `chrome.identity.getAuthToken`** (Google access token) exchanged for
+  a Firebase ID token through `accounts:signInWithIdp`, rather than
+  `launchWebAuthFlow` + `signInWithCredential`. Simpler for Google accounts. See
+  `lib/auth.js`.
+
+Documents are written with the exact iOS field layout (`users/{uid}/tasks`,
+`users/{uid}/categories`) so records round-trip across devices. Setup, OAuth
+client creation, and Web Store publishing steps are in `chrome-extension/README.md`.

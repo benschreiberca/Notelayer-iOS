@@ -177,6 +177,7 @@ struct RootTabsView: View {
         .animation(.easeInOut(duration: 0.2), value: shouldShowVoiceButton)
         .animation(.easeInOut(duration: 0.2), value: shouldShowSearchButton)
         .onAppear {
+            configureMacWindowIfNeeded()
             updateResolvedScheme()
             checkAndShowWelcome()
             tabViewSession = AnalyticsService.shared.trackViewOpen(
@@ -348,6 +349,19 @@ struct RootTabsView: View {
         }
     }
 
+
+    /// On Mac (Catalyst) give the window a sensible minimum size and hide the
+    /// title bar so the app reads as a real desktop app, not a stretched iPad
+    /// window. No-op on iOS/iPadOS.
+    private func configureMacWindowIfNeeded() {
+        #if targetEnvironment(macCatalyst)
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0 is UIWindowScene }) as? UIWindowScene else { return }
+        windowScene.sizeRestrictions?.minimumSize = CGSize(width: 480, height: 660)
+        windowScene.titlebar?.titleVisibility = .hidden
+        windowScene.titlebar?.toolbar = nil
+        #endif
+    }
 
     private func updateResolvedScheme() {
         switch theme.mode {

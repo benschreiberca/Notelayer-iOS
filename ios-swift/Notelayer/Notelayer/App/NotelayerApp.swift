@@ -332,7 +332,11 @@ struct NotelayerApp: App {
         let authService = AuthService()
         _authService = StateObject(wrappedValue: authService)
         _backendService = StateObject(wrappedValue: FirebaseBackendService(authService: authService, store: .shared))
-        
+
+        // Bridge to the Apple Watch companion. No-ops where WatchConnectivity
+        // is unsupported (e.g. Mac Catalyst).
+        WatchSessionProvider.shared.activate()
+
         // Check if we're in screenshot generation mode
         let isScreenshotMode = ProcessInfo.processInfo.environment["SCREENSHOT_MODE"] == "true" ||
                               ProcessInfo.processInfo.arguments.contains("--screenshot-generation")

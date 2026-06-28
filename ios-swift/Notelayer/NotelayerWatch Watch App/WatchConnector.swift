@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 // Minimal stub — WatchConnectivity wired up once the app builds successfully.

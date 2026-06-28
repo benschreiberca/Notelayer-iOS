@@ -10,8 +10,14 @@ final class WatchConnector: NSObject, ObservableObject {
     static let shared = WatchConnector()
 
     @Published private(set) var tasks: [WatchTaskDTO] = []
+    @Published private(set) var categories: [WatchCategoryDTO] = []
     @Published private(set) var isReachable = false
     @Published var lastError: String?
+
+    /// Look up a category by id for labeling/coloring.
+    func category(for id: String) -> WatchCategoryDTO? {
+        categories.first { $0.id == id }
+    }
 
     private override init() {
         super.init()
@@ -65,9 +71,13 @@ final class WatchConnector: NSObject, ObservableObject {
     }
 
     private func applyPayload(_ payload: [String: Any]) {
-        guard let raw = payload[WatchMessage.tasks] as? [[String: Any]] else { return }
-        tasks = raw.compactMap(WatchTaskDTO.init(dictionary:))
-        lastError = nil
+        if let rawTasks = payload[WatchMessage.tasks] as? [[String: Any]] {
+            tasks = rawTasks.compactMap(WatchTaskDTO.init(dictionary:))
+            lastError = nil
+        }
+        if let rawCats = payload[WatchMessage.categories] as? [[String: Any]] {
+            categories = rawCats.compactMap(WatchCategoryDTO.init(dictionary:))
+        }
     }
 
     private func applyContext(_ context: [String: Any]) { applyPayload(context) }

@@ -9,11 +9,11 @@ import Foundation
 
 /// Message keys + payload keys used across the WatchConnectivity link.
 public enum WatchMessage {
-    /// Watch → phone: request the current task list. Reply: `{ tasks: [[String: Any]] }`.
+    /// Watch → phone: request the current task list. Reply: `{ tasks, categories }`.
     public static let fetchTasks = "fetchTasks"
-    /// Watch → phone: add a task. Payload: `{ title: String }`. Reply: `{ ok: Bool }`.
+    /// Watch → phone: add a task. Payload: `{ title }`. Reply: `{ ok }`.
     public static let addTask = "addTask"
-    /// Watch → phone: complete a task. Payload: `{ id: String }`. Reply: `{ ok: Bool }`.
+    /// Watch → phone: complete a task. Payload: `{ id }`. Reply: `{ ok }`.
     public static let completeTask = "completeTask"
 
     /// Common payload keys.
@@ -21,6 +21,7 @@ public enum WatchMessage {
     public static let title = "title"
     public static let id = "id"
     public static let tasks = "tasks"
+    public static let categories = "categories"
     public static let ok = "ok"
 }
 
@@ -33,13 +34,27 @@ public struct WatchTaskDTO: Identifiable, Equatable {
     public let priority: String
     public let dueDate: Date?
     public let isCompleted: Bool
+    /// Category ids this task belongs to.
+    public let categoryIds: [String]
+    /// Optional free-text notes.
+    public let notes: String?
 
-    public init(id: String, title: String, priority: String, dueDate: Date?, isCompleted: Bool) {
+    public init(
+        id: String,
+        title: String,
+        priority: String,
+        dueDate: Date?,
+        isCompleted: Bool,
+        categoryIds: [String] = [],
+        notes: String? = nil
+    ) {
         self.id = id
         self.title = title
         self.priority = priority
         self.dueDate = dueDate
         self.isCompleted = isCompleted
+        self.categoryIds = categoryIds
+        self.notes = notes
     }
 
     public func toDictionary() -> [String: Any] {
@@ -48,8 +63,10 @@ public struct WatchTaskDTO: Identifiable, Equatable {
             "title": title,
             "priority": priority,
             "isCompleted": isCompleted,
+            "categoryIds": categoryIds,
         ]
         if let dueDate { dict["dueDate"] = dueDate.timeIntervalSince1970 }
+        if let notes, !notes.isEmpty { dict["notes"] = notes }
         return dict
     }
 
@@ -60,10 +77,41 @@ public struct WatchTaskDTO: Identifiable, Equatable {
         self.title = title
         self.priority = (dictionary["priority"] as? String) ?? "medium"
         self.isCompleted = (dictionary["isCompleted"] as? Bool) ?? false
+        self.categoryIds = (dictionary["categoryIds"] as? [String]) ?? []
+        self.notes = dictionary["notes"] as? String
         if let interval = dictionary["dueDate"] as? TimeInterval {
             self.dueDate = Date(timeIntervalSince1970: interval)
         } else {
             self.dueDate = nil
         }
+    }
+}
+
+/// A category as seen by the watch — enough to label and color tasks.
+public struct WatchCategoryDTO: Identifiable, Equatable {
+    public let id: String
+    public let name: String
+    public let icon: String
+    /// Hex color string, e.g. "#6366F1".
+    public let colorHex: String
+
+    public init(id: String, name: String, icon: String, colorHex: String) {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.colorHex = colorHex
+    }
+
+    public func toDictionary() -> [String: Any] {
+        ["id": id, "name": name, "icon": icon, "colorHex": colorHex]
+    }
+
+    public init?(dictionary: [String: Any]) {
+        guard let id = dictionary["id"] as? String,
+              let name = dictionary["name"] as? String else { return nil }
+        self.id = id
+        self.name = name
+        self.icon = (dictionary["icon"] as? String) ?? ""
+        self.colorHex = (dictionary["colorHex"] as? String) ?? "#6366F1"
     }
 }

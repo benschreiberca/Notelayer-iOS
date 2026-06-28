@@ -60,15 +60,30 @@ final class WatchSessionProvider: NSObject {
                 title: $0.title,
                 priority: $0.priority.rawValue,
                 dueDate: $0.dueDate,
-                isCompleted: false
+                isCompleted: false,
+                categoryIds: $0.categories,
+                notes: $0.taskNotes
             )
         }
     }
 
+    /// Categories the watch needs to label and color tasks.
+    private func currentWatchCategories() -> [WatchCategoryDTO] {
+        store.sortedCategories.map {
+            WatchCategoryDTO(id: $0.id, name: $0.name, icon: $0.icon, colorHex: $0.color)
+        }
+    }
+
+    private func snapshotPayload() -> [String: Any] {
+        [
+            WatchMessage.tasks: currentWatchTasks().map { $0.toDictionary() },
+            WatchMessage.categories: currentWatchCategories().map { $0.toDictionary() },
+        ]
+    }
+
     private func pushContext() {
         guard WCSession.default.activationState == .activated else { return }
-        let payload = [WatchMessage.tasks: currentWatchTasks().map { $0.toDictionary() }]
-        try? WCSession.default.updateApplicationContext(payload)
+        try? WCSession.default.updateApplicationContext(snapshotPayload())
     }
 
     // MARK: - Action handling
@@ -77,21 +92,21 @@ final class WatchSessionProvider: NSObject {
         let action = message[WatchMessage.action] as? String
         switch action {
         case WatchMessage.fetchTasks:
-            reply([WatchMessage.tasks: currentWatchTasks().map { $0.toDictionary() }])
+            reply(snapshotPayload())
 
         case WatchMessage.addTask:
             let title = (message[WatchMessage.title] as? String)?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             guard !title.isEmpty else { reply([WatchMessage.ok: false]); return }
             _ = store.addTask(Task(title: title))
-            reply([WatchMessage.ok: true, WatchMessage.tasks: currentWatchTasks().map { $0.toDictionary() }])
+            reply([WatchMessage.ok: true].merging(snapshotPayload()) { _, new in new })
 
         case WatchMessage.completeTask:
             guard let id = message[WatchMessage.id] as? String else {
                 reply([WatchMessage.ok: false]); return
             }
             store.completeTask(id: id)
-            reply([WatchMessage.ok: true, WatchMessage.tasks: currentWatchTasks().map { $0.toDictionary() }])
+            reply([WatchMessage.ok: true].merging(snapshotPayload()) { _, new in new })
 
         default:
             reply([WatchMessage.ok: false])

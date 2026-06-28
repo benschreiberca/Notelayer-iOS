@@ -23,9 +23,13 @@ private struct AdaptiveSheetDetents: ViewModifier {
     let compactDetents: Set<PresentationDetent>
 
     func body(content: Content) -> some View {
+        #if targetEnvironment(macCatalyst)
+        // On Mac Catalyst sheets are native overlay windows — they size to their
+        // content automatically. Detents and drag indicators don't apply.
+        content
+            .presentationDetents([.large])
+        #else
         let isRegular = horizontalSizeClass == .regular
-        // On iPad use a tall card so content isn't clipped; on iPhone keep the
-        // bottom-sheet detents the call site asked for.
         let detents: Set<PresentationDetent> = isRegular
             ? [.fraction(0.85), .large]
             : compactDetents
@@ -33,6 +37,7 @@ private struct AdaptiveSheetDetents: ViewModifier {
         content
             .presentationDetents(detents)
             .presentationDragIndicator(.visible)
+        #endif
     }
 }
 

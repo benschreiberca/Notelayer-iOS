@@ -60,15 +60,15 @@ struct WatchTasksView: View {
     // MARK: - View mode switcher
 
     private var viewModeMenu: some View {
-        Menu {
-            Picker("View", selection: $mode) {
-                ForEach(WatchViewMode.allCases) { m in
-                    Label(m.rawValue, systemImage: m.icon).tag(m)
-                }
+        Picker(selection: $mode) {
+            ForEach(WatchViewMode.allCases) { m in
+                Label(m.rawValue, systemImage: m.icon).tag(m)
             }
         } label: {
             Image(systemName: mode.icon)
         }
+        .pickerStyle(.navigationLink)
+        .labelsHidden()
     }
 
     // MARK: - Task list (grouped per view mode)

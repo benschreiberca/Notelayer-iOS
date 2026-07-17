@@ -13,7 +13,9 @@ use_frameworks!
 # Pods for Notelayer
 
 target 'Notelayer' do
-  pod 'Firebase/Analytics'
+  # AnalyticsWithoutAdIdSupport avoids GoogleAdsOnDeviceConversion, which has
+  # no Mac Catalyst binary. All logEvent analytics still work.
+  pod 'Firebase/AnalyticsWithoutAdIdSupport'
   pod 'Firebase/Auth'
   pod 'Firebase/Firestore'
   pod 'Firebase'

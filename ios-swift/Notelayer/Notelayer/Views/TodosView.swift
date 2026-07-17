@@ -22,6 +22,9 @@ private struct LazyView<Content: View>: View {
 struct TodosView: View {
     @Binding var isSearchActive: Bool
     @Binding var categoryJump: String?
+    /// When provided (Mac sidebar), the view mode is driven externally and the
+    /// in-view segmented picker is hidden. On iOS this is nil and the picker shows.
+    var externalViewMode: Binding<TodoViewMode>? = nil
     @StateObject private var store = LocalStore.shared
     @State private var showingDone = false
     @State private var editingTask: Task? = nil
@@ -63,16 +66,19 @@ struct TodosView: View {
 
         NavigationStack {
             VStack(spacing: 0) {
-                // Keep mode controls pinned under the navigation bar.
-                Picker("View", selection: $viewMode) {
-                    ForEach(TodoViewMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+                // Keep mode controls pinned under the navigation bar. Hidden on
+                // Mac where the sidebar drives the view mode instead.
+                if externalViewMode == nil {
+                    Picker("View", selection: $viewMode) {
+                        ForEach(TodoViewMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, isSearchActive ? 8 : 12)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, isSearchActive ? 8 : 12)
 
                 if isSearchActive {
                     searchBarView
@@ -231,6 +237,7 @@ struct TodosView: View {
                 }
             }
             .onAppear {
+                if let external = externalViewMode { viewMode = external.wrappedValue }
                 recomputeTaskCache()
                 if !hasScheduledSharedImport {
                     hasScheduledSharedImport = true
@@ -255,6 +262,10 @@ struct TodosView: View {
                     tabName: AnalyticsTabName.todos,
                     source: "Todos Mode Toggle"
                 )
+            }
+            .onChange(of: externalViewMode?.wrappedValue) { newValue in
+                // Sidebar-driven mode change on Mac.
+                if let newValue { viewMode = newValue }
             }
             .onChange(of: showingDone) { newValue in
                 AnalyticsService.shared.logEvent(AnalyticsEventName.todosFilterChanged, params: [

@@ -352,7 +352,7 @@ struct NotelayerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabsView()
+            rootView
                 .environmentObject(ThemeManager.shared)
                 .environmentObject(authService)
                 .environmentObject(backendService)
@@ -362,5 +362,14 @@ struct NotelayerApp: App {
                     }
                 }
         }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+        #if targetEnvironment(macCatalyst)
+        MacRootView()
+        #else
+        RootTabsView()
+        #endif
     }
 }

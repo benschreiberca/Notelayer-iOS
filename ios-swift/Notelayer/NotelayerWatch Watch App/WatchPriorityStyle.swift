@@ -10,5 +10,32 @@ enum WatchPriorityStyle {
         }
     }
 
+    static func label(for raw: String) -> String {
+        switch raw {
+        case "high": return "High"
+        case "medium": return "Medium"
+        case "low": return "Low"
+        default: return "Deferred"
+        }
+    }
+
     static let accent = Color(red: 0.39, green: 0.40, blue: 0.95)
+}
+
+extension Color {
+    /// Initialize from a "#RRGGBB" (or "RRGGBB") hex string. Falls back to the
+    /// Notelayer accent if the string can't be parsed.
+    init(hex: String) {
+        let cleaned = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        var rgb: UInt64 = 0
+        guard Scanner(string: cleaned).scanHexInt64(&rgb), cleaned.count == 6 else {
+            self = WatchPriorityStyle.accent
+            return
+        }
+        self = Color(
+            red: Double((rgb >> 16) & 0xFF) / 255.0,
+            green: Double((rgb >> 8) & 0xFF) / 255.0,
+            blue: Double(rgb & 0xFF) / 255.0
+        )
+    }
 }

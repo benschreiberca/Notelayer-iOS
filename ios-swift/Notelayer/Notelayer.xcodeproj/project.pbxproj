@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		BC3A1B1B2F1A000100406D9A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
-		BC5D91F62F29A5BD00C183A4 /* NotelayerShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC5D91F62F29A5BD00C183A4 /* NotelayerShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC5D91EC2F29A5BD00C183A4 /* NotelayerShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BC9FDFA92F305CFC0011A419 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC3A1B1A2F1A000100406D9A /* GoogleService-Info.plist */; };
-		D8B93D542FF19BCF00976517 /* NotelayerWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D8B93D4A2FF19BCE00976517 /* NotelayerWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D8B93D542FF19BCF00976517 /* NotelayerWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D8B93D4A2FF19BCE00976517 /* NotelayerWatch Watch App.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2828DDB85AF624896C03D90 /* ScreenshotGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B7D28EA766390BACBFB989 /* ScreenshotGenerationTests.swift */; };
 		EB36A7DD243F4FC829226FC9 /* Pods_Notelayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FE39EC02E4BE394B620DF83 /* Pods_Notelayer.framework */; };
 		F1A0B1C2D3E4F50000000011 /* InsightsAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0B1C2D3E4F50000000001 /* InsightsAggregatorTests.swift */; };
@@ -551,11 +551,13 @@
 		};
 		BC5D91F52F29A5BD00C183A4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = BC5D91EB2F29A5BD00C183A4 /* NotelayerShareExtension */;
 			targetProxy = BC5D91F42F29A5BD00C183A4 /* PBXContainerItemProxy */;
 		};
 		D8B93D532FF19BCF00976517 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = D8B93D492FF19BCE00976517 /* NotelayerWatch Watch App */;
 			targetProxy = D8B93D522FF19BCF00976517 /* PBXContainerItemProxy */;
 		};

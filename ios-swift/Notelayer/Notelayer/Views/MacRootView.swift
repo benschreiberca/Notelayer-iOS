@@ -13,7 +13,9 @@ struct MacRootView: View {
     @StateObject private var store = LocalStore.shared
     @StateObject private var welcomeCoordinator = WelcomeCoordinator.shared
 
-    @State private var selection: MacSidebarItem = .view(.list)
+    // Optional — List(selection:) on iOS/Catalyst only supports an Optional
+    // binding (the non-optional overload is macOS/tvOS only).
+    @State private var selection: MacSidebarItem? = .view(.list)
     @State private var viewMode: TodoViewMode = .list
     @State private var isSearchActive = false
     @State private var categoryJump: String? = nil
@@ -130,7 +132,7 @@ struct MacRootView: View {
     @ViewBuilder
     private var detail: some View {
         switch selection {
-        case .view, .category:
+        case .view, .category, .none:
             TodosView(
                 isSearchActive: $isSearchActive,
                 categoryJump: $categoryJump,
